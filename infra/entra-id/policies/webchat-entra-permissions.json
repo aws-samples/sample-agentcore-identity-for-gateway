@@ -1,0 +1,8 @@
+{"Version":"2012-10-17","Statement":[
+ {"Sid":"EntraThreeLOSessionBinding","Effect":"Allow","Action":["bedrock-agentcore:CompleteResourceTokenAuth"],
+  "Resource":["arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:workload-identity-directory/default",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:workload-identity-directory/default/workload-identity/__ENTRA_WI__",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:token-vault/default",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:token-vault/default/oauth2credentialprovider/rsidc-entra"]},
+ {"Sid":"EntraProviderSecret","Effect":"Allow","Action":["secretsmanager:GetSecretValue"],"Resource":"__CP_ENTRA_SECRET__"}
+]}

@@ -1,0 +1,19 @@
+{
+ "name": "rsidc-mall-entra-gateway",
+ "displayName": "Mall tools gateway (Microsoft Entra ID)",
+ "recordType": "MCP",
+ "recordVersion": "1.0.0",
+ "description": "AgentCore Gateway (MCP), Entra ID version: the same 4 mall tools, per-user RBAC via Cedar on Entra's native App Role claim roles. No Cognito.\nAuth: Bearer Microsoft Entra ID v2 access token (tenant <entra-tenant-id>); allowedAudience = rsidc-mall-api <mall-api-app-id>; Cedar policy engine <entra-policy-engine-id>\nTools: mall___get_mall_list, mall___get_footfall_summary, mall___get_hourly_traffic, mall___get_zone_comparison\nOwner: Jacky Wu (rsidc PoC)",
+ "descriptors": {
+  "mcpServer": {
+   "data": "{\"name\": \"io.github.aws-samples/rsidc-mall-entra-gateway\", \"title\": \"Mall tools gateway (Microsoft Entra ID)\", \"description\": \"AgentCore Gateway (MCP), Entra ID version: the same 4 mall tools, per-user RBAC via Cedar on Entra's\", \"version\": \"1.0.0\", \"remotes\": [{\"type\": \"streamable-http\", \"url\": \"https://<entra-gateway-id>.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp\"}]}",
+   "dataSchemaVersion": "2025-12-11",
+   "additionalData": {
+    "tools": {
+     "data": "{\"tools\": [{\"name\": \"mall___get_mall_list\", \"description\": \"List all malls (id, name, city).\", \"inputSchema\": {\"type\": \"object\", \"properties\": {}}}, {\"name\": \"mall___get_footfall_summary\", \"description\": \"Daily footfall total for one mall.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"date\": {\"type\": \"string\", \"description\": \"YYYY-MM-DD\"}, \"mall_id\": {\"type\": \"string\"}}}}, {\"name\": \"mall___get_hourly_traffic\", \"description\": \"Hourly visitor counts (10:00-21:00) for one mall.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"date\": {\"type\": \"string\", \"description\": \"YYYY-MM-DD\"}, \"mall_id\": {\"type\": \"string\"}}}}, {\"name\": \"mall___get_zone_comparison\", \"description\": \"Visitors per zone for one mall, to compare zones.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"date\": {\"type\": \"string\", \"description\": \"YYYY-MM-DD\"}, \"mall_id\": {\"type\": \"string\"}}}}]}",
+     "dataSchemaVersion": "2025-06-18"
+    }
+   }
+  }
+ }
+}

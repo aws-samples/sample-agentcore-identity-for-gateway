@@ -1,0 +1,41 @@
+tests/.users.env
+infra/state.env
+*.log
+tasks.txt
+.venv/
+__pycache__/
+.DS_Store
+build/
+build-oauth/
+tests/.quick-client.env
+tests/.entra-users.env
+tests/.entra-agent.env
+tests/.entra-totp.env
+# demo decks contain test-user passwords (internal only)
+docs/AgentCore-Identity-*.pptx
+# local copy WITH Entra test-user passwords (internal only)
+RUNBOOK-entra-id.local.md
+# kept local only (not published)
+docs/
+history/
+
+# Microsoft Entra ID setup: kept local only (not published)
+tests/entra-id/
+tests/.entra-*.env
+
+# test results: kept local only (not published)
+tests/*/results/
+
+# local notes / state: not published
+/state.env
+/tasks.txt
+worklog.md
+
+# local build tools / intermediate files (not published)
+/tools/
+__pycache__/
+
+# tests/ is kept local only (not published)
+/tests/
+.holmes/
+.playwright-mcp/

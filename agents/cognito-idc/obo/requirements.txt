@@ -1,0 +1,4 @@
+redshift_connector
+strands-agents
+bedrock-agentcore
+boto3

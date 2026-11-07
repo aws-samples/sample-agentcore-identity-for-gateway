@@ -1,0 +1,109 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>rsidc · Entra ID × AgentCore Identity (2LO / 3LO / OBO)</title>
+<style>
+ body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f4f6f8;color:#16191f}
+ header{background:#232f3e;color:#fff;padding:10px 18px;display:flex;align-items:center;gap:14px}
+ header h1{font-size:16px;margin:0} header .u{margin-left:auto;font-size:13px} header a{color:#ff9900}
+ main{max-width:1150px;margin:16px auto;padding:0 12px}
+ .card{background:#fff;border:1px solid #d5dbdb;border-radius:8px;padding:12px 14px;margin-bottom:14px}
+ .card h2{font-size:15px;margin:0 0 6px} .card.p2lo{border-left:5px solid #ec7211} .card.pobo{border-left:5px solid #0073bb} .card.p3lo{border-left:5px solid #8c4fff}
+ .roles span{display:inline-block;background:#0073bb;color:#fff;border-radius:10px;padding:2px 9px;margin:2px 4px 2px 0;font-size:12px}
+ .roles .none{background:#d13212}
+ table{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px} td,th{border:1px solid #d5dbdb;padding:5px 7px;vertical-align:top;text-align:left}
+ th{background:#232f3e;color:#fff} td.ok{color:#1d8102;font-weight:700} td.no{color:#d13212;font-weight:700} td.diff{background:#fff7e6}
+ button{background:#ff9900;border:0;border-radius:6px;padding:8px 14px;font-weight:700;cursor:pointer;margin-right:6px}
+ a.btn{display:inline-block;background:#ff9900;color:#000;padding:9px 18px;border-radius:6px;text-decoration:none;font-weight:700}
+ .btn.out{background:#fff;border:1px solid #d13212;color:#d13212;padding:4px 12px;font-size:12px}
+ .note{font-size:12px;color:#545b64} .expect{font-size:12px;background:#f1faff;border-left:3px solid #0073bb;padding:4px 8px;margin:6px 0}
+ .ok-msg{color:#1d8102;font-weight:700} pre{white-space:pre-wrap;font-size:12px;background:#f7f7f7;padding:6px;border-radius:4px}
+</style></head><body>
+<header><h1>Microsoft Entra ID × AgentCore Identity · 2LO / 3LO / OBO (runtime rsidc_entra_agent)</h1><span class="u" id="u"></span></header>
+<main id="app"></main>
+<script type="application/json" id="st">__STATE__</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+const ST = JSON.parse(document.getElementById("st").textContent);
+const app = document.getElementById("app");
+// Logout is a same-origin POST (a GET link could be triggered cross-site). The server answers {location} for the IdP sign-out.
+function wireLogout() {
+  document.querySelectorAll("[data-logout]").forEach(b => b.onclick = async () => {
+    const r = await fetch(b.dataset.logout, {method: "POST"});
+    if (r.ok) location.assign((await r.json()).location);
+  });
+}
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const chips = r => r && r.length ? r.map(x => `<span>${esc(x)}</span>`).join("") : `<span class="none">no roles</span>`;
+const KEYS = ["aud", "scp", "azp", "preferred_username", "roles"];
+const val = v => Array.isArray(v) ? v.join(", ") : (v ?? "—");
+function claimsTable(c) { return `<table><tr><th>claim</th><th>value</th></tr>${KEYS.map(k => `<tr><td>${k}</td><td>${esc(val(c[k]))}</td></tr>`).join("")}</table>`; }
+function beforeAfter(i, o) {
+  return `<table><tr><th>claim</th><th>inbound (user → runtime)</th><th>outbound (after OBO exchange)</th></tr>` +
+    KEYS.map(k => `<tr><td>${k}</td><td>${esc(val(i[k]))}</td><td class="${val(i[k]) !== val(o[k]) ? "diff" : ""}">${esc(val(o[k]))}</td></tr>`).join("") + `</table>`;
+}
+function gatewayTable(g) {
+  if (!g) return "";
+  const rows = Object.entries(g.allowed || {}).map(([t, ok]) => { const l = (g.listed || []).includes(t);
+    return `<tr><td><code>${esc(t)}</code></td><td class="${l ? "ok" : "no"}">${l ? "✓ listed" : "✗ hidden"}</td><td class="${ok ? "ok" : "no"}">${ok ? "✓ allowed" : "✗ denied"}</td></tr>`; }).join("");
+  return `<p class="note">Gateway rsidc-mall-entra-gateway · tools/list HTTP ${esc(g.list_http)} · ${(g.listed || []).length} tool(s) listed; every tool is also called directly (Cedar decides).</p>
+    <table><tr><th>tool</th><th>tools/list</th><th>direct tools/call</th></tr>${rows}</table>`;
+}
+if (!ST.signedIn) {
+  safeRender(app, `<div class="card"><h2>Sign in with Microsoft Entra ID</h2>
+    ${ST.signedOut ? `<p class="ok-msg">✓ Signed out of the app and of Microsoft Entra ID.</p>` : ""}
+    <p class="note">Tenant test users: <b>lo3user@…</b> (works today; MFA code from the TOTP secret of that user), and <b>wei / ds1 / chen @…</b> once Entra Security defaults are disabled.
+    Your Entra access token (aud = rsidc-entra-agent, scp = access_as_user) stays on the server; this page only shows claims.</p>
+    <p><a class="btn" href="/entra/login">Sign in with Entra ID</a></p></div>`);
+} else {
+  safeRender(document.getElementById("u"), `signed in as <b>${esc(ST.user)}</b> <button class="btn out" data-logout="/entra/logout">Sign out of Entra ID</button>`); wireLogout();
+  safeRender(app, `
+  <div class="card"><h2>Your inbound token (user → AgentCore Runtime)</h2>
+    <p class="note">Validated by the runtime's customJWTAuthorizer (Entra v2 discovery, allowedAudience = rsidc-entra-agent). ver ${esc(ST.inbound.ver)} · iss ${esc(ST.inbound.iss)}</p>
+    ${claimsTable(ST.inbound)}</div>
+  <div class="card p2lo" id="p2lo"><h2>2LO · the agent acts as ITSELF (client credentials, M2M)</h2>
+    <p class="note">The agent calls GetResourceOauth2Token(oauth2Flow=M2M) on credential provider rsidc-entra (MicrosoftOauth2) → Entra client_credentials → an app-only token for rsidc-mall-api → Gateway.</p>
+    <div class="expect">Expect: no user in the token (no preferred_username, no scp); roles = the APP's App Roles (List + Footfall) → the same 2 tools for <b>every</b> user.</div>
+    <button data-api="2lo">Run 2LO</button><div id="r-2lo"></div></div>
+  <div class="card pobo" id="pobo"><h2>OBO · the agent acts ON BEHALF OF you (token exchange)</h2>
+    <p class="note">GetResourceOauth2Token(oauth2Flow=ON_BEHALF_OF_TOKEN_EXCHANGE): AgentCore Identity sends your inbound token to Entra (jwt-bearer, requested_token_use=on_behalf_of) and gets a token for rsidc-mall-api that still names YOU and carries YOUR App Roles.</p>
+    <div class="expect">Expect: aud / scp / azp change, preferred_username is kept; tools follow the user (wei 4 · ds1 2 · chen 0; lo3user has no App Roles → 0 tools).</div>
+    <button data-api="obo">Exchange on behalf of me</button><button data-api="obo_graph">OBO → Microsoft Graph /me</button><div id="r-obo"></div></div>
+  <div class="card p3lo" id="p3lo"><h2>3LO · you consent once; the agent keeps YOUR token in the Token Vault</h2>
+    <p class="note">USER_FEDERATION: first call returns a consent URL → you sign in / consent at Entra (LOGIN 2) → AgentCore callback → this app calls CompleteResourceTokenAuth with your token → the agent reads Graph /me as you.</p>
+    <div class="expect">Expect: first time CONSENT_REQUIRED → after consent TOKEN_FROM_VAULT, Graph /me = you, identity guard passes.</div>
+    <a class="btn" id="b3" href="/3lo/start">Connect my Microsoft profile (3LO)</a>
+    <label class="note"><input type="checkbox" id="force"> force re-consent</label>
+    <button data-api="3lo">Check vault only</button><div id="r-3lo"></div></div>`);
+  document.getElementById("force").onchange = e => document.getElementById("b3").href = e.target.checked ? "/3lo/start?force=1" : "/3lo/start";
+  if (ST.last3lo) show3(ST.last3lo.agent, ST.last3lo.binding, ST.last3lo.step);
+}
+function show3(r, binding, step) {
+  const me = r && r.me ? `<table><tr><th>Graph /me</th><th>value</th></tr>${Object.entries(r.me).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>` : "";
+  safeRender(document.getElementById("r-3lo"), `${step ? `<p class="note">Last step: <b>${esc(step)}</b></p>` : ""}
+    ${binding ? `<p class="note">Session binding: CompleteResourceTokenAuth → <b>${esc(binding.CompleteResourceTokenAuth)}</b> · session matches pending: ${esc(binding.matchesPending)}</p>` : ""}
+    <p>Status: <b>${esc(r && (r.status || r.error))}</b>${r && r.status === "TOKEN_FROM_VAULT" ? " · ✓ identity guard: the vault token belongs to you" : ""}</p>${me}`);
+}
+let queue = Promise.resolve();   // one request at a time: the Lambda runs with reserved concurrency 1 (in-memory sessions)
+app.querySelectorAll("button[data-api]").forEach(b => b.onclick = () => { queue = queue.then(() => call(b.dataset.api)).catch(() => {}); });
+async function call(api) {
+  const box = document.getElementById(api.startsWith("obo") ? "r-obo" : "r-" + api); safeRender(box, "<p class='note'>…calling the agent</p>");
+  const resp = await fetch("/api/" + api, {method: "POST"});
+  if (!resp.ok) { safeRender(box, `<p class="note">HTTP ${resp.status}: ${resp.status === 401 ? "session expired, sign in again" : "try again"}</p>`); return; }
+  const {inbound, result: r} = await resp.json();
+  if (r.error) { safeRender(box, `<pre>${esc(r.error)}</pre>`); return; }
+  if (api === "2lo") safeRender(box, `<p class="note">Outbound token (agent → Gateway), app-only:</p>${claimsTable(r.outbound_token_claims || {})}${gatewayTable(r.gateway)}`);
+  if (api === "obo") safeRender(box, beforeAfter(inbound, r.outbound_token_claims || {}) + gatewayTable(r.gateway));
+  if (api === "obo_graph") safeRender(box, `<p class="note">OBO token for Microsoft Graph → GET /v1.0/me (HTTP ${esc(r.graph_http)}):</p><table><tr><th>field</th><th>value</th></tr>${Object.entries(r.me || {}).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>`);
+  if (api === "3lo") show3(r, null, "vault check");
+}
+</script></body></html>

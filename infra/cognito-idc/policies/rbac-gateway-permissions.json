@@ -1,0 +1,7 @@
+{"Version":"2012-10-17","Statement":[
+ {"Sid":"InvokeToolLambdas","Effect":"Allow","Action":"lambda:InvokeFunction","Resource":["__SALES__","__CRM__"]},
+ {"Sid":"PolicyInAgentCore","Effect":"Allow",
+  "Action":["bedrock-agentcore:AuthorizeAction","bedrock-agentcore:PartiallyAuthorizeActions","bedrock-agentcore:GetPolicyEngine"],
+  "Resource":["arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:policy-engine/rsidc_rbac_pe-*",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:gateway/rsidc-rbac-gateway-*"]}
+]}

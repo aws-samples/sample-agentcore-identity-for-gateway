@@ -1,0 +1,4 @@
+# webchat/common/
+`lambda_adapter.py`: replays an API Gateway HTTP API event into any of the GUI apps' `BaseHTTPRequestHandler` (`WEBCHAT_APP=<module>`). It is not imported locally. `infra/cognito-idc/14-deploy-webchat.sh` copies it, with the app files of both tracks, into one flat `webchat/` folder inside the Lambda zip, so the handler stays `webchat/lambda_adapter.handler`.
+
+`websec.py`: shared security helpers imported by all four apps: `json_for_script` (safe inline JSON, no `<`, `>`, `&`, U+2028/2029), `cookie` (HttpOnly, SameSite=Lax, Max-Age, and Secure when `WEB_BASE_URL` is https), `TTLStore` (session store 1 h, OAuth state 10 min, 1000-entry cap) and `take_pending_3lo` (one-time 3LO session binding). It must be copied into the Lambda zip next to the apps. Offline checks: `webchat/tests/`.

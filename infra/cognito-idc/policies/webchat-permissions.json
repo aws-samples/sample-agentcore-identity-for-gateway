@@ -1,0 +1,10 @@
+{"Version":"2012-10-17","Statement":[
+ {"Sid":"Logs","Effect":"Allow","Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],
+  "Resource":"arn:aws:logs:__REGION__:__ACCOUNT__:log-group:/aws/lambda/rsidc-webchat-*"},
+ {"Sid":"ThreeLOSessionBinding","Effect":"Allow","Action":["bedrock-agentcore:CompleteResourceTokenAuth"],
+  "Resource":["arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:workload-identity-directory/default",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:workload-identity-directory/default/workload-identity/__WI__",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:token-vault/default",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:token-vault/default/oauth2credentialprovider/rsidc-3lo-cognito"]},
+ {"Sid":"ThreeLOProviderSecret","Effect":"Allow","Action":["secretsmanager:GetSecretValue"],"Resource":"__CP3LO_SECRET__"}
+]}

@@ -1,0 +1,1 @@
+{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"redshift.amazonaws.com"},"Action":["sts:AssumeRole","sts:SetContext"],"Condition":{"StringEquals":{"aws:SourceAccount":"__ACCOUNT__"},"ArnLike":{"aws:SourceArn":["arn:aws:redshift:__REGION__:__ACCOUNT__:cluster:__CLUSTER__","arn:aws:redshift:__REGION__:__ACCOUNT__:redshiftidcapplication:*"]}}}]}

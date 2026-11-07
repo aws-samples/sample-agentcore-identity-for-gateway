@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>共享基础（Cognito + IAM Identity Center 方案）</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+nav{overflow:auto}nav .meta{position:static;margin:16px 18px 0;line-height:1.9}nav .meta a{display:inline;padding:0;border:0;color:var(--acc)}
+.start{border:2px solid var(--acc);background:#f0f6fc}.start h3{margin-top:0}
+.arch2 img{width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff}
+details.faq summary .res{margin-left:auto;font-weight:400;font-size:12px;color:var(--mut)}
+details.faq .bd p{margin:8px 0}details.faq .bd ul{margin:6px 0;padding-left:20px}details.faq .bd pre{margin:8px 0}
+.dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}@media(max-width:1000px){.dgrid{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div class="banner"><b>静态演示</b> — 界面为模拟，数据为真实记录。本页不会调用 AWS。<a href="foundation.html" hreflang="en" lang="en" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">English</a></div>
+<div class="wrap">
+<nav>
+  <h1>共享基础</h1>
+  <div class="sub">Cognito + IAM Identity Center 方案。从这里开始：各部分共用的 VPC、Cognito 用户池、Web GUI、Agent Registry 与清理。</div>
+  <a data-s="overview" class="on">0 · 概览</a>
+  <a data-s="setup">1 · 配置</a>
+  <a data-s="webgui">2 · Web GUI</a>
+  <a data-s="registry">3 · Agent Registry</a>
+  <a data-s="teardown">4 · 清理与成本</a>
+  <div class="meta">
+    <a href="part1-quick.zh-CN.html">第 1 部分 · Quick</a><br>
+    <a href="part2-3lo.zh-CN.html">第 2 部分 · 3LO</a><br>
+    <a href="part3-2lo.zh-CN.html">第 3 部分 · 2LO</a><br>
+    <a href="part4-obo.zh-CN.html">第 4 部分 · OBO</a><br>
+    <a href="gateway-rbac.zh-CN.html">Gateway RBAC</a><br>
+    <a href="foundation.zh-CN.html">共享基础</a><br>
+    <a href="../../README.md">仓库 README</a>
+  </div>
+</nav>
+<main>
+<section id="overview" class="on"></section>
+<section id="setup"></section>
+<section id="webgui"></section>
+<section id="registry"></section>
+<section id="teardown"></section>
+</main></div>
+<script id="data" type="application/json">{"screens": {"01-vpc-nat-gateway.png": {"caption": "VPC → NAT gateways → rsidc-rt-nat：公网 NAT，EIP {nat-eip}（Runtime 唯一的出口 IP）", "url": "https://ap-southeast-1.console.aws.amazon.com/vpcconsole/home?region=ap-southeast-1#NatGatewayDetails:natGatewayId={nat-gateway-id}", "alt": "VPC 控制台：公网 NAT gateway 及其 Elastic IP，作为 Runtime 的出口地址", "at": "2026-10-05 15:53:06 HKT"}, "02-cognito-users.png": {"caption": "Cognito → rsidc-users → Users：4 个由管理员创建的用户，邮箱已验证（与 IdC 用户对应）", "url": "https://ap-southeast-1.console.aws.amazon.com/cognito/v2/idp/user-pools/{user-pool-id}/user-management/users?region=ap-southeast-1", "alt": "Cognito 用户池 Users 列表：4 个由管理员创建、邮箱已验证的用户", "at": "2026-10-05 15:53:14 HKT"}, "02b-cognito-sign-up.png": {"caption": "Cognito → rsidc-users → Sign-up：Self-registration = Disabled（仅管理员可创建用户）", "url": "https://ap-southeast-1.console.aws.amazon.com/cognito/v2/idp/user-pools/{user-pool-id}/authentication/sign-up?region=ap-southeast-1", "alt": "Cognito 用户池 Sign-up 设置：已禁用自助注册，仅管理员可创建用户", "at": "2026-10-05 15:53:22 HKT"}}, "diagrams": [["Amazon Quick → Gateway（由 Quick 执行 3LO）", "architecture-quick-mall.svg", "架构图：Amazon Quick 让用户登录 Cognito，再用用户的 access token 调用 AgentCore Gateway；Lambda 工具运行前，Cedar 策略检查 roles claim", "part1-quick.zh-CN.html", "第 1 部分 · Quick"], ["3LO（用户授权 + Token Vault）", "architecture-3lo.svg", "架构图：用户在 Cognito 授权，AgentCore Identity 将 token 存入 Token Vault，agent 以该用户身份调用 Cognito userInfo", "part2-3lo.zh-CN.html", "第 2 部分 · 3LO"], ["2LO（client credentials）", "architecture-2lo.svg", "架构图：agent 获取自己的 client-credentials token 并调用 AgentCore Gateway，Gateway 调用 Lambda，以 svc_reporting 身份查询 Redshift", "part3-2lo.zh-CN.html", "第 3 部分 · 2LO"], ["OBO（身份传递到 Redshift）", "architecture.svg", "架构图：Cognito JWT 经 AgentCore Runtime 进行 IAM Identity Center token exchange，再以登录用户的身份访问 Redshift", "part4-obo.zh-CN.html", "第 4 部分 · OBO"]], "order": [["1", "共享基础：前置条件、步骤 1-2（本页）", "infra/cognito-idc/01, 02", "带单一出口 IP 的 Runtime VPC；Cognito 用户池 + 4 个用户", "foundation.zh-CN.html#setup"], ["2", "第 4 部分 · OBO：步骤 3-10", "infra/cognito-idc/03 to 08", "IdC trusted token issuer、Redshift 集群、示例数据、Runtime 角色、IdC agent 应用、Runtime", "part4-obo.zh-CN.html"], ["3", "第 3 部分 · 2LO：步骤 9-13", "infra/cognito-idc/09 to 13", "OAuth client、credential provider、2LO Gateway、OAuth Runtime（与 3LO 共用）", "part3-2lo.zh-CN.html"], ["4", "第 2 部分 · 3LO", "infra/cognito-idc/09, 10, 12, 13", "3LO client 与 credential provider，在共用的 OAuth Runtime 上配置回调 URL", "part2-3lo.zh-CN.html"], ["5", "共享基础：步骤 14 Web GUI（本页）", "infra/cognito-idc/14", "基于 API Gateway + Lambda 的 OBO 与 2LO/3LO GUI", "foundation.zh-CN.html#webgui"], ["6", "Gateway RBAC：步骤 15 与 mall（客户）版本", "infra/cognito-idc/15, 16", "在 Gateway 上用 Cedar 按用户进行工具级授权", "gateway-rbac.zh-CN.html"], ["7", "第 1 部分 · Quick", "Quick console + Step 16", "Amazon Quick 作为 mall Gateway 的 3LO client", "part1-quick.zh-CN.html"], ["8", "Agent Registry 与清理（本页）", "infra/common/agent-registry.py, 99-teardown.sh", "为 Runtime 与 Gateway 建立目录；清理全部资源", "foundation.zh-CN.html#registry"]], "steps": {"prereq": {"title": "前置条件", "result": "就绪", "blocks": [{"t": "list", "x": ["AWS CLI v2、`uv`、Python 3.12（通过 uv）、`nc`、`zip`；AWS profile `default`，在 123456789012 中具备管理员权限。", "已有的 IdC 实例 `{idc-instance-id}`（ap-east-1），其中用户 wei/zhang/chen/ds1 分属 risk-team、marketing-team、platform-team 和 data-scientists 组。", "在项目根目录创建工具 venv：`uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt`（boto3、requests；agent 的 Runtime 依赖由 `08` / `12` 打包）", "**所有步骤都通过 `infra/common/run.sh` 运行。** 它会加载 `infra/common/00-config.sh` 和 `infra/state.env`（运行时创建的本地文件，已加入 gitignore，用于保存资源 ID）。每个步骤都是幂等的，可安全重复执行。"]}, {"t": "code", "x": "uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt"}]}, "step1": {"title": "步骤 1 · 带固定出口 IP 的 Runtime VPC", "result": "NAT EIP {nat-eip}", "blocks": [{"t": "code", "x": "infra/common/run.sh ./infra/cognito-idc/01-runtime-network.sh"}, {"t": "p", "x": "创建 VPC 10.50.0.0/16、带 IGW 与 NAT GW（及 EIP）的公有子网、两个私有子网（apse1-az1/az2），以及仅允许出站的 SG。"}, {"t": "res", "x": "Runtime NAT EIP: {nat-eip}\nRT_VPC_ID={vpc-id}  RT_NAT_ID={nat-gateway-id}  RT_SG_ID={runtime-sg-id}\nRT_PRIV_SUBNET_1={private-subnet-1-id}  RT_PRIV_SUBNET_2={private-subnet-2-id}"}, {"t": "p", "x": "**验证：** NAT gateway 状态为 `available`，并持有固定出口 IP。"}, {"t": "code", "x": "aws ec2 describe-nat-gateways --region ap-southeast-1 --nat-gateway-ids {nat-gateway-id} --query 'NatGateways[0].[State,NatGatewayAddresses[0].PublicIp]'\n# expected: available {nat-eip}"}, {"t": "shots", "f": ["01-vpc-nat-gateway.png"]}]}, "step2": {"title": "步骤 2 · Cognito 用户池（终端用户 IdP）", "result": "pool {user-pool-id}, client {obo-client-id}", "blocks": [{"t": "code", "x": "infra/common/run.sh ./infra/cognito-idc/02-cognito.sh"}, {"t": "p", "x": "仅管理员可创建用户的用户池，外加一个公开 app client（USER_PASSWORD_AUTH）和四个邮箱与 IdC 用户一致的用户。脚本生成用户密码并保存到本地 gitignore 文件（chmod 600），此处不会输出。"}, {"t": "res", "x": "| ds1   | ds1@techfinance.example.com           | CONFIRMED |\n| zhang | zhang@techfinance.example.com | CONFIRMED |\n| chen  | chen@techfinance.example.com  | CONFIRMED |\n| wei   | wei@techfinance.example.com   | CONFIRMED |\nCOGNITO_POOL_ID={user-pool-id}  COGNITO_CLIENT_ID={obo-client-id}"}, {"t": "p", "x": "**验证：** 自助注册已关闭。"}, {"t": "code", "x": "aws cognito-idp describe-user-pool --region ap-southeast-1 --user-pool-id {user-pool-id} --query UserPool.AdminCreateUserConfig\n# expected: AllowAdminCreateUserOnly: true"}, {"t": "shots", "f": ["02-cognito-users.png", "02b-cognito-sign-up.png"]}]}, "ops": {"title": "运维 · 在 Cognito 用户池上仅允许管理员创建用户", "result": "默认只预览；加 --apply 才修改", "blocks": [{"t": "code", "x": ".venv/bin/python infra/cognito-idc/ops/cognito-disable-self-signup.py            # 预览：只列出将修改的池\n.venv/bin/python infra/cognito-idc/ops/cognito-disable-self-signup.py --apply    # 修改本项目的池"}, {"t": "p", "x": "脚本默认只输出报告。它只检查 `$RT_REGION` 中名称为 `rsidc-*` 的用户池；加 `--apply` 后，才会在仍允许自助注册的池上设置 `AllowAdminCreateUserOnly=true`。扩大范围需要显式指定（`--regions`、`--all-regions`、`--all-pools`）。`UpdateUserPool` 会把省略的设置重置为默认值，因此脚本会把每个池的完整配置原样写回，并输出前后差异。"}, {"t": "res", "x": "结果（2026-10-02）：扫描 41 个池。6 个仍允许自助注册，均在 us-east-1，用户数为 0：\n{other-pool-suffix-1}, {other-pool-suffix-2}, {other-pool-suffix-3}, {other-pool-suffix-4}, {other-pool-suffix-5}, {other-pool-suffix-6}\n每份 diff 只有一处变化：\n{\"AdminCreateUserConfig.AllowAdminCreateUserOnly\": [false, true]}"}, {"t": "p", "x": "**验证：**"}, {"t": "list", "x": ["`--dry-run` 报告剩余 0 个池。", "对 `us-east-1_{other-pool-suffix-1}`（带有效 SECRET_HASH）和 `rsidc-users` 调用 `SignUp`，均失败并返回 `NotAuthorizedException: SignUp is not permitted for this user pool`。"]}]}}, "webgui": [{"t": "p", "x": "**目的：** 无需在本地运行任何东西，即可使用 OBO GUI 和 2LO/3LO GUI。API Gateway 提供 HTTPS，Cognito 要求所有非 localhost 的回调都使用 HTTPS。不使用 Function URL，不设公开的 Lambda 策略，也不需要 EC2 和 S3。"}, {"t": "code", "x": "infra/common/run.sh bash infra/cognito-idc/14-deploy-webchat.sh"}, {"t": "p", "x": "**创建或修改的内容：**"}, {"t": "list", "x": ["IAM 角色 `rsidc-webchat-role`。仅授予日志、`CompleteResourceTokenAuth`，以及对 3LO provider secret 的 `GetSecretValue`。", "Lambda 函数 `rsidc-webchat-obo` 和 `rsidc-webchat-oauth`（python3.12、arm64、预留并发 1）。每个资源策略只允许 `apigateway.amazonaws.com`，且 `SourceArn` 限定为各自的 API。", "HTTP API `rsidc-webchat-obo` 和 `rsidc-webchat-oauth`（quick create：`$default` 路由与自动部署的 stage，payload 2.0，集成超时 30 秒）。", "API 的回调 URL 和登出 URL，已添加到 OBO Cognito client（通过步骤 13）。", "`<oauth-api>/3lo/callback`，已添加到 OAuth workload identity 的 return URL。", "**IP 允许列表：无。** Lambda 内部没有源 IP 限制。访问仅由 Cognito 登录控制，且用户池中的用户只能由管理员创建。如需按 IP 限制，请在 API 前端实施（例如 REST API 资源策略或 WAF）。"]}, {"t": "p", "x": "**实际结果（2026-10-06）：**"}, {"t": "res", "x": "OBO GUI:     https://{web-obo-api-id}.execute-api.ap-southeast-1.amazonaws.com\n2LO/3LO GUI: https://{web-2lo-api-id}.execute-api.ap-southeast-1.amazonaws.com\nLambda policy: {'Service': 'apigateway.amazonaws.com'} lambda:InvokeFunction  ArnLike AWS:SourceArn arn:aws:execute-api:...:{web-obo-api-id}/*"}, {"t": "p", "x": "**端到端浏览器测试（以 wei 登录）：**"}, {"t": "list", "x": ["OBO `SQL: SELECT * FROM sales.orders`：返回 5 行。", "OBO 自然语言提问：已回答，Lambda 耗时约 6.2 秒（远低于 30 秒上限）。", "2LO：出站 token `client_id={2lo-client-id}`，scope `rsidc-reports/read`，以 `svc_reporting` 身份返回数据行。", "强制重新授权的 3LO：`CompleteResourceTokenAuth → OK`，身份校验确认 token 属于调用者。"]}, {"t": "p", "x": "**经验教训：**"}, {"t": "list", "x": ["`AuthType NONE` 且带公开 `Principal: *` 权限的 Lambda Function URL 会被账号安全自动化（`lambda_function_policy_block_public_access`）移除。在 Lambda 前使用 API Gateway 可完全避免公开策略。", "3LO 的 `CompleteResourceTokenAuth` 使用调用方自己的凭证读取 provider 的 client secret，因此 Lambda 角色需要对该 secret 的 `GetSecretValue` 权限；缺少时调用会失败并报 `AccessDenied when retrieving secret`。"]}, {"t": "p", "x": "**如何验证：**"}, {"t": "code", "x": "source infra/state.env\ncurl -s -o /dev/null -w \"%{http_code}\\n\" $WEB_OBO_URL/      # 200\naws lambda get-policy --function-name rsidc-webchat-obo --region ap-southeast-1 --query Policy --output text   # only apigateway.amazonaws.com\naws lambda get-function-url-config --function-name rsidc-webchat-obo --region ap-southeast-1   # ResourceNotFoundException (no URL)"}, {"t": "p", "x": "然后打开 OBO URL，以 wei/zhang/chen/ds1 登录（密码为步骤 2 中设置的密码）。"}, {"t": "p", "x": "**清理：**"}, {"t": "code", "x": "for f in obo oauth; do\n  aws apigatewayv2 delete-api --region ap-southeast-1 --api-id $(aws apigatewayv2 get-apis --region ap-southeast-1 --query \"Items[?Name=='rsidc-webchat-$f'].ApiId|[0]\" --output text)\n  aws lambda delete-function --region ap-southeast-1 --function-name rsidc-webchat-$f\ndone"}, {"t": "p", "x": "同时删除角色 `rsidc-webchat-role`。"}, {"t": "p", "x": "**成本：** 按请求计费（HTTP API 与 Lambda），无闲置成本。"}], "registry": {"title": "Agent Registry（东京 registry）", "result": "registry {registry-id}，记录均为 APPROVED", "blocks": [{"t": "p", "x": "该 registry 也登记了 Entra ID 的资源；参见 [Entra ID 交互页面](../entra-id/part1-quick.zh-CN.html)（part1-quick 至 part4-obo）。"}, {"t": "p", "x": "**目的：** 为本 PoC 的 agent 和 MCP server 建立受管控、可搜索的目录。团队或 Kiro、Claude Code、Quick 等 MCP client 可以直接在其中发现并复用，而无需重复构建。"}, {"t": "p", "x": "**Region 说明：** Agent Registry 可用于 us-east-1、us-west-2、ap-northeast-1、ap-southeast-2 和 eu-west-1，但**不支持 ap-southeast-1**。因此 registry 建在 **ap-northeast-1（东京）**，其记录只是指向新加坡端点的元数据。"}, {"t": "list", "x": ["**不使用自动发现：** 未使用 AgentCore Runtime 和 Gateway 的自动发现，因为这些资源位于另一个 Region。", "**不做 URL 同步：** 每个端点都需要 Cognito JWT，因此记录为手动创建。Gateway 的工具列表读取自已部署的 target。"]}, {"t": "code", "x": "infra/common/run.sh .venv/bin/python infra/common/agent-registry.py"}, {"t": "p", "x": "脚本会创建 registry `rsidc-registry`（IAM 认证，**手动审批**，不自动批准）。每条记录依次创建、提交审批、批准。脚本是幂等的：已存在的记录会被跳过。"}, {"t": "p", "x": "**Actual result (2026-10-06):**"}, {"t": "res", "x": "registry arn:aws:agent-registry:ap-northeast-1:123456789012:registry/{registry-id}\nrsidc-data-agent     CUSTOM {registry-record-id-data-agent-b} APPROVED\nrsidc-oauth-agent    CUSTOM {registry-record-id-oauth-agent-b} APPROVED\nrsidc-2lo-gateway    MCP    {registry-record-id-2lo-gateway-b} APPROVED\nrsidc-rbac-gateway   MCP    {registry-record-id-rbac-gateway-b} APPROVED\nrsidc-mall-gateway   MCP    {registry-record-id-mall-gateway-b} APPROVED"}, {"t": "p", "x": "语义搜索（`agent-registry` SearchDiscoverableRegistryRecords）返回："}, {"t": "table", "h": ["查询", "靠前结果"], "r": [["\"which tool can restrict MCP tools per user with Cedar\"", "rsidc-rbac-gateway, rsidc-mall-gateway"], ["\"query Redshift as the signed-in user via IAM Identity Center\"", "rsidc-data-agent"], ["\"mall footfall traffic\"", "rsidc-mall-gateway"]]}, {"t": "p", "x": "重复运行时，5 条记录均输出 `skip … (exists: APPROVED)`。"}, {"t": "p", "x": "**How you can verify:**"}, {"t": "code", "x": "aws agent-registry-control list-registry-records --registry-id {registry-id} --region ap-northeast-1 \\\n  --query 'registryRecords[].[name,recordType,status]' --output table\naws agent-registry-control get-registry-record --registry-id {registry-id} --record-id {registry-record-id-mall-gateway-b} --region ap-northeast-1"}, {"t": "p", "x": "控制台：**亚太地区（东京）** 的 AWS Agent Registry → Registries → `rsidc-registry`。"}, {"t": "p", "x": "**Teardown:**"}, {"t": "code", "x": "for r in $(aws agent-registry-control list-registry-records --registry-id {registry-id} --region ap-northeast-1 --query 'registryRecords[].recordId' --output text); do\n  aws agent-registry-control delete-registry-record --registry-id {registry-id} --record-id $r --region ap-northeast-1; done\naws agent-registry-control delete-registry --registry-id {registry-id} --region ap-northeast-1"}, {"t": "p", "x": "**成本：** PoC 规模下可忽略。Registry 按记录数和搜索请求计费；详见 AgentCore 定价页面。"}, {"t": "p", "x": "**注意：** `aws <service> <cmd> help` 会打开交互式分页器，可能导致自动化卡住。请改用 `--generate-cli-skeleton` 或查阅文档。"}]}, "registryUs": {"title": "Agent Registry · 面向 Amazon Quick 的第二个 registry（us-east-1）", "result": "registry {registry-us-id}", "blocks": [{"t": "p", "x": "Quick 只能关联与 Quick 账号**相同 AWS 账号和 Region** 的 registry，要求 `AWS_IAM` 认证，并且只展示带有 `remotes[].url` 的 `MCP` 记录。因此请在 Quick 订阅所在的 AWS 账号和 Region 中创建该 registry（此处为 us-east-1）。MCP connector 本身没有这些限制，只需要 Gateway URL。"}, {"t": "code", "x": "REGISTRY_REGION=us-east-1 infra/common/run.sh .venv/bin/python infra/common/agent-registry.py"}, {"t": "p", "x": "**实际结果（2026-10-08）：** registry `{registry-us-id}`（us-east-1）。所有记录均为 APPROVED："}, {"t": "table", "h": ["记录", "类型", "记录 ID"], "r": [["rsidc-data-agent", "CUSTOM", "{registry-record-id-data-agent-a}"], ["rsidc-oauth-agent", "CUSTOM", "{registry-record-id-oauth-agent-a}"], ["rsidc-2lo-gateway", "MCP", "{registry-record-id-2lo-gateway-a}"], ["rsidc-rbac-gateway", "MCP", "{registry-record-id-rbac-gateway-a}"], ["rsidc-mall-gateway", "MCP", "{registry-record-id-mall-gateway-a}"], ["rsidc-mall-entra-gateway", "MCP", "{registry-record-id-entra-gateway-a}"]]}, {"t": "p", "x": "东京 registry 也新增了 `rsidc-mall-entra-gateway`（`{registry-record-id-entra-gateway-b}`）。"}, {"t": "p", "x": "**Quick 会展示的内容：** 仅 4 个 gateway（MCP 记录）；2 个 Runtime 为 CUSTOM 类型，不会展示。其中目前只有 `rsidc-mall-gateway` 可用于 Quick 登录：其 Cognito client `rsidc-quick-mcp` 允许 Quick 的回调 URL。"}]}, "teardown": [{"t": "code", "x": "infra/common/run.sh ./infra/common/99-teardown.sh        # Agent Registry（两个 Region）\ninfra/common/run.sh ./infra/entra-id/99-teardown.sh      # Entra ID 方案（未部署过则跳过）\ninfra/common/run.sh ./infra/cognito-idc/99-teardown.sh   # 步骤 01-16"}, {"t": "p", "x": "请按 common、entra-id、cognito-idc 的顺序运行这三个脚本。每个脚本都会先输出计划（将删除的内容）并要求输入 `yes`；传入 `--yes` 可跳过确认，传入 `--dry-run` 仅输出计划。`cognito-idc/99-teardown.sh` 按依赖的逆序清理步骤 01–16，包括 Redshift 集群（**不创建最终快照**）。原有的 IdC 实例、用户和组不会被触碰。它还会移除 OAuth Runtime、Gateway 与 target、Lambda、credential provider、为 OAuth 部分新增的三个 IAM 角色，以及 Cognito domain。"}, {"t": "p", "x": "脚本已覆盖以下各项。若只想移除某一部分，可参考这里的手动命令："}, {"t": "list", "x": ["步骤 14 Web GUI：见 [2 · Web GUI](#webgui) 中的清理命令。", "Gateway RBAC 清理：见 [gateway-rbac.zh-CN.html](gateway-rbac.zh-CN.html)。", "客户（mall）版本清理：见 [part1-quick.zh-CN.html](part1-quick.zh-CN.html)。", "Agent Registry：见 [3 · Agent Registry](#registry) 中的清理命令。"]}, {"t": "p", "x": "Entra ID 资源：见 [Entra ID 交互页面](../entra-id/part1-quick.zh-CN.html)（part1-quick 至 part4-obo）。"}], "cost": {"rows": [["Redshift ra3.large ×1（ap-east-1）", "集群存在期间按节点小时计费（最大的成本项）"], ["NAT Gateway + EIP（ap-southeast-1）", "按小时计费，另按处理的 GB 数计费"], ["AgentCore Runtime", "仅按用量计费"], ["Bedrock (Claude)", "按 token 计费（仅 N4 测试）"], ["2LO/3LO：Gateway、Lambda、第二个 Runtime、credential provider", "仅按用量计费"], ["Cognito、IdC、S3、Secrets Manager", "按用户 / 请求 / GB / secret 计费；测试规模下费用很小"], ["Web GUI（HTTP API + Lambda）", "按请求计费；无闲置成本"], ["Agent Registry", "按记录数和搜索请求计费；PoC 规模下可忽略"]], "note": "Redshift 和 NAT gateway 只要存在就按小时计费，即使空闲。最新价格见 [Amazon Redshift 定价](https://aws.amazon.com/redshift/pricing/) 和 [Amazon VPC 定价](https://aws.amazon.com/vpc/pricing/)，也可用 [AWS Pricing Calculator](https://calculator.aws/) 估算。**用完请及时清理。**"}}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+// tiny markdown: `code`, **bold**, [text](url) for relative or https links only
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+  .replace(/\[([^\]]+)\]\(((?:https:\/\/|\.\.?\/|#|[a-z0-9-]+\.html)[^)]*)\)/g, '<a href="$2">$1</a>');
+
+function go(sec, anchor) {
+  document.querySelectorAll("nav a[data-s]").forEach(x => x.classList.toggle("on", x.dataset.s === sec));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === sec));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav a[data-s]").forEach(a => a.onclick = () => { go(a.dataset.s); history.replaceState(null, "", "#" + a.dataset.s); });
+// in-page links like #webgui switch sections
+document.addEventListener("click", e => {
+  const a = e.target.closest("main a[href^='#']"); if (!a) return;
+  const id = a.getAttribute("href").slice(1); if ($("section#" + id)) { e.preventDefault(); go(id); }
+});
+
+/* generic block renderer */
+function screenCard(file) {
+  const x = D.screens[file], f = "img/console/" + file;
+  return `<details class="sc"><summary>截图：${esc(x.caption)}</summary><div class="b">
+    <a href="${f}" target="_blank" rel="noopener"><img src="${f}" alt="${esc(x.alt)}" loading="lazy"></a>
+    <div class="ref"><a href="${f}" target="_blank" rel="noopener">查看大图</a> · 控制台：<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a> （截取于 ${esc(x.at)}）</div></div></details>`;
+}
+function block(b) {
+  switch (b.t) {
+    case "p": return `<p>${md(b.x)}</p>`;
+    case "code": return `<pre class="out">${esc(b.x)}</pre>`;
+    case "res": return `<div class="ref"><b>记录的结果</b></div><pre class="out">${esc(b.x)}</pre>`;
+    case "list": return `<ul>${b.x.map(i => `<li>${md(i)}</li>`).join("")}</ul>`;
+    case "table": return `<table><tr>${b.h.map(h => `<th>${esc(h)}</th>`).join("")}</tr>${b.r.map(r => `<tr>${r.map(c => `<td>${md(c)}</td>`).join("")}</tr>`).join("")}</table>`;
+    case "shots": return b.f.map(screenCard).join("");
+  }
+  return "";
+}
+const blocks = bs => bs.map(block).join("");
+const stepCard = (s, open) => `<details class="faq" ${open ? "open" : ""}><summary>${esc(s.title)}<span class="res">结果：${esc(s.result)}</span></summary><div class="bd">${blocks(s.blocks)}</div></details>`;
+
+/* 0 · Overview */
+function renderOverview() {
+  const rows = D.order.map(r => `<tr><td>${r[0]}</td><td><a href="${esc(r[4])}">${esc(r[1])}</a></td><td><code>${esc(r[2])}</code></td><td>${esc(r[3])}</td></tr>`).join("");
+  const dia = D.diagrams.map(d => `<div class="card arch2"><h3>${esc(d[0])}</h3>
+    <a href="img/${d[1]}" target="_blank" rel="noopener"><img src="img/${d[1]}" alt="${esc(d[2])}" loading="lazy"></a>
+    <div class="ref"><a href="${d[3]}">${esc(d[4])}</a> · <a href="img/${d[1]}" target="_blank" rel="noopener">查看大图</a></div></div>`).join("");
+  safeRender($("#overview"), `
+  <h2>共享基础：Cognito + IAM Identity Center</h2>
+  <p class="lead">目标：证明在 AgentCore Runtime 中查询/更新 Redshift 的 agent <b>以调用方 IdC 用户的身份执行</b>，从而使为 IdC 组定义的 Redshift 权限（schema/表/列授权、RLS）得到强制执行，并且 Redshift <b>只能</b>从操作员工作站和 AgentCore Runtime 访问。这些页面上的所有结果均为示例输出。</p>
+  <div class="card start"><h3>从这里开始：跨页面的步骤顺序</h3>
+    <p>本页包含四个场景共用的配置（一个 Runtime VPC、一个 Cognito 用户池、共用的 Web GUI）。请先完成这些，再按下表顺序依次进行各部分。每个步骤都通过 <code>infra/common/run.sh</code> 运行，且是幂等的。</p>
+    <table><tr><th>#</th><th>页面</th><th>脚本</th><th>产出</th></tr>${rows}</table>
+    <p class="ref">只想体验一个场景？完成这里的步骤 1-2，然后直接跳到对应部分。只有 OBO 部分需要 Redshift 集群和 IdC 应用；2LO 与 3LO 共用 OAuth Runtime（步骤 12）。</p></div>
+  <h3>基于同一个 Cognito 用户池 + IdC 的四个场景</h3>
+  <p class="lead">本 runbook 涵盖四个场景基于 <b>Cognito + IAM Identity Center</b> 的实现。四个场景共用 Runtime VPC、Cognito 用户池和下文的 Web GUI。</p>
+  <div class="dgrid">${dia}</div>
+  <table style="margin-top:14px"><tr><th>模式</th><th>部分</th></tr>${D.diagrams.map(d => `<tr><td>${esc(d[0])}</td><td><a href="${d[3]}">${esc(d[4])}</a></td></tr>`).join("")}
+    <tr><td>按用户的 Gateway 工具 RBAC（Cedar）</td><td><a href="gateway-rbac.zh-CN.html">Gateway RBAC</a></td></tr></table>
+  <h3>动画演示</h3>
+  <div class="card"><p>打开 <a href="flow.html">flow.html</a>，通过 OBO / 2LO / 3LO 标签页逐步查看这些页面所述的每次登录、token 传递和校验（已在 headless Chrome 中验证：三个标签页均无 JS 错误）。Gateway RBAC 的演示见 <a href="flow-rbac.html">flow-rbac.html</a>。</p></div>
+  <h3>本页内容</h3>
+  <ul><li><a href="#setup">1 · 配置</a>：前置条件、步骤 1 VPC、步骤 2 Cognito 用户池、仅管理员注册的运维脚本</li>
+  <li><a href="#webgui">2 · Web GUI</a>：步骤 14，Lambda 前置 API Gateway HTTP API</li>
+  <li><a href="#registry">3 · Agent Registry</a>：东京 registry，以及面向 Quick 的 us-east-1 第二个 registry</li>
+  <li><a href="#teardown">4 · 清理与成本</a>：完整清理顺序与计费项</li></ul>`);
+}
+/* 1 · Setup */
+function renderSetup() {
+  safeRender($("#setup"), `<h2>配置</h2><p class="lead">前置条件，然后是步骤 1-2 和仅管理员注册的检查。展开步骤可查看命令、记录的结果以及验证方法。</p>`
+    + ["prereq", "step1", "step2", "ops"].map(k => stepCard(D.steps[k], true)).join(""));
+}
+/* 2 · Web GUIs */
+function renderWebgui() {
+  safeRender($("#webgui"), `<h2>步骤 14 · AWS 上的 Web GUI（API Gateway HTTP API → Lambda）</h2>
+    <p class="lead">结果：OBO GUI <code>{web-obo-api-id}</code> · 2LO/3LO GUI <code>{web-2lo-api-id}</code></p>
+    <div class="card">${blocks(D.webgui)}</div>`);
+}
+/* 3 · Agent Registry */
+function renderRegistry() {
+  safeRender($("#registry"), `<h2>Agent Registry</h2><p class="lead">Runtime 与 Gateway 的目录，分别建在 registry 服务所在 Region（东京）和 Quick 所在 Region（us-east-1）。</p>`
+    + stepCard(D.registry, true) + stepCard(D.registryUs, true));
+}
+/* 4 · Teardown & cost */
+function renderTeardown() {
+  const c = D.cost;
+  safeRender($("#teardown"), `<h2>完整清理顺序</h2><p class="lead">结果：<code>99-teardown.sh</code> 加上各部分的单独步骤。</p>
+    <div class="card">${blocks(D.teardown)}</div>
+    <h2 style="margin-top:22px">成本（运行期间的计费项）</h2>
+    <div class="card"><table><tr><th>资源</th><th>计费方式</th></tr>${c.rows.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("")}</table>
+    <p>${md(c.note)}</p></div>`);
+}
+renderOverview(); renderSetup(); renderWebgui(); renderRegistry(); renderTeardown();
+const h = location.hash.slice(1); if (h && $("section#" + h)) go(h);
+</script>
+</body></html>

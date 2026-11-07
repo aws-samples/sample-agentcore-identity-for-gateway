@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>rsidc data agent — web chat</title>
+<style>
+ body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f4f6f8;color:#16191f}
+ header{background:#232f3e;color:#fff;padding:10px 18px;display:flex;align-items:center;gap:14px}
+ header h1{font-size:16px;margin:0} header .u{margin-left:auto;font-size:13px} header a{color:#ff9900}
+ main{max-width:980px;margin:16px auto;padding:0 12px}
+ #log{background:#fff;border:1px solid #d5dbdb;border-radius:8px;min-height:380px;padding:12px;overflow:auto;max-height:62vh}
+ .m{margin:8px 0;padding:8px 10px;border-radius:8px;white-space:pre-wrap;line-height:1.4}
+ .me{background:#e8f4fd;margin-left:15%} .bot{background:#f2f3f3;margin-right:10%}
+ table{border-collapse:collapse;margin-top:6px;font-size:13px} td,th{border:1px solid #ccc;padding:3px 6px} th{background:#232f3e;color:#fff}
+ form{display:flex;gap:8px;margin-top:10px} input{flex:1;padding:9px;border:1px solid #aab7b8;border-radius:6px;font-size:14px}
+ button{background:#ff9900;border:0;border-radius:6px;padding:9px 14px;font-weight:700;cursor:pointer}
+ .chips button{background:#fff;border:1px solid #aab7b8;font-weight:400;margin:6px 6px 0 0;font-size:12px}
+ .login{text-align:center;padding:80px 0} .login a{background:#ff9900;color:#000;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:700}
+ .mode{font-size:12px;color:#545b64}
+ button.lo{background:none;border:0;padding:0;color:#0972d3;text-decoration:underline;font-weight:400;font-size:inherit;cursor:pointer}
+</style></head><body>
+<header><h1>AgentCore data agent (OBO → Redshift as you)</h1><span class="u" id="u"></span></header>
+<main id="app"></main>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+const SIGNEDIN = __SIGNEDIN__, USER = "__USER__";
+const app = document.getElementById("app");
+// Logout is a same-origin POST (a GET link could be triggered cross-site). The server answers {location} for the IdP sign-out.
+function wireLogout() {
+  document.querySelectorAll("[data-logout]").forEach(b => b.onclick = async () => {
+    const r = await fetch(b.dataset.logout, {method: "POST"});
+    if (r.ok) location.assign((await r.json()).location);
+  });
+}
+
+if (!SIGNEDIN) {
+  safeRender(app, `<div class="login"><p>Sign in with a test user (wei / zhang / chen / ds1) on the Cognito login page.</p><p><a href="/login">Sign in</a></p></div>`);
+} else {
+  safeRender(document.getElementById("u"), `signed in as <b>${USER}</b> · <button class="lo" data-logout="/logout">sign out</button>`);
+  safeRender(app, `<div id="log"></div>
+   <div class="chips">${["Who am I in Redshift?","Show all sales orders","Show the risk credit limits","Show marketing campaigns",
+     "SQL: SELECT * FROM sales.orders","SQL: SELECT customer_email FROM sales.orders"].map(c=>`<button data-q="${c}">${c}</button>`).join("")}</div>
+   <form id="f"><input id="q" placeholder="Ask in natural language, or prefix with SQL: to run exact SQL" autofocus><button>Send</button></form>
+   <p class="mode">Natural language goes to the Claude agent; "SQL: …" runs exactly that statement as you. Every query runs in Redshift as your IdC identity.</p>`);
+  wireLogout();
+  const log = document.getElementById("log");
+  const add = (cls, h) => { const d = document.createElement("div"); d.className = "m " + cls; safeRender(d, h); log.appendChild(d); log.scrollTop = 1e9; return d; };
+  const esc = s => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  async function ask(text) {
+    add("me", esc(text)); const wait = add("bot", "…thinking");
+    const isSql = /^sql:/i.test(text);
+    const r = await fetch("/api/ask", {method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(isSql ? {sql: text.slice(4).trim()} : {prompt: text})}).then(r => r.json());
+    const res = r.result || {};
+    const md = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
+    if (res.answer) safeRender(wait, md(res.answer));
+    else if (res.result && res.result.ok && res.result.columns)
+      safeRender(wait, `<table><tr>${res.result.columns.map(c=>`<th>${esc(c)}</th>`).join("")}</tr>${res.result.rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</table><div class="mode">${res.result.rows.length} rows</div>`);
+    else if (res.result && res.result.ok) safeRender(wait, `OK, rowcount = ${res.result.rowcount}`);
+    else { const e = (res.result && res.result.error) || JSON.stringify(r); const m = /'M': '([^']+)'/.exec(e);
+           safeRender(wait, `<b style="color:#d13212">Denied by Redshift</b>\n${esc(m ? m[1] + " (42501)" : e)}`); }
+  }
+  document.getElementById("f").onsubmit = e => { e.preventDefault(); const q = document.getElementById("q"); if (q.value.trim()) ask(q.value.trim()); q.value = ""; };
+  document.querySelectorAll(".chips button").forEach(b => b.onclick = () => ask(b.dataset.q));
+}
+</script></body></html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>rsidc tool RBAC on AgentCore Gateway</title>
+<style>
+ body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f4f6f8;color:#16191f}
+ header{background:#232f3e;color:#fff;padding:10px 18px;display:flex;align-items:center;gap:14px}
+ header h1{font-size:16px;margin:0} header .u{margin-left:auto;font-size:13px} header a{color:#ff9900}
+ main{max-width:1100px;margin:16px auto;padding:0 12px}
+ .card{background:#fff;border:1px solid #d5dbdb;border-radius:8px;padding:12px 14px;margin-bottom:14px}
+ .card h2{font-size:15px;margin:0 0 8px}
+ .roles span{display:inline-block;background:#0073bb;color:#fff;border-radius:10px;padding:2px 9px;margin:2px 4px 2px 0;font-size:12px}
+ .roles .none{background:#d13212}
+ table{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px} td,th{border:1px solid #d5dbdb;padding:5px 7px;vertical-align:top;text-align:left}
+ th{background:#232f3e;color:#fff} td.ok{color:#1d8102;font-weight:700} td.no{color:#d13212;font-weight:700}
+ td pre{margin:0;white-space:pre-wrap;font-size:11.5px;max-height:90px;overflow:auto}
+ button{background:#ff9900;border:0;border-radius:6px;padding:8px 14px;font-weight:700;cursor:pointer}
+ .ok-msg{color:#1d8102;font-weight:700;margin:4px 0} .btn.out{background:#fff;border:1px solid #d13212;color:#d13212;padding:4px 12px;font-size:12px;margin-left:10px}
+ a.btn{display:inline-block;background:#ff9900;color:#000;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:700}
+ .note{font-size:12px;color:#545b64}
+ button.lo{background:none;border:0;padding:0;color:#0972d3;text-decoration:underline;font-weight:400;font-size:inherit;cursor:pointer}
+</style></head><body>
+<header><h1>AgentCore Gateway: per-user tool RBAC (Cedar on the <code>roles</code> claim)</h1><span class="u" id="u"></span></header>
+<main id="app"></main>
+<script type="application/json" id="st">__STATE__</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+const ST = JSON.parse(document.getElementById("st").textContent);
+const app = document.getElementById("app");
+// Logout is a same-origin POST (a GET link could be triggered cross-site). The server answers {location} for the IdP sign-out.
+function wireLogout() {
+  document.querySelectorAll("[data-logout]").forEach(b => b.onclick = async () => {
+    const r = await fetch(b.dataset.logout, {method: "POST"});
+    if (r.ok) location.assign((await r.json()).location);
+  });
+}
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const roleChips = r => r && r.length ? r.map(x => `<span>${esc(x)}</span>`).join("") : `<span class="none">roles = [] (no tools)</span>`;
+const card = (k, t) => `<div class="card" id="c-${k}"><h2>${esc(t)}</h2>
+  <button data-gw="${k}">Check tools</button> <span class="note">Runs tools/list, then calls <b>every</b> tool directly (including hidden ones).</span>
+  <div id="r-${k}"></div></div>`;
+let html = "";
+// --- Cognito (demo + customer version) ---
+if (!ST.signedIn) {
+  html += `<div class="card"><h2>Amazon Cognito sign-in (demo + customer version)</h2><p class="note">Sign in as <b>wei</b> (analyst: all tools), <b>ds1</b> (viewer: some tools) or <b>chen</b> (no tools).</p>
+    <p><a class="btn" href="/login">Sign in with Cognito</a></p></div>`;
+} else {
+  html += `<div class="card"><h2>Cognito access token · ${esc(ST.user)} · <button class="lo" data-logout="/logout">sign out</button></h2><div class="roles">roles claim: ${roleChips(ST.roles)}</div>
+     <p class="note">Added by the Cognito Pre Token Generation trigger from your group mappings: IdC groups for the demo, Cognito groups for the customer version.
+     The Gateway's Cedar rules only check <code>roles</code>; no group names appear in Cedar.</p></div>` +
+    Object.entries(ST.gateways).map(([k, t]) => card(k, t)).join("");
+}
+// --- Microsoft Entra ID version ---
+if (ST.entra.enabled) {
+  if (!ST.entra.signedIn) {
+    const out = new URLSearchParams(location.search).get("entra") === "signed-out"
+      ? `<p class="ok-msg">✓ Signed out of the app and of Microsoft Entra ID.</p>` : "";
+    html += `<div class="card" id="entra"><h2>Microsoft Entra ID sign-in</h2>${out}<p class="note">Sign in as <b>wei@…</b>, <b>ds1@…</b> or <b>chen@…</b> in the Entra tenant. The token's <code>roles</code> claim comes natively from Entra App Roles; no Cognito, no trigger.</p>
+      <p><a class="btn" href="/entra/login">Sign in with Entra ID</a></p></div>`;
+  } else {
+    const c = ST.entra.claims;
+    html += `<div class="card" id="entra"><h2>Entra ID access token · ${esc(ST.entra.user)} <button class="btn out" data-logout="/entra/logout">Sign out of Entra ID</button></h2>
+      <div class="roles">roles claim: ${roleChips(ST.entra.roles)}</div>
+      <p class="note">ver=${esc(c.ver)} · aud=${esc(c.aud)} · azp=${esc(c.azp)} · scp=${esc(c.scp)}<br>iss=${esc(c.iss)}</p></div>` + card("entra", ST.entra.title);
+  }
+}
+safeRender(app, html); wireLogout();
+document.getElementById("u").textContent = [ST.signedIn && "Cognito: " + ST.user, ST.entra.signedIn && "Entra: " + ST.entra.user].filter(Boolean).join(" · ");
+let queue = Promise.resolve();  // one request at a time: the Lambda runs with reserved concurrency 1 (in-memory sessions)
+app.querySelectorAll("button[data-gw]").forEach(b => b.onclick = () => { queue = queue.then(() => check(b)).catch(() => {}); });
+async function check(b) {
+  const out = document.getElementById("r-" + b.dataset.gw); safeRender(out, "<p class='note'>…calling the gateway</p>");
+  const resp = await fetch("/api/check/" + b.dataset.gw, {method: "POST"});
+  if (!resp.ok) { safeRender(out, `<p class="note">HTTP ${resp.status}: ${resp.status === 401 ? "session expired, sign in again" : "try again"}</p>`); return; }
+  const r = await resp.json();
+  safeRender(out, `<p class="note">tools/list (HTTP ${r.list_http}) returned ${r.listed.length} tool(s).</p>
+    <table><tr><th>tool</th><th>in tools/list</th><th>direct tools/call</th><th>response</th></tr>` +
+    r.rows.map(x => `<tr><td><code>${esc(x.tool)}</code></td><td class="${x.listed ? "ok" : "no"}">${x.listed ? "✓ listed" : "✗ hidden"}</td>
+      <td class="${x.allowed ? "ok" : "no"}">${x.allowed ? "✓ allowed" : "✗ denied"} (HTTP ${x.http})</td><td><pre>${esc(x.detail)}</pre></td></tr>`).join("") + "</table>");
+}
+</script></body></html>

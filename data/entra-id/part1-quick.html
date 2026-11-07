@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 1 · Amazon Quick → rsidc-mall-entra-gateway (Entra ID)</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+</style></head>
+<body>
+<div class="banner"><b>Static demo</b> — simulated UI, real recorded data. Nothing here calls AWS or Entra.<a href="part1-quick.zh-CN.html" hreflang="zh-CN" lang="zh-CN" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">中文</a></div>
+<div class="wrap">
+<nav>
+  <h1>Part 1 · Quick → Entra Gateway</h1>
+  <div class="sub">Amazon Quick → Microsoft Entra ID → AgentCore Gateway with per-user tool authorization, using a verified custom domain in front of the Gateway.</div>
+  <a data-s="arch" class="on">0 · Architecture</a>
+  <a data-s="replay">1 · Replay (fake sign-in)</a>
+  <a data-s="hood">2 · Under the hood</a>
+  <a data-s="setup">3 · Setup</a>
+  <a data-s="faq">4 · FAQ · Tech challenges</a>
+  <div class="meta" id="navmeta"></div>
+</nav>
+<main>
+<section id="arch" class="on">
+  <h2>Architecture: Quick → Entra ID → CloudFront → AgentCore Gateway → Lambda</h2>
+  <p class="lead">Amazon Quick signs the user in to Microsoft Entra ID and calls the Gateway through CloudFront on the custom domain
+  <code>mcp.agentzone.click</code>. CloudFront only answers OAuth discovery (<code>mcp-prm</code>); the Gateway validates the Entra token
+  (CUSTOM_JWT) and Policy in AgentCore (Cedar) decides per tool from the <code>roles</code> claim. Numbers match the Flow legend in the diagram.
+  Solid = request, dashed = verification only (JWKS).</p>
+  <div class="card arch"><a href="img/architecture-quick-entra-gateway.svg" target="_blank" rel="noopener">
+    <img src="img/architecture-quick-entra-gateway.svg" alt="Amazon Quick to Microsoft Entra ID to Amazon CloudFront (custom domain) to Amazon Bedrock AgentCore Gateway to Lambda target"></a>
+    <div class="ref"><a href="img/architecture-quick-entra-gateway.svg" target="_blank" rel="noopener">Open full size</a> · Solid = request; dashed = token signature check against Entra JWKS (no token exchange). CloudFront only rewrites OAuth discovery (mcp-prm + response headers policy); authorization happens at the Gateway (CUSTOM_JWT + Cedar on the roles claim).</div>
+    <div class="ref">Click the diagram to open it full size.</div></div>
+</section>
+<section id="replay"></section>
+<section id="hood"></section>
+<section id="setup"></section>
+<section id="faq"></section>
+</main></div>
+<script id="data" type="application/json">{"built": "2026-10-31 08:05", "ids": {"tenant": "{entra-tenant-id}", "apiApp": "{mall-api-app-id}", "testClient": "{test-client-app-id}", "domain": "techfinance.onmicrosoft.com", "account": "123456789012", "gwId": "{entra-gateway-id}", "peId": "{entra-policy-engine-id}"}, "tools": ["mall___get_mall_list", "mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_zone_comparison"], "questions": [["List the malls", "mall___get_mall_list"], ["Footfall for HK01 on 2026-10-01", "mall___get_footfall_summary"], ["Hourly traffic for HK01 on 2026-10-01", "mall___get_hourly_traffic"], ["Compare zones in HK01 on 2026-10-01", "mall___get_zone_comparison"]], "assigned": {"wei": ["Tools.Mall.List", "Tools.Mall.Footfall", "Tools.Mall.Hourly", "Tools.Mall.Zone"], "ds1": ["Tools.Mall.List", "Tools.Mall.Footfall"], "chen": []}, "enforce": {"wei": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "ver": "2.0", "roles": ["Tools.Mall.List", "Tools.Mall.Zone", "Tools.Mall.Hourly", "Tools.Mall.Footfall"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "ds1": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_mall_list"], "http": 200, "ver": "2.0", "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_zone_comparison": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}}}, "chen": {"list": {"tools": [], "http": 200, "ver": "2.0", "roles": null, "pass": true}, "calls": {"mall___get_mall_list": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_footfall_summary": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_hourly_traffic": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_zone_comparison": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}}}}, "log_only": {"wei": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "ver": "2.0", "roles": ["Tools.Mall.List", "Tools.Mall.Zone", "Tools.Mall.Hourly", "Tools.Mall.Footfall"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "ds1": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "ver": "2.0", "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "chen": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "ver": "2.0", "roles": null, "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}}, "negatives": [{"case": "tampered ds1 token (roles forged to all 4)", "expect": 403, "actual": 403, "pass": true, "evidence": "signature check"}, {"case": "Cognito access token (other issuer)", "expect": 403, "actual": 403, "pass": true, "evidence": "issuer/JWKS"}, {"case": "Entra token for Microsoft Graph (wrong audience)", "expect": true, "actual": true, "pass": true, "evidence": "http=403 aud=https://graph.microsoft.com"}, {"case": "garbage bearer", "expect": 401, "actual": 401, "pass": true, "evidence": ""}], "change": [{"case": "before: ds1 hourly", "expect": false, "actual": false, "pass": true, "evidence": "roles=['Tools.Mall.List', 'Tools.Mall.Footfall']"}, {"case": "after assignment, new token: ds1 hourly", "expect": true, "actual": true, "pass": true, "evidence": "roles=['Tools.Mall.List', 'Tools.Mall.Hourly', 'Tools.Mall.Footfall'] 12s after assignment"}, {"case": "after assignment, OLD token: ds1 hourly", "expect": false, "actual": false, "pass": true, "evidence": "claims frozen until the old token expires"}, {"case": "restore: Hourly assignment removed", "expect": true, "actual": true, "pass": true, "evidence": "appRoleAssignment deleted"}], "runs": {"enforce": {"time": "2026-10-20T11:07:40+0800", "date": "2026-10-20", "pass": 19, "total": 19, "source": "recorded enforce run", "gateway": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp"}, "log_only": {"time": "2026-10-07T11:26:37+0800", "date": "2026-10-07", "pass": 15, "total": 15, "source": "recorded log-only run", "gateway": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp"}, "change": {"time": "2026-10-07T11:28:29+0800", "date": "2026-10-07", "pass": 4, "total": 4, "source": "recorded change run", "gateway": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp"}}, "quick": {"clientTable": [["Name", "`rsidc-quick-mcp-entra`"], ["Supported account types", "Single tenant (this directory only)"], ["Platform / Redirect URI", "**Web**: `https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback` (your Quick Region)"], ["Certificates & secrets", "New client secret; store it only in a secret store (never in code or screenshots)"], ["API permissions", "`rsidc-mall-api` → delegated `mcp.access`; Microsoft Graph → `openid`, `profile`, `offline_access`"], ["Grant admin consent", "Yes (so users aren't prompted for consent)"]], "connectorTable": [["Name", "`rsidc-mall-entra`"], ["Base URL", "`https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp`"], ["Authorization URL", "`https://login.microsoftonline.com/{entra-tenant-id}/oauth2/v2.0/authorize`"], ["Token URL", "`https://login.microsoftonline.com/{entra-tenant-id}/oauth2/v2.0/token`"], ["Client ID / secret", "from step 2 (`rsidc-quick-mcp-entra`)"], ["Scope", "`api://{mall-api-app-id}/mcp.access openid profile offline_access`"], ["Redirect URL", "`https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback` (must match step 2)"]], "aadsts": "AADSTS9010010: The resource parameter provided in the request doesn't match with the requested scopes.", "correlation": "{entra-correlation-id}", "invalidTarget": "Error: invalid_target", "desktopCheck": "Checked 2026-10-26: the ds1 token has `roles = [Tools.Mall.List, Tools.Mall.Footfall]`, and `tools/list` on this gateway returns only `get_footfall_summary` and `get_mall_list`.", "mcpUrl": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp", "discovery": "https://login.microsoftonline.com/{entra-tenant-id}/v2.0/.well-known/openid-configuration", "classification": ["**3LO:** Quick runs the OAuth authorization code flow against Entra ID and stores **each user's own** token (\"Signed in as …\" on the connector page).", "**Not OBO:** no token exchange happens. The token Quick sends is the user's Entra token, and the Gateway authorizes it directly.", "**Not AgentCore Identity 3LO:** no credential provider or Token Vault is involved. The Gateway's targets are Lambda (outbound = the Gateway IAM role)."], "why": "Entra v2 scopes a token by `scope` (`api://<rsidc-mall-api>/mcp.access`). If `resource` is sent, it must name the same API. The Gateway URL can't be that API's Application ID URI, because `https://` ID URIs must be on a domain verified in the tenant, and `amazonaws.com` can't be verified.", "noGatewayChange": "No Gateway change is needed: the Gateway checks `allowedAudience = rsidc-mall-api`, not the client ID, so any client in the tenant that gets a token for `api://<rsidc-mall-api>/mcp.access` is accepted. The user's App Role assignments (the `roles` claim) decide the tools."}, "excerpts": {"roles": {"file": "infra/entra-id/01-entra-setup.py", "ref": "infra/entra-id/01-entra-setup.py:16-17", "parts": [[[16, "ROLES = {\"Tools.Mall.List\": \"Mall List\", \"Tools.Mall.Footfall\": \"Mall Footfall\", \"Tools.Mall.Hourly\": \"Mall Hourly\", \"Tools.Mall.Zone\": \"Mall Zone\"}"], [17, "USERS = {\"wei\": list(ROLES), \"ds1\": [\"Tools.Mall.List\", \"Tools.Mall.Footfall\"], \"chen\": []}"]]], "redacted": false}, "apiApp": {"file": "infra/entra-id/01-entra-setup.py", "ref": "infra/entra-id/01-entra-setup.py:46-63", "parts": [[[46, "# --- API app (resource the gateway trusts) ---"], [47, "api = one(\"/applications\", \"displayName eq 'rsidc-mall-api'\")"], [48, "if not api:"], [49, "    api = g(\"POST\", \"/applications\", {"], [50, "        \"displayName\": \"rsidc-mall-api\", \"signInAudience\": \"AzureADMyOrg\","], [51, "        \"api\": {\"requestedAccessTokenVersion\": 2, \"oauth2PermissionScopes\": [{"], [52, "            \"id\": str(uuid.uuid4()), \"value\": \"mcp.access\", \"type\": \"User\", \"isEnabled\": True,"], [53, "            \"adminConsentDisplayName\": \"Call the mall MCP tools\", \"adminConsentDescription\": \"Call the mall MCP tools through AgentCore Gateway\","], [54, "            \"userConsentDisplayName\": \"Call the mall MCP tools\", \"userConsentDescription\": \"Call the mall MCP tools through AgentCore Gateway\"}]},"], [55, "        \"appRoles\": [{\"id\": str(uuid.uuid4()), \"allowedMemberTypes\": [\"User\"], \"value\": v, \"displayName\": d,"], [56, "                      \"description\": f\"May call the {d} tool\", \"isEnabled\": True} for v, d in ROLES.items()]})"], [57, "    print(\"created app rsidc-mall-api\")"], [58, "if api.get(\"identifierUris\") != [f\"api://{api['appId']}\"]:"], [59, "    g(\"PATCH\", f\"/applications/{api['id']}\", {\"identifierUris\": [f\"api://{api['appId']}\"]})"], [60, "api = g(\"GET\", f\"/applications/{api['id']}\")"], [61, "assert api[\"api\"][\"requestedAccessTokenVersion\"] == 2, \"access tokens must be v2\""], [62, "scope_id = api[\"api\"][\"oauth2PermissionScopes\"][0][\"id\"]"], [63, "role_ids = {r[\"value\"]: r[\"id\"] for r in api[\"appRoles\"]}"]]], "redacted": false}, "testClient": {"file": "infra/entra-id/01-entra-setup.py", "ref": "infra/entra-id/01-entra-setup.py:66-83", "parts": [[[66, "# --- test client (public client: auth code + PKCE) ---"], [67, "graph_sp = sp_for(GRAPH_APP)"], [68, "graph_scopes = {s[\"value\"]: s[\"id\"] for s in graph_sp[\"oauth2PermissionScopes\"] if s[\"value\"] in (\"openid\", \"profile\", \"email\", \"offline_access\")}"], [69, "cli = one(\"/applications\", \"displayName eq 'rsidc-mall-test-client'\")"], [70, "body = {\"publicClient\": {\"redirectUris\": REDIRECTS}, \"isFallbackPublicClient\": True,"], [71, "        \"optionalClaims\": {\"idToken\": [{\"name\": \"login_hint\", \"essential\": False}]},   # -> logout_hint: sign-out without the account picker"], [72, "        \"requiredResourceAccess\": [{\"resourceAppId\": api[\"appId\"], \"resourceAccess\": [{\"id\": scope_id, \"type\": \"Scope\"}]},"], [73, "                                   {\"resourceAppId\": GRAPH_APP, \"resourceAccess\": [{\"id\": i, \"type\": \"Scope\"} for i in graph_scopes.values()]}]}"], [74, "if not cli:"], [75, "    cli = g(\"POST\", \"/applications\", {\"displayName\": \"rsidc-mall-test-client\", \"signInAudience\": \"AzureADMyOrg\", **body}); print(\"created app rsidc-mall-test-client\")"], [76, "else:  # keep permissions added by later parts (e.g. 19: access_as_user on the agent API)"], [77, "    mine = {r[\"resourceAppId\"] for r in body[\"requiredResourceAccess\"]}"], [78, "    body[\"requiredResourceAccess\"] += [r for r in cli.get(\"requiredResourceAccess\", []) if r[\"resourceAppId\"] not in mine]"], [79, "    g(\"PATCH\", f\"/applications/{cli['id']}\", body)"], [80, "cli_sp = sp_for(cli[\"appId\"])"], [81, "for res_sp, scopes in ((api_sp, \"mcp.access\"), (graph_sp, \" \".join(graph_scopes))):   # admin consent for all users"], [82, "    if not one(\"/oauth2PermissionGrants\", f\"clientId eq '{cli_sp['id']}' and resourceId eq '{res_sp['id']}'\"):"], [83, "        g(\"POST\", \"/oauth2PermissionGrants\", {\"clientId\": cli_sp[\"id\"], \"consentType\": \"AllPrincipals\", \"resourceId\": res_sp[\"id\"], \"scope\": scopes})"]]], "redacted": false}, "assign": {"file": "infra/entra-id/01-entra-setup.py", "ref": "infra/entra-id/01-entra-setup.py:92-96,101-103", "parts": [[[92, "assigned = {(a[\"principalId\"], a[\"appRoleId\"]) for a in g(\"GET\", f\"/servicePrincipals/{api_sp['id']}/appRoleAssignedTo\")[\"value\"]}"], [93, "for name, roles in USERS.items():"], [94, "    upn = f\"{name}@{domain}\""], [95, "    u = one(\"/users\", f\"userPrincipalName eq '{upn}'\")"], [96, "    if not u:"]], [[101, "    for r in roles:"], [102, "        if (u[\"id\"], role_ids[r]) not in assigned:"], [103, "            g(\"POST\", f\"/servicePrincipals/{api_sp['id']}/appRoleAssignedTo\", {\"principalId\": u[\"id\"], \"resourceId\": api_sp[\"id\"], \"appRoleId\": role_ids[r]})"]]], "redacted": false}, "gwHeader": {"file": "infra/entra-id/02-entra-gateway.sh", "ref": "infra/entra-id/02-entra-gateway.sh:2-9", "parts": [[[2, "# Entra ID track, Gateway tool RBAC: a Gateway that trusts Microsoft Entra ID directly (no Cognito, no Pre Token trigger)."], [3, "# PREREQUISITE: the Cognito track through step 16 (cognito-idc/16-mall-gateway.sh) must have run: it creates the mall Lambda"], [4, "#   rsidc-mall-tools and the gateway role rsidc-mall-gateway-role used below. Run after 01-entra-setup.py."], [5, "#   inbound : CUSTOM_JWT, discovery = the tenant's v2 OIDC metadata, allowedAudience = the rsidc-mall-api app ID"], [6, "#             (Entra v2 access tokens carry the client in `azp`, not `client_id`, so audience is the right check)"], [7, "#   target  : the same mall Lambda + gateway role as the Cognito customer version."], [8, "#   policy  : its own engine with the same 4 fixed Cedar rules; Entra's native App Role claim `roles` is matched"], [9, "# Usage: 02-entra-gateway.sh LOG_ONLY|ENFORCE"]]], "redacted": false}, "gwAuth": {"file": "infra/entra-id/02-entra-gateway.sh", "ref": "infra/entra-id/02-entra-gateway.sh:11-17", "parts": [[[11, "DISC=\"https://login.microsoftonline.com/$ENTRA_TENANT_ID/v2.0/.well-known/openid-configuration\""], [12, "GR=${PROJECT}-mall-gateway-role; MALL_FN=arn:aws:lambda:$R:${ACCOUNT_ID}:function:${PROJECT}-mall-tools"], [13, "AUTH=\"{\\\"customJWTAuthorizer\\\":{\\\"discoveryUrl\\\":\\\"$DISC\\\",\\\"allowedAudience\\\":[\\\"$ENTRA_API_APP_ID\\\"]}}\""], [14, "if [ -z \"${ENTRA_GW_ID:-}\" ]; then"], [15, "  save ENTRA_GW_ID $(aws bedrock-agentcore-control create-gateway --region $R --name ${PROJECT}-mall-entra-gateway --role-arn arn:aws:iam::${ACCOUNT_ID}:role/$GR \\"], [16, "    --protocol-type MCP --authorizer-type CUSTOM_JWT --description \"rsidc Part 6: Entra ID version (Entra JWT + App Roles -> Cedar -> mall tools)\" \\"], [17, "    --authorizer-configuration \"$AUTH\" --query gatewayId --output text)"]]], "redacted": false}, "gwTarget": {"file": "infra/entra-id/02-entra-gateway.sh", "ref": "infra/entra-id/02-entra-gateway.sh:23-27", "parts": [[[23, "if ! aws bedrock-agentcore-control list-gateway-targets --region $R --gateway-identifier $ENTRA_GW_ID --query \"items[?name=='mall'].targetId\" --output text | grep -q .; then"], [24, "  CFG=$(python3 -c \"import json,sys;print(json.dumps({'mcp':{'lambda':{'lambdaArn':sys.argv[1],'toolSchema':{'inlinePayload':json.load(open(sys.argv[2]))}}}}))\" $MALL_FN \"$ROOT/infra/common/lambda/mall_tools/tools.json\")"], [25, "  aws bedrock-agentcore-control create-gateway-target --region $R --gateway-identifier $ENTRA_GW_ID --name mall \\"], [26, "    --description \"Customer mall-footfall tools (4)\" --target-configuration \"$CFG\" \\"], [27, "    --credential-provider-configurations '[{\"credentialProviderType\":\"GATEWAY_IAM_ROLE\"}]' >/dev/null"]]], "redacted": false}, "gwPolicy": {"file": "infra/entra-id/02-entra-gateway.sh", "ref": "infra/entra-id/02-entra-gateway.sh:37-46", "parts": [[[37, "policy() {  # identical rule shape to the Cognito customer version; only the gateway ARN differs"], [38, "  aws bedrock-agentcore-control list-policies --region $R --policy-engine-id $ENTRA_PE_ID --query \"policies[?name=='$1'].policyId\" --output text | grep -q . && return"], [39, "  local stmt=\"permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\\\"$2\\\", resource == AgentCore::Gateway::\\\"$ENTRA_GW_ARN\\\") when { principal.hasTag(\\\"roles\\\") && principal.getTag(\\\"roles\\\") like \\\"*\\\\\\\"$3\\\\\\\"*\\\" };\""], [40, "  aws bedrock-agentcore-control create-policy --region $R --policy-engine-id $ENTRA_PE_ID --name $1 \\"], [41, "    --description \"$2 requires Entra App Role $3\" --definition \"$(jq -cn --arg s \"$stmt\" '{cedar:{statement:$s}}')\" >/dev/null"], [42, "}"], [43, "policy entra_mall_list     mall___get_mall_list        Tools.Mall.List"], [44, "policy entra_mall_footfall mall___get_footfall_summary Tools.Mall.Footfall"], [45, "policy entra_mall_hourly   mall___get_hourly_traffic   Tools.Mall.Hourly"], [46, "policy entra_mall_zone     mall___get_zone_comparison  Tools.Mall.Zone"]]], "redacted": false}, "gwAttach": {"file": "infra/entra-id/02-entra-gateway.sh", "ref": "infra/entra-id/02-entra-gateway.sh:48-55", "parts": [[[48, "# The shared gateway role gets a SEPARATE inline policy for this engine (the Cognito customer version's policy is left untouched)."], [49, "sed -e \"s|__ENTRA_PE_ARN__|$ENTRA_PE_ARN|\" -e \"s|__ENTRA_GW_ARN__|$ENTRA_GW_ARN|\" \"$ROOT/infra/entra-id/policies/entra-gateway-permissions.json\" > /tmp/$GR-entra.json"], [50, "aws iam put-role-policy --role-name $GR --policy-name entra-gateway --policy-document file:///tmp/$GR-entra.json"], [51, "G=$(aws bedrock-agentcore-control get-gateway --region $R --gateway-identifier $ENTRA_GW_ID --output json)"], [52, "for try in 1 2 3 4 5 6; do aws bedrock-agentcore-control update-gateway --region $R --gateway-identifier $ENTRA_GW_ID \\"], [53, "  --name \"$(jq -r .name <<<\"$G\")\" --role-arn \"$(jq -r .roleArn <<<\"$G\")\" --protocol-type MCP --description \"$(jq -r .description <<<\"$G\")\" \\"], [54, "  --authorizer-type CUSTOM_JWT --authorizer-configuration \"$(jq -c .authorizerConfiguration <<<\"$G\")\" \\"], [55, "  --policy-engine-configuration \"{\\\"arn\\\":\\\"$ENTRA_PE_ARN\\\",\\\"mode\\\":\\\"$MODE\\\"}\" >/dev/null && break; sleep 10; done  # IAM propagation"]]], "redacted": false}, "iamPolicy": {"file": "infra/entra-id/policies/entra-gateway-permissions.json", "ref": "infra/entra-id/policies/entra-gateway-permissions.json:1-5", "parts": [[[1, "{\"Version\":\"2012-10-17\",\"Statement\":["], [2, " {\"Sid\":\"PolicyInAgentCoreEntra\",\"Effect\":\"Allow\","], [3, "  \"Action\":[\"bedrock-agentcore:AuthorizeAction\",\"bedrock-agentcore:PartiallyAuthorizeActions\",\"bedrock-agentcore:GetPolicyEngine\"],"], [4, "  \"Resource\":[\"__ENTRA_PE_ARN__\",\"__ENTRA_GW_ARN__\"]}"], [5, "]}"]]], "redacted": false}, "tokenReq": {"file": "Entra RBAC test script (excerpt)", "ref": "Entra RBAC test script (excerpt)", "parts": [[[15, "def entra_token(user, scope=None):"], [16, "    r = requests.post(f\"https://login.microsoftonline.com/{T}/oauth2/v2.0/token\", timeout=30, data=dict("], [17, "        grant_type=\"password\", client_id=CLI, username=f\"{user}@{D}\", password=<redacted: read from a secret store>,"], [18, "        scope=scope or f\"api://{API}/mcp.access\")).json()"], [19, "    return r[\"access_token\"]"], [20, ""], [21, ""], [22, "def claims(t):"], [23, "    return json.loads(base64.urlsafe_b64decode(t.split(\".\")[1] + \"==\"))"]]], "redacted": true}, "rpc": {"file": "Entra RBAC test script (excerpt)", "ref": "Entra RBAC test script (excerpt)", "parts": [[[26, "def rpc(token, method, params=None):"], [27, "    body = {\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": method, **({\"params\": params} if params is not None else {})}"], [28, "    r = requests.post(GW, json=body, timeout=60, headers={\"Authorization\": f\"Bearer {token}\", \"Content-Type\": \"application/json\","], [29, "                                                       \"Accept\": \"application/json, text/event-stream\"})"], [30, "    try:"], [31, "        return r.status_code, r.json()"], [32, "    except ValueError:"], [33, "        return r.status_code, {\"raw\": r.text[:200]}"], [34, ""], [35, ""], [36, "def listed(token):"], [37, "    s, j = rpc(token, \"tools/list\")"], [38, "    return s, sorted(t[\"name\"] for t in j.get(\"result\", {}).get(\"tools\", []))"], [39, ""], [40, ""], [41, "def call(token, name):"], [42, "    s, j = rpc(token, \"tools/call\", {\"name\": name, \"arguments\": {\"mall_id\": \"HK01\", \"date\": \"2026-10-01\"}})"], [43, "    res = j.get(\"result\", {})"], [44, "    ok = s == 200 and \"error\" not in j and not res.get(\"isError\")"], [45, "    txt = (j.get(\"error\") or {}).get(\"message\") or (res.get(\"content\") or [{}])[0].get(\"text\", \"\")"], [46, "    return ok, s, txt[:110].replace(\"\\n\", \" \")"]]], "redacted": false}, "negatives": {"file": "Entra RBAC test script (excerpt)", "ref": "Entra RBAC test script (excerpt)", "parts": [[[49, "def tamper(token):"], [50, "    h, p, sig = token.split(\".\")"], [51, "    c = json.loads(base64.urlsafe_b64decode(p + \"==\")); c[\"roles\"] = [\"Tools.Mall.List\", \"Tools.Mall.Footfall\", \"Tools.Mall.Hourly\", \"Tools.Mall.Zone\"]"], [52, "    return f\"{h}.{base64.urlsafe_b64encode(json.dumps(c).encode()).decode().rstrip('=')}.{sig}\""]], [[81, "            s, _ = rpc(tamper(entra_token(\"ds1\")), \"tools/list\"); rec(\"tampered ds1 token (roles forged to all 4)\", 403, s, \"signature check\")"], [82, "            s, _ = rpc(cognito_access_token(\"wei\"), \"tools/list\"); rec(\"Cognito access token (other issuer)\", 403, s, \"issuer/JWKS\")"], [83, "            g = entra_token(\"wei\", \"https://graph.microsoft.com/.default\")"], [84, "            s, _ = rpc(g, \"tools/list\"); rec(\"Entra token for Microsoft Graph (wrong audience)\", True, s in (401, 403), f\"http={s} aud={claims(g).get('aud')}\")"], [85, "            s, _ = rpc(\"not-a-jwt\", \"tools/list\"); rec(\"garbage bearer\", 401, s, \"\")"]]], "redacted": false}}, "review": {"API app: 4 App Roles, scope mcp.access, identifierUri api://<appId>, v2 tokens": "{\n  \"roles\": [\n    \"Tools.Mall.Zone\",\n    \"Tools.Mall.Hourly\",\n    \"Tools.Mall.Footfall\",\n    \"Tools.Mall.List\"\n  ],\n  \"scopes\": [\n    \"mcp.access\"\n  ],\n  \"uris\": [\n    \"api://{mall-api-app-id}\"\n  ],\n  \"ver\": 2\n}", "assignments resolve to the expected role values": "ds1 Tools.Mall.Footfall\nds1 Tools.Mall.List\nwei Tools.Mall.Footfall\nwei Tools.Mall.Hourly\nwei Tools.Mall.List\nwei Tools.Mall.Zone", "test client: admin consent (AllPrincipals) for mcp.access": "AllPrincipals\temail offline_access openid profile\nAllPrincipals\tmcp.access", "inbound: Entra v2 discovery + allowedAudience = API appId": "{\n    \"discoveryUrl\": \"https://login.microsoftonline.com/{entra-tenant-id}/v2.0/.well-known/openid-configuration\",\n    \"allowedAudience\": [\n        \"{mall-api-app-id}\"\n    ]\n}", "policy engine attached in ENFORCE": "READY\tENFORCE\tarn:aws:bedrock-agentcore:ap-southeast-1:123456789012:policy-engine/{entra-policy-engine-id}", "target mall READY → Lambda rsidc-mall-tools (gateway IAM role)": "READY\tarn:aws:lambda:ap-southeast-1:123456789012:function:rsidc-mall-tools\tGATEWAY_IAM_ROLE", "4 Cedar policies ACTIVE": "entra_mall_footfall\tACTIVE\nentra_mall_hourly\tACTIVE\nentra_mall_list\tACTIVE\nentra_mall_zone\tACTIVE", "Cedar rule for hourly requires roles ∋ Tools.Mall.Hourly (no group names)": "permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\"mall___get_hourly_traffic\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:gateway/{entra-gateway-id}\") when { principal.hasTag(\"roles\") && principal.getTag(\"roles\") like \"*\\\"Tools.Mall.Hourly\\\"*\" };", "IAM inline policy entra-gateway scoped to this engine + gateway": "{\n    \"Version\": \"2012-10-17\",\n    \"Statement\": [\n        {\n            \"Sid\": \"PolicyInAgentCoreEntra\",\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"bedrock-agentcore:AuthorizeAction\",\n                \"bedrock-agentcore:PartiallyAuthorizeActions\",\n                \"bedrock-agentcore:GetPolicyEngine\"\n            ],\n            \"Resource\": [\n                \"arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:policy-engine/{entra-policy-engine-id}\",\n                \"arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:gateway/{entra-gateway-id}\"\n            ]\n        }\n    ]\n}", "anti-bypass: Lambda has no resource policy and no Function URL": "1\n1"}, "shots": [{"order": "1.1", "name": "e1-api-approles", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/AppRoles/appId/{mall-api-app-id}", "caption": "Entra app rsidc-mall-api: 4 App Roles Tools.Mall.*"}, {"order": "1.2", "name": "e1-api-expose", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/ProtectAnAPI/appId/{mall-api-app-id}", "caption": "Entra app rsidc-mall-api: Expose an API (api://…/mcp.access)"}, {"order": "1.3", "name": "e1-api-manifest", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Manifest/appId/{mall-api-app-id}", "caption": "Entra app rsidc-mall-api: manifest requestedAccessTokenVersion = 2"}, {"order": "1.4", "name": "e1-assignments", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Users/objectId/{entra-sp-object-id}/appId/{mall-api-app-id}", "caption": "Enterprise app rsidc-mall-api: Users and groups (role assignments)"}, {"order": "1.5", "name": "e1-client-perms", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/CallAnAPI/appId/{test-client-app-id}", "caption": "Entra app rsidc-mall-test-client: API permissions (admin consent granted)"}, {"order": "2.1", "name": "a2-gateway", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/toolsAndGateways?region=ap-southeast-1", "caption": "Gateway rsidc-mall-entra-gateway: Entra discovery URL + audience, target mall, policy engine ENFORCE"}, {"order": "2.2", "name": "a2-gateway-auth", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/toolsAndGateways?region=ap-southeast-1", "caption": "Gateway inbound auth (Entra v2 discovery, allowed audience)"}, {"order": "2.3", "name": "a2-policies", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/policy?region=ap-southeast-1", "caption": "Policy engine rsidc_mall_entra_pe: 4 entra_mall_* policies ACTIVE"}, {"order": "2.4", "name": "a2-iam-role", "url": "https://us-east-1.console.aws.amazon.com/iam/home#/roles/details/rsidc-mall-gateway-role?section=permissions", "caption": "IAM role rsidc-mall-gateway-role: inline policy entra-gateway"}, {"order": "2.5", "name": "a2-lambda", "url": "https://ap-southeast-1.console.aws.amazon.com/lambda/home?region=ap-southeast-1#/functions/rsidc-mall-tools?tab=configure", "caption": "Lambda rsidc-mall-tools configuration (no Function URL)"}], "screens": [{"step": "api", "file": "img/entra-02-mall-api-app-roles.png", "caption": "rsidc-mall-api · App roles (defines Tools.Mall.List / Footfall / Hourly / Zone, allowed member types Applications + Users/Groups)", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/AppRoles/appId/{mall-api-app-id}", "look": "4 roles, values Tools.Mall.List / Footfall / Hourly / Zone, enabled; member types Applications + Users/Groups."}, {"step": "api", "file": "img/entra-01-wei-app-role-assignments.png", "caption": "User wei · Applications (App Role assignments: Mall List, Mall Zone, Mall Hourly, Mall Footfall — directly assigned)", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/Applications/userId/{entra-user-object-id}", "look": "rsidc-mall-api with the 4 Mall roles, assignment type Direct. App Role assignments are NOT under the user's \"Assigned roles\" (those are directory/admin roles): see Enterprise applications → rsidc-mall-api → Users and groups, or the user's Applications blade."}, {"step": "api", "file": "img/entra-04-mall-api-expose-an-api.png", "caption": "rsidc-mall-api · Expose an API (Application ID URI https://mcp.agentzone.click/mcp; scope https://mcp.agentzone.click/mcp/mcp.access, Admins and users, Enabled)", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/ProtectAnAPI/appId/{mall-api-app-id}", "look": "Application ID URI on the verified custom domain; scope mcp.access, who can consent = Admins and users, state Enabled."}, {"step": "api", "file": "img/entra-05-mall-api-manifest-identifieruris.png", "caption": "rsidc-mall-api · Manifest (identifierUris = custom domain URI + api://<appId>; the api:// one is kept)", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Manifest/appId/{mall-api-app-id}", "look": "identifierUris lists both https://mcp.agentzone.click/mcp and api://<appId>."}, {"step": "quick", "file": "img/entra-03-quick-client-secrets.png", "caption": "rsidc-quick-mcp-entra · Certificates & secrets (Quick's confidential client secret; values redacted)", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Credentials/appId/{quick-entra-app-id}", "look": "the client secret used by the Quick connector (description and expiry); values and IDs blacked out."}, {"step": "test", "file": "img/entra-06-test-client-api-permissions.png", "caption": "rsidc-mall-test-client · API permissions (the public test client used by the scripts/GUI: Graph email/offline_access/openid/profile, rsidc-entra-agent access_as_user, rsidc-mall-api mcp.access — all granted for the directory)", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/CallAnAPI/appId/{test-client-app-id}", "look": "This is the TEST client (scripts, RBAC web GUI), not Quick's client: every permission shows \"Granted for\" the directory."}, {"step": "hood", "file": "img/cloudfront-01-mcp-prm-function-code.png", "caption": "CloudFront → Functions → mcp-prm · Build: function code (Development stage)", "url": "https://us-east-1.console.aws.amazon.com/cloudfront/v4/home#/functions/mcp-prm", "where": "CloudFront console → Functions → mcp-prm → Build", "look": "for /.well-known/oauth-protected-resource* it returns resource = https://mcp.agentzone.click/mcp and scopes_supported = [https://mcp.agentzone.click/mcp/mcp.access]; every other request passes through."}, {"step": "hood", "file": "img/cloudfront-02-mcp-prm-publish-association.png", "caption": "CloudFront → Functions → mcp-prm · Publish: associated with the distribution's Default (*) behavior as Viewer request", "url": "https://us-east-1.console.aws.amazon.com/cloudfront/v4/home#/functions/mcp-prm", "where": "CloudFront console → Functions → mcp-prm → Publish", "look": "Event type = Viewer request, Cache behavior = Default (*); publish copies Development → Live."}, {"step": "hood", "file": "img/entra-12-mall-api-overview-app-id-uri.png", "caption": "rsidc-mall-api · Overview: Application ID URI = https://mcp.agentzone.click/mcp (on the verified domain agentzone.click)", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/{mall-api-app-id}", "look": "Application ID URI (red box) is an https URI on a domain verified in this tenant — this is the value Quick's resource= must equal."}], "custom": {"source": "Recorded test results (2026-10-30)", "custom": "https://mcp.agentzone.click", "gwHost": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com", "fnPrm": "function handler(event) {\n  if (event.request.uri.indexOf('/.well-known/oauth-protected-resource') === 0) {\n    return { statusCode: 200, statusDescription: 'OK',\n      headers: { 'content-type': { value: 'application/json' }, 'cache-control': { value: 'no-store' } },\n      body: { encoding: 'text', data: JSON.stringify({\n        resource: 'https://mcp.agentzone.click/mcp',\n        authorization_servers: ['https://login.microsoftonline.com/{entra-tenant-id}/v2.0'],\n        scopes_supported: ['https://mcp.agentzone.click/mcp/mcp.access'],\n        bearer_methods_supported: ['header'] }) } };\n  }\n  return event.request;\n}", "rhpName": "mcp-agentzone-www-authenticate", "rhpValue": "Bearer error=\"invalid_token\", resource_metadata=\"https://mcp.agentzone.click/.well-known/oauth-protected-resource\"", "wwwAfter": "HTTP/1.1 401\nWWW-Authenticate: Bearer error=\"invalid_token\", resource_metadata=\"https://mcp.agentzone.click/.well-known/oauth-protected-resource\"", "wwwAuth": "HTTP/1.1 401\nWWW-Authenticate: Bearer error=\"invalid_token\", resource_metadata=\"https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/.well-known/oauth-protected-resource\"", "prmBefore": "{\n \"authorization_servers\": [\n  \"https://login.microsoftonline.com/{entra-tenant-id}/v2.0\"\n ],\n \"resource\": \"https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp\",\n \"scopes_supported\": []\n}", "prmAfter": "{\n \"resource\": \"https://mcp.agentzone.click/mcp\",\n \"authorization_servers\": [\n  \"https://login.microsoftonline.com/{entra-tenant-id}/v2.0\"\n ],\n \"scopes_supported\": [\n  \"https://mcp.agentzone.click/mcp/mcp.access\"\n ],\n \"bearer_methods_supported\": [\n  \"header\"\n ]\n}", "ev": {"discovery": "GET /.well-known/oauth-protected-resource and /.well-known/oauth-protected-resource/mcp → custom resource + mcp.access scope; POST /mcp without a token → 401 with resource_metadata = the custom domain.", "entra": "token request with scope=https://mcp.agentzone.click/mcp/mcp.access + resource=https://mcp.agentzone.click/mcp → token issued, aud = {mall-api-app-id} (app ID). Control: resource = the amazonaws Gateway URL → AADSTS9010010.", "cloudfront": "POST /mcp without a token → 401 from the Gateway (CloudFront reaches the origin with all methods).", "gateway": "the token from the custom-domain scope was accepted (aud = app ID ∈ allowedAudience): ds1 tools/list returned 2 tools.", "cedar": "ds1 tools/list = get_footfall_summary, get_mall_list; get_mall_list allowed; get_hourly_traffic → Tool Execution Denied."}, "ds1Recheck": "Checked through the custom domain for ds1 (2026-10-30): tools/list = get_footfall_summary, get_mall_list; get_mall_list allowed; get_hourly_traffic denied."}, "faq": [{"q": "Why does Quick + Entra fail with the plain Gateway URL?", "wrong": "Quick's OAuth connector fails with `invalid_target`; the same authorize request in a browser returns `AADSTS9010010`.", "extra": "plainUrl", "why": "Error AADSTS9010010 from Microsoft Entra ID indicates a conflict between the legacy resource parameter and the modern scope parameter during OAuth 2.0 token acquisition. For example, Quick sends `resource=<Gateway MCP URL>` (RFC 8707) next to `scope=api://<rsidc-mall-api>/mcp.access`; the resource doesn't name the same API as the scope, so Entra rejects it. More generally: Quick sends the RFC 8707 `resource` parameter = the MCP Base URL. Entra v2 sets the token audience from `scope`; if `resource` is present it must name the **same API** (the scope's Application ID URI). The amazonaws Gateway URL is not any app's App ID URI.", "fix": "Make the MCP URL and the App ID URI the same name: a custom domain verified in Entra (used on this page), or Cognito as a broker.", "verified": "Recorded 2026-10-27 and 2026-10-30: authorize with `resource=<Gateway URL>` → AADSTS9010010, the same request without `resource` succeeds; Quick connector → `invalid_target`.", "docs": [["RFC 8707 · Resource Indicators for OAuth 2.0", "https://datatracker.ietf.org/doc/html/rfc8707"], ["MCP specification · Authorization", "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"], ["Amazon Quick · MCP integration", "https://docs.aws.amazon.com/quick/latest/userguide/mcp-integration.html"], ["Microsoft Entra · breaking changes (AppId URI: verified domain or api://{appId})", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-breaking-changes"], ["Microsoft Entra · AADSTS error codes", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes"], ["Microsoft Entra · authorization code flow", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow"]]}, {"q": "Quick shows \"One or more parameters are invalid\": what does the MCP server's discovery metadata need to say?", "extra": "discovery", "wrong": "Quick rejects the connector at *Create and continue* with \"One or more parameters are invalid\", although Base URL, authorize/token URLs, client ID and redirect URL are correct.", "why": "Quick reads **RFC 9728** protected resource metadata: it follows the 401 `WWW-Authenticate … resource_metadata=` to `/.well-known/oauth-protected-resource` and takes `resource` and the scope from there (the connector has no scope field). Two things must hold: `resource` equals the **Base URL** (here also the Entra App ID URI), and `scopes_supported` contains the **Entra scope**. Behind a proxy, the Gateway's own metadata names its amazonaws URL and has `scopes_supported: []`.", "fix": "Serve the metadata for the custom domain at the edge (CloudFront Function `mcp-prm`) and point the 401's `resource_metadata` at it (response headers policy). See Setup (c).", "verified": "Recorded 2026-10-30: both well-known paths return the custom `resource` + scope, the 401 points to the custom domain, and the Quick connector is created and signs in to Entra.", "docs": [["RFC 9728 · OAuth 2.0 Protected Resource Metadata", "https://datatracker.ietf.org/doc/html/rfc9728"], ["MCP specification · Authorization", "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"], ["Amazon Quick · MCP integration", "https://docs.aws.amazon.com/quick/latest/userguide/mcp-integration.html"], ["AgentCore Gateway · custom domain names", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-custom-domains.html"], ["CloudFront Functions", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html"], ["CloudFront · response headers policies", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/modifying-response-headers.html"]]}, {"q": "Why doesn't the AWS sample (agentcore-samples 04-entra-obo-mcp-runtime) need CloudFront or a custom domain?", "extra": "awsSample", "why": "**Different problem.** The sample's client is a Python script that gets the token out-of-band with MSAL device code flow, `scope=<agent-app-GUID>/.default`, **no RFC 8707 `resource`** and **no RFC 9728 discovery**, and calls AgentCore Runtime with `Authorization: Bearer`. Entra derives the audience from the scope alone, so AADSTS9010010 can't happen. Runtime vs Gateway is not the reason: Quick pointed at a Runtime URL would still send `resource=<amazonaws URL>` (inference, not tested).", "docs": [["AWS sample · agentcore-samples 04-entra-obo-mcp-runtime (GitHub, awslabs)", "https://github.com/awslabs/agentcore-samples/tree/main/01-features/05-authenticate-and-authorize/04-entra-obo-mcp-runtime"], ["Amazon Quick · MCP integration", "https://docs.aws.amazon.com/quick/latest/userguide/mcp-integration.html"], ["AgentCore Gateway · custom domain names", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-custom-domains.html"], ["AgentCore API · CustomJWTAuthorizerConfiguration", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html"], ["AgentCore Identity · Microsoft Entra ID", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-idp-microsoft.html"], ["Microsoft Entra · On-Behalf-Of flow", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-on-behalf-of-flow"]]}, {"q": "Why is a custom domain needed?", "why": "`https://` App ID URIs must be on a domain **verified in the tenant**. `amazonaws.com` can't be verified (you can't add a TXT record there). `<tenant>.onmicrosoft.com` can be used in an App ID URI, but you don't control its DNS, so it can't be the URL Quick calls. The **same name** has to be both the App ID URI and the Base URL.", "fix": "Own a domain (here `agentzone.click`), verify it in Entra, add `https://mcp.agentzone.click/mcp` to `identifierUris`, and point `mcp.agentzone.click` at the Gateway.", "verified": "Recorded 2026-10-30: token request with `scope=https://mcp.agentzone.click/mcp/mcp.access` + `resource=https://mcp.agentzone.click/mcp` → token issued.", "docs": [["Microsoft Entra · add a custom domain name", "https://learn.microsoft.com/en-us/entra/fundamentals/add-custom-domain"], ["Microsoft Entra · breaking changes (AppId URI: verified domain or api://{appId})", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-breaking-changes"], ["Microsoft Entra · app manifest (identifierUris)", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-app-manifest"], ["Route 53 · registering a domain", "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html"], ["Route 53 · adding or changing name servers", "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-name-servers-glue-records.html"], ["CloudFront · alternate domain names (CNAMEs)", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html"], ["CloudFront · SSL/TLS certificate requirements (ACM in us-east-1)", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html"]]}, {"q": "Why CloudFront?", "why": "The Gateway has no native custom-domain setting. The AWS doc \"Setting up custom domain names for Gateway endpoints\" (AgentCore Developer Guide) uses CloudFront as a reverse proxy.", "fix": "Origin = the Gateway host (HTTPS only); cache policy **CachingDisabled** (every call is per-user); origin request policy **AllViewerExceptHostHeader** (forwards `Authorization` and MCP headers, but sends the origin's own Host); **all HTTP methods**; ACM cert in us-east-1; Route 53 A/AAAA alias.", "verified": "Recorded 2026-10-30: no-token POST → 401 from the Gateway; ds1 `tools/list` and Cedar allow/deny through the custom domain.", "docs": [["AgentCore Gateway · custom domain names", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-custom-domains.html"], ["CloudFront · managed cache policies (CachingDisabled)", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html"], ["CloudFront · managed origin request policies (AllViewerExceptHostHeader)", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-origin-request-policies.html"], ["CloudFront · alternate domain names (CNAMEs)", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html"], ["CloudFront · SSL/TLS certificate requirements (ACM in us-east-1)", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html"]]}, {"q": "Why the CloudFront Function and the response headers policy?", "wrong": "Without them Quick shows \"One or more parameters are invalid\" (card 2).", "why": "Quick discovers OAuth settings via RFC 9728: the 401 `WWW-Authenticate` header points to `resource_metadata`, and that document gives `resource` and `scopes_supported`. The Gateway's header and metadata describe its **amazonaws** URL with `scopes_supported: []`, and the Quick connector configuration has **no scope field**, so Quick has no matching resource and no scope to request.", "fix": "CloudFront Function `mcp-prm` (viewer request) answers `/.well-known/oauth-protected-resource*` for the custom domain with the `mcp.access` scope. Response headers policy `mcp-agentzone-www-authenticate` (override=true) sets the 401 `WWW-Authenticate` to `resource_metadata=\"https://mcp.agentzone.click/.well-known/oauth-protected-resource\"`. Security is unchanged: both only rewrite public discovery data; every MCP call still reaches the Gateway, which validates the Entra JWT (issuer, signature, `aud`) and applies Cedar.", "verified": "Recorded 2026-10-30: `mcp-prm` tested with `test-function` before publishing; after deploy, both well-known paths return the custom `resource` + scope, a no-token POST returns 401 with the custom `resource_metadata`, and Quick signs in through the custom domain.", "docs": [["RFC 9728 · OAuth 2.0 Protected Resource Metadata", "https://datatracker.ietf.org/doc/html/rfc9728"], ["CloudFront Functions", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html"], ["CloudFront · response headers policies", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/modifying-response-headers.html"], ["AgentCore Gateway · custom domain names", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-custom-domains.html"], ["AgentCore Gateway · inbound authorization", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"], ["Policy in Amazon Bedrock AgentCore (Cedar)", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html"]]}, {"q": "Why a response headers policy instead of a viewer-response function?", "why": "The header that matters is on the Gateway's **401** challenge, and CloudFront **doesn't run viewer-response functions when the origin returns a 4xx/5xx**. Response headers policies apply to **all** responses, including 4xx.", "fix": "Response headers policy with custom header `WWW-Authenticate`, **override=true** (replaces the Gateway's value), value pointing to the custom domain's metadata.", "verified": "Recorded 2026-10-30: POST without a token → 401 with `resource_metadata=\"https://mcp.agentzone.click/.well-known/oauth-protected-resource\"`.", "docs": [["CloudFront · viewer response not run when the origin returns 400 or higher (stated for Lambda@Edge events)", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-cloudfront-trigger-events.html"], ["CloudFront · CloudFront Functions vs Lambda@Edge", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-choosing.html"], ["CloudFront · restrictions on edge functions", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-restrictions.html"], ["CloudFront · response headers policies", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/modifying-response-headers.html"]]}, {"q": "Why does the token `aud` stay the app ID (GUID), and why no Gateway change?", "why": "Entra v2 access tokens use the resource app's **app ID** as `aud`. The App ID URI is only the name used in `scope`/`resource`; any of the app's URIs maps to the same app.", "fix": "None needed: the Gateway's `allowedAudience` is already the rsidc-mall-api app ID.", "verified": "Recorded 2026-10-30: token via the custom-domain scope has `aud` = rsidc-mall-api app ID; Gateway accepted it (ds1 tools/list).", "docs": [["Microsoft Entra · access tokens (v2, aud, roles, scp)", "https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens"], ["Microsoft Entra · scopes, permissions and consent", "https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc"], ["Microsoft Entra · add app roles", "https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-app-roles-in-apps"], ["AgentCore API · CustomJWTAuthorizerConfiguration", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html"], ["AgentCore Gateway · inbound authorization", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"]]}, {"q": "Why keep the `api://` Application ID URI?", "why": "`identifierUris` is a list. Existing clients (in this setup the test client, the RBAC web GUI and the other Entra flows) request `api://<appId>/mcp.access`; removing it would break them. Both URIs resolve to the same app, scope and `aud`.", "fix": "Add `https://mcp.agentzone.click/mcp` next to `api://<appId>`; don't replace it.", "docs": [["Microsoft Entra · app manifest (identifierUris)", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-app-manifest"], ["Microsoft Entra · breaking changes (AppId URI: verified domain or api://{appId})", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-breaking-changes"], ["Microsoft Entra · scopes, permissions and consent", "https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc"]]}], "checklist": ["Registered domain → Name servers = the hosted zone's 4 NS", "TXT `MS=ms…` resolves publicly before clicking Verify in Entra", "App ID URI added next to `api://<appId>` (not replacing it)", "ACM certificate in **us-east-1** (CloudFront requirement)", "CloudFront: all HTTP methods, CachingDisabled, AllViewerExceptHostHeader, HTTPS-only origin", "Token request with custom scope + `resource` → aud = app ID", "`/.well-known/oauth-protected-resource` on the custom domain returns the custom `resource` + scope", "401 `WWW-Authenticate` on the custom domain points to the custom domain (set by a response headers policy, override=true)", "Quick client: Graph `openid profile offline_access` consented; client secret kept in a secret store"], "aadstsExplain": "Error AADSTS9010010 from Microsoft Entra ID indicates a conflict between the legacy resource parameter and the modern scope parameter during OAuth 2.0 token acquisition", "aadstsCase": "For example, Quick sends `resource=<Gateway MCP URL>` (RFC 8707) next to `scope=api://<rsidc-mall-api>/mcp.access`; the resource doesn't name the same API as the scope, so Entra rejects it."}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+// tiny markdown: `code`, **bold**, [text](url)
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+  .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1");
+const short = t => t.replace("mall___", "");
+const upn = u => `${u}@${D.ids.domain}`;
+const foot = date => `<div class="foot">Recorded test results (${esc(date)})</div>`;  // no internal file names
+const pill = (ok, yes = "ALLOWED", no = "DENIED") => `<span class="pill ${ok ? "ok" : "no"}">${ok ? yes : no}</span>`;
+
+function codeBlock(key, note) {
+  const e = D.excerpts[key];
+  const body = e.parts.map(p => p.map(([n, t]) => `<div class="row"><span class="ln">${n}</span>${esc(t)}</div>`).join(""))
+    .join(`<div class="gap">…</div>`);
+  return `<div class="ref"><b>${esc(e.ref)}</b>${note ? " · " + note : ""}${e.redacted ? " · password lookup redacted in this view" : ""}</div><pre>${body}</pre>`;
+}
+const out = (title, k) => `<div class="ref"><b>${esc(title)}</b> · recorded read-only check (2026-10-07)</div><pre class="out">${esc(D.review[k])}</pre>`;
+
+/* ---------------- nav ---------------- */
+function go(sec, anchor) {
+  document.querySelectorAll("nav a").forEach(x => x.classList.toggle("on", x.dataset.s === sec));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === sec));
+  const t = anchor && document.getElementById(anchor);
+  if (t) t.scrollIntoView(); else window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav a").forEach(a => a.onclick = () => go(a.dataset.s));
+safeRender($("#navmeta"), `Page built ${esc(D.built)}<br>Tests: enforce ${D.runs.enforce.pass}/${D.runs.enforce.total} · log_only ${D.runs.log_only.pass}/${D.runs.log_only.total} · change ${D.runs.change.pass}/${D.runs.change.total}`);
+
+/* ---------------- 1 · Replay ---------------- */
+const R = {user: null, mode: "enforce", stage: 0};
+function renderReplay() {
+  const el = $("#replay");
+  const stages = ["Sign in to Microsoft Entra ID", "Decoded access token", "Quick chat + MCP connector"];
+  safeRender(el, `<h2>Replay: one user, one token, four questions</h2>
+  <p class="lead">Pick an Entra user, sign in with any password (simulated), inspect the v2 access token's claims, then ask the 4 mall questions in a mock Quick chat.
+  Every tool list and every allow/deny below is the <b>real</b> result recorded by the Entra RBAC test script against <code>rsidc-mall-entra-gateway</code>.
+  The connector panel mirrors the Quick setup: <b>Custom user based OAuth</b> with Base URL <code>${esc(D.custom.custom)}/mcp</code> (CloudFront in front of the Gateway).
+  The tool results come from a scripted run against the same Gateway. ${esc(D.custom.ds1Recheck)}</p>
+  <div class="steps">${stages.map((s, i) => `<span class="${i <= R.stage ? "on" : ""}">${i + 1} · ${s}</span>`).join("")}</div>
+  <div id="rp"></div>`);
+  [signIn, tokenView, quickView][R.stage]($("#rp"));
+}
+function signIn(el) {
+  const u = R.user || "wei";
+  safeRender(el, `<div class="ms">
+    <div class="logo"><i style="background:#f25022"></i><i style="background:#7fba00"></i><i style="background:#00a4ef"></i><i style="background:#ffb900"></i></div>
+    <h4>Sign in</h4>
+    <div class="who">${["wei", "ds1", "chen"].map(x => `<button class="btn ${x === u ? "on" : ""}" data-u="${x}">${x}</button>`).join("")}</div>
+    <input id="upn" value="${esc(upn(u))}" readonly>
+    <input id="pw" type="password" placeholder="Password (any value, simulated)">
+    <button class="go" id="go">Sign in</button>
+    <small>Simulated Microsoft sign-in page. The password is not sent anywhere. Real tenant: <code>${esc(D.ids.tenant)}</code>; tokens in the recorded tests came from ROPC on <code>rsidc-mall-test-client</code> (non-interactive, so no MFA prompt).</small>
+  </div>
+  <div class="card"><b>Users and their App Role assignments on rsidc-mall-api</b> (Entra ID Free: assigned per user)
+    <table><tr><th>User</th><th>Assigned App Roles</th><th>Expected tools</th></tr>
+    ${["wei", "ds1", "chen"].map(x => `<tr><td><code>${esc(upn(x))}</code></td><td>${D.assigned[x].map(r => `<code>${r}</code>`).join(" ") || "<i>none</i>"}</td><td>${D.assigned[x].length}</td></tr>`).join("")}</table>
+    ${codeBlock("roles", "the assignments the setup script creates")}
+  </div>${foot("2026-10-07")}`);
+  R.user = u;
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { R.user = b.dataset.u; signIn(el); });
+  $("#go", el).onclick = () => { R.stage = 1; renderReplay(); };
+}
+function tokenView(el) {
+  const u = R.user, L = D.enforce[u].list;
+  const roles = L.roles;
+  const rows = [
+    ["aud", D.ids.apiApp + "  (rsidc-mall-api)", "recorded", "recorded test token claims"],
+    ["azp", D.ids.testClient + "  (rsidc-mall-test-client)", "from request", "the client the test used (the Entra RBAC test script); with Quick it is the rsidc-quick-mcp-entra appId"],
+    ["ver", L.ver, "recorded", D.runs.enforce.source],
+    ["roles", roles ? JSON.stringify(roles) : "(claim absent)", "recorded", D.runs.enforce.source + (roles ? "" : " · a user with no App Role gets no roles claim at all")],
+    ["preferred_username", upn(u), "from request", "the username sent in the token request"],
+    ["scp", "mcp.access", "from request", "tests request api://<rsidc-mall-api>/mcp.access; Quick requests " + D.custom.custom + "/mcp/mcp.access (same scope, same aud)"],
+  ];
+  safeRender(el, `<div class="grid g2">
+  <div class="card"><b>Decoded payload: Entra v2 access token for ${esc(u)}</b>
+    <p class="lead" style="margin:6px 0">The token itself is never embedded in this page (only claims). Signature and header are not shown.</p>
+    <table class="claims"><tr><th>Claim</th><th>Value</th><th>Provenance</th></tr>
+    ${rows.map(([k, v, p, s]) => `<tr><td>${k}</td><td><code>${esc(v)}</code><div class="ref">${esc(s)}</div></td><td><span class="pill ${p === "recorded" ? "ok" : "mut"}">${p}</span></td></tr>`).join("")}</table>
+  </div>
+  <div class="card"><b>What each claim is used for</b>
+    <ul class="checks">
+      <li><code>aud</code>: the Gateway's <code>allowedAudience</code> = rsidc-mall-api. A Graph token (<code>aud=https://graph.microsoft.com</code>) is rejected with 403 (recorded).</li>
+      <li><code>azp</code>: the calling app. <b>Not checked</b> by the Gateway (no allowedClients), so any tenant client that obtains a token for <code>mcp.access</code> is accepted.</li>
+      <li><code>ver</code> 2.0: required because the Gateway trusts the <b>v2</b> discovery document; set by <code>requestedAccessTokenVersion: 2</code>.</li>
+      <li><code>roles</code>: the only thing Cedar looks at. One rule per tool: <code>principal.getTag("roles") like "*\"Tools.Mall.X\"*"</code>.</li>
+      <li><code>preferred_username</code>: identifies the user (shown as "Signed in as"); not used for authorization.</li>
+    </ul>
+    <div class="row-btns"><button class="btn" id="back">← Sign in as someone else</button><button class="btn pri" id="next">Open Quick →</button></div>
+  </div></div>${foot(D.runs.enforce.date)}`);
+  $("#back", el).onclick = () => { R.stage = 0; renderReplay(); };
+  $("#next", el).onclick = () => { R.stage = 2; R.chat = []; renderReplay(); };
+}
+function quickView(el) {
+  const u = R.user, run = D[R.mode][u], meta = D.runs[R.mode];
+  const listed = new Set(run.list.tools);
+  safeRender(el, `<div class="quick">
+   <div class="chat"><div class="hd"><span>Amazon Quick · chat (simulated)</span>
+     <span class="row-btns"><button class="btn ${R.mode === "enforce" ? "on" : ""}" data-m="enforce">ENFORCE (${D.runs.enforce.date})</button><button class="btn ${R.mode === "log_only" ? "on" : ""}" data-m="log_only">LOG_ONLY (${D.runs.log_only.date})</button></span></div>
+     <div class="bd" id="bd"></div>
+     <div class="ft">${D.questions.map(([q, t], i) => `<button class="btn" data-q="${i}">${esc(q)}</button>`).join("")}<button class="btn" id="clr">Clear</button></div></div>
+   <div><div class="conn"><b>MCP connector: agentzone-mall-entra</b>
+     <div class="ref">Authentication: <b>Custom user based OAuth</b> (Microsoft Entra ID, confidential client <code>rsidc-quick-mcp-entra</code>)</div>
+     <div style="margin:8px 0"><span class="dot" style="background:var(--ok)"></span>Signed in as <b>${esc(upn(u))}</b></div>
+     <div class="ref">Base URL <code>${esc(D.custom.custom)}/mcp</code> → CloudFront → Gateway</div>
+     <div class="ref"><b>tools/list</b> → HTTP ${run.list.http} · ${run.list.tools.length} tool(s) (policy ${R.mode.toUpperCase()})</div>
+     ${D.tools.map(t => `<div class="t ${listed.has(t) ? "" : "off"}"><span>${t}</span>${listed.has(t) ? '<span class="pill ok">enabled</span>' : '<span class="pill mut">not listed</span>'}</div>`).join("")}
+     <div class="row-btns" style="margin-top:12px"><button class="btn" id="out">Sign out / switch user</button></div></div>
+     <div class="ref" style="margin-top:8px">Results: scripted run against the same Gateway (${esc(meta.date)}).${u === "ds1" ? " <b>" + esc(D.custom.ds1Recheck) + "</b>" : ""}</div>
+     ${u === "ds1" ? changeCard() : ""}
+   </div></div>${foot(meta.date + " · " + meta.pass + "/" + meta.total + " PASS")}`);
+  const bd = $("#bd", el);
+  const paint = () => {
+    safeRender(bd, R.chat.length ? R.chat.join("") : `<div class="msg a">Hi ${esc(u)}. Ask about the malls. (Tool results shown.)</div>`);
+    bd.scrollTop = bd.scrollHeight;
+  };
+  paint();
+  el.querySelectorAll("[data-q]").forEach(b => b.onclick = () => {
+    const [q, t] = D.questions[+b.dataset.q], c = run.calls[t];
+    const hidden = !listed.has(t);
+    R.chat.push(`<div class="msg u">${esc(q)}</div>`);
+    R.chat.push(`<div class="msg a"><div class="tc">tools/call <code>${t}</code> {"mall_id":"HK01","date":"2026-10-01"} → HTTP ${c.http} ${pill(c.ok)}</div>
+      ${hidden ? `<div class="ref">This tool is not in ${esc(u)}'s tools/list, so a Quick agent would normally not see it. Replaying the <b>direct</b> tools/call the test made anyway: Cedar decides each call, not just the list.</div>` : ""}
+      <pre class="out">${esc(c.text)}</pre><div class="ref">recorded evidence (truncated to 110 chars by the test)</div></div>`);
+    paint();
+  });
+  el.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { R.mode = b.dataset.m; R.chat = []; quickView(el); });
+  $("#clr", el).onclick = () => { R.chat = []; paint(); };
+  $("#out", el).onclick = () => { R.stage = 0; R.chat = []; renderReplay(); };
+}
+function changeCard() {
+  return `<div class="conn" style="margin-top:12px"><b>Bonus: App Role change for ds1 (recorded ${D.runs.change.date})</b>
+   <table>${D.change.map(c => `<tr><td>${esc(c.case)}</td><td>${c.pass ? '<span class="pill ok">PASS</span>' : '<span class="pill no">FAIL</span>'}<div class="ref">${esc(c.evidence)}</div></td></tr>`).join("")}</table>
+   <div class="ref">Only the Entra assignment changed; Cedar, Lambda and Gateway were untouched. Existing tokens keep their claims until they expire.</div></div>`;
+}
+
+// numbered code view for embedded snippets (mcp-prm.js)
+function lines(text) {
+  return `<pre>${text.split("\n").map((t, n) => `<div class="row"><span class="ln">${n + 1}</span>${esc(t)}</div>`).join("")}</pre>`;
+}
+const ev = k => `<div class="ev"><span class="pill ok">Verified 2026-10-30</span> ${esc(D.custom.ev[k])}</div>`;
+
+/* ---------------- 5 · FAQ ---------------- */
+// FAQ card 3 detail: comparison with the AWS sample 04-entra-obo-mcp-runtime (research 2026-10-31, read-only)
+function awsSampleDetail() {
+  const L = (u, t) => `<a href="${u}" target="_blank" rel="noopener">${t || u}</a>`;
+  const SAMPLE = "https://github.com/awslabs/agentcore-samples/tree/main/01-features/05-authenticate-and-authorize/04-entra-obo-mcp-runtime";
+  const nt = '<span class="pill warn">not tested</span>';
+  return `<h3>The sample, in facts</h3>
+  <table class="kv">
+   <tr><td>MCP client</td><td>Strands <code>MCPClient</code> + a <code>requests</code> script (<code>agent/agent_obo.py:82</code>, <code>entra_obo_mcp_runtime.py:570</code>)</td></tr>
+   <tr><td>Token</td><td>MSAL device code flow, <code>scope=&lt;agent-app-GUID&gt;/.default</code>; no <code>resource</code>, no PRM discovery</td></tr>
+   <tr><td>MCP server</td><td>AgentCore <b>Runtime</b>, protocol MCP (<code>entra_obo_mcp_runtime.py:383</code>); URL <code>bedrock-agentcore.&lt;region&gt;.amazonaws.com/runtimes/&lt;arn&gt;/invocations?qualifier=DEFAULT</code> (:324-328)</td></tr>
+   <tr><td>Inbound auth</td><td><code>customJWTAuthorizer</code> with the <b>v1</b> discovery URL (no <code>/v2.0</code>), allowedAudience = GUID / <code>api://&lt;mcp-app-id&gt;</code>, <code>customClaims</code> roles CONTAINS <code>mcp_invoke</code> (:353-368, :480-485)</td></tr>
+   <tr><td>Downstream</td><td>OBO via AgentCore Identity <code>MicrosoftOauth2</code>, <code>ON_BEHALF_OF_TOKEN_EXCHANGE</code> to Graph <code>User.Read</code> (<code>agent_obo.py:49-54</code>)</td></tr>
+   <tr><td>Entra App ID URIs</td><td><code>api://&lt;client-id&gt;</code> only (<code>ENTRA_SETUP.md</code>)</td></tr></table>
+  <div class="ref">Source: ${L(SAMPLE, "awslabs/agentcore-samples · 04-entra-obo-mcp-runtime")}</div>
+  <h3>Why Quick is different</h3>
+  <ul class="checks">
+   <li>Quick uses "Resource Indicators (RFC 8707) to bind access tokens to specific MCP servers" and "determines scopes from the Protected Resource Metadata document"; the user OAuth fields have no scope. ${L("https://docs.aws.amazon.com/quick/latest/userguide/mcp-integration.html", "Quick MCP integration")}</li>
+   <li>Microsoft: <code>https://</code> App ID URIs must be on a verified domain, otherwise use <code>api://{appId}</code> (Entra breaking change since Oct 2021).</li>
+   <li>AWS doc ${L("https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-custom-domains.html", "Setting up custom domain names for Gateway endpoints")}: the PRM <code>resource</code> contains the gateway domain, and an edge function is recommended as a workaround until native support. The CloudFront Function on this page is the same pattern.</li></ul>
+  <h3>Options checked</h3>
+  <ol class="checks">
+   <li>Quick's troubleshooting suggests Entra <b>v1.0</b> endpoints + <code>accessTokenAcceptedVersion=2</code> for AADSTS9010010. v1 still needs <code>resource</code> to map to an <code>identifierUri</code>; with the amazonaws URL expect AADSTS500011. ${nt}</li>
+   <li>An AWS blog PATCHes <code>identifierUris</code> to the Gateway URL "depending on your tenant policy"; current tenants reject non-verified domains (<code>HostNameNotOnVerifiedDomain</code>).</li>
+   <li>Quick "Public OAuth client" only controls the secret; it doesn't change <code>resource</code> or scope.</li></ol>
+  <h3>Gateway allowedScopes / advertisedScopeMapping: what they do</h3>
+  <p>Gateway <code>CustomJWTAuthorizerConfiguration</code> has <code>allowedScopes</code> + <code>advertisedScopeMapping</code>: "The advertised scope appears in OAuth protected resource metadata and WWW-Authenticate response headers" (${L("https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html", "API reference")}).
+   Observed behaviour (2026-10-31, rsidc-mall-entra-gateway):</p>
+  <table class="kv">
+   <tr><td>Configuration</td><td><code>customJWTAuthorizer</code> += <code>allowedScopes ["mcp.access"]</code>, <code>advertisedScopeMapping {"mcp.access": "https://mcp.agentzone.click/mcp/mcp.access"}</code></td></tr>
+   <tr><td>Gateway PRM (origin)</td><td><code>scopes_supported: ["https://mcp.agentzone.click/mcp/mcp.access"]</code> (without it: <code>[]</code>) <span class="pill ok">native</span>; <code>resource</code> still the amazonaws gateway URL <span class="pill no">unchanged</span></td></tr>
+   <tr><td>401 WWW-Authenticate</td><td>gained <code>scope="https://mcp.agentzone.click/mcp/mcp.access"</code>; <code>resource_metadata</code> still the amazonaws URL</td></tr>
+   <tr><td><code>allowedScopes</code> check</td><td>reads the token's <code>scp</code> claim: ds1 user token (<code>scp = mcp.access</code>) → tools/list 200 (2 tools) <span class="pill ok">allowed</span>; app-only 2LO token (no <code>scp</code>, <code>roles</code> only) → 403 <code>insufficient_scope</code> (<code>WWW-Authenticate: error="insufficient_scope", scope=…</code>) <span class="pill no">blocked</span></td></tr></table>
+  <p><b>Conclusion:</b> <code>advertisedScopeMapping</code> does supply <code>scopes_supported</code> natively, but it doesn't remove the CloudFront Function: the PRM <code>resource</code> still has to be rewritten to the custom domain, and a CloudFront Function can't edit an origin response body, so <code>mcp-prm</code> still serves the whole document (with its own scope list).
+   <code>allowedScopes</code> is a useful extra gate for user (delegated) tokens, but it rejects app-only (2LO) tokens, which have no <code>scp</code>; don't enable it on a gateway that also serves app-only clients.
+   Optional: the response headers policy's static <code>WWW-Authenticate</code> could also include <code>scope="…"</code> to match the Gateway.</p>
+  <h3>Ideas from the sample</h3>
+  <ul class="checks"><li>Add an authorizer <code>customClaims</code> gate (e.g. <code>azp</code> EQUALS the Quick client ID) on top of Cedar. ${nt}</li>
+   <li>OBO to downstream (<code>MicrosoftOauth2</code> + <code>ON_BEHALF_OF_TOKEN_EXCHANGE</code>) if tools need to act as the user. ${nt}</li></ul>
+  <div class="foot">Research 2026-10-31 (read-only review of the sample repo + AWS/Microsoft docs); Gateway behaviour recorded 2026-10-31</div>`;
+}
+
+// FAQ card 2 detail: how to check an MCP server's discovery metadata (RFC 9728)
+function discoveryDetail() {
+  const C = D.custom;
+  return `<h3>How to check</h3>
+  <pre class="out">curl -s ${esc(C.custom)}/.well-known/oauth-protected-resource
+curl -s ${esc(C.custom)}/.well-known/oauth-protected-resource/mcp
+curl -si -X POST ${esc(C.custom)}/mcp | grep -i www-authenticate</pre>
+  <div class="grid g2" style="margin-top:8px"><div><div class="ref"><b>Correct</b> (served by <code>mcp-prm</code>, recorded 2026-10-30)</div><pre class="out">${esc(C.prmAfter)}</pre><pre class="out">${esc(C.wwwAfter)}</pre></div>
+   <div><div class="ref"><b>Gateway default behind a proxy</b>: wrong <code>resource</code>, empty scopes</div><pre class="out">${esc(C.prmBefore)}</pre><pre class="out">${esc(C.wwwAuth)}</pre></div></div>
+  <div class="ref">Set-up details: Setup (c) "CloudFront Function mcp-prm"; request flow: Under the hood hop 1.</div>
+  ${foot("2026-10-30")}`;
+}
+
+// FAQ card 1 detail: example request with the plain Gateway URL, the recorded errors, alternatives
+function plainUrlDetail() {
+  const Q = D.quick;
+  return `<h3>Example: the plain Gateway URL as Base URL</h3>
+  <ol class="checks">
+   <li><b>Quick connector</b> (Integrations → Model Context Protocol → Custom user based OAuth):
+    <table class="kv">${Q.connectorTable.map(([k, v]) => `<tr><td>${md(k)}</td><td>${md(v)}</td></tr>`).join("")}</table>
+    <div class="ref">Confidential Web app <code>rsidc-quick-mcp-entra</code> (Quick needs a client ID <b>and</b> secret). ${md(Q.noGatewayChange)}</div></li>
+   <li><b>Authorize request</b> (shape):
+    <pre class="out">GET https://login.microsoftonline.com/${esc(D.ids.tenant)}/oauth2/v2.0/authorize
+  ?client_id=&lt;rsidc-quick-mcp-entra appId&gt;&amp;response_type=code
+  &amp;redirect_uri=https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback
+  &amp;scope=api://${esc(D.ids.apiApp)}/mcp.access openid profile offline_access
+  &amp;resource=${esc(Q.mcpUrl)}     ← added by Quick (RFC 8707)</pre></li>
+   <li><b>Two recorded errors, one cause</b>
+    <div class="grid g2"><div><div class="ref">Browser test 2026-10-27, authorize with <code>&amp;resource=&lt;Gateway MCP URL&gt;</code></div><div class="err">${esc(Q.aadsts)}</div>
+      <div class="ref">correlation ID ${esc(Q.correlation)} · the same request without <code>resource</code> succeeds</div></div>
+     <div><div class="ref">Quick connector 2026-10-27</div><div class="err">${esc(Q.invalidTarget)}</div>
+      <div class="ref"><code>invalid_target</code> is the RFC 8707 error code for a rejected <code>resource</code></div></div></div></li>
+   <li><b>Why Entra rejects it:</b> ${esc(D.aadstsExplain)}. ${md(D.aadstsCase)}
+    <div class="ref">${md(Q.why)}</div></li>
+  </ol>
+  <h3>Alternatives</h3>
+  <div class="grid g2">
+   <div class="opt best"><h4>(b) Custom verified domain + CloudFront <span class="pill ok">this page uses (b)</span></h4>Verify <code>agentzone.click</code> in Entra and use <code>https://mcp.agentzone.click/mcp</code> as both the App ID URI and the URL in front of the Gateway, so <code>resource</code> and <code>scope</code> name the same API. See Setup (a)–(d) and FAQ card 2.</div>
+   <div class="opt"><h4>(a) Cognito as the broker</h4>Quick → Cognito (resource server = Gateway URL), Entra federated into Cognito as an OIDC IdP, App Roles mapped into <code>roles</code>. Not covered on this page.</div>
+   <div class="opt"><h4>(c) Desktop static-token header</h4>Add MCP → Remote with <code>Authorization: Bearer &lt;Entra token&gt;</code>. Works (ds1, 2026-10-26) but tests Gateway RBAC only; tokens last about 1 hour.</div>
+   <div class="opt"><h4>(d) PFR</h4>Ask for Quick to make <code>resource</code> optional or configurable.</div></div>
+  ${foot("2026-10-26 · 2026-10-27")}`;
+}
+function renderFaq() {
+  const el = $("#faq");
+  const row = (cls, label, v) => v ? `<dt class="${cls}">${label}</dt><dd>${md(v)}</dd>` : "";
+  safeRender(el, `<h2>FAQ · Tech challenges</h2>
+  <p class="lead">Why each piece of the Quick + Entra setup exists, for developers. Click a question to open it.</p>
+  <div class="row-btns" style="margin-bottom:12px"><button class="btn" id="fopen">Expand all</button><button class="btn" id="fclose">Collapse all</button></div>
+  ${D.faq.map((f, i) => `<details class="faq"><summary>${i + 1}. ${md(f.q)}</summary><div class="bd"><dl class="qa">
+    ${row("w", "What goes wrong", f.wrong)}${row("y", "Why", f.why)}${row("f", "Fix", f.fix)}${row("v", "Evidence", f.verified)}</dl>
+    ${f.extra === "plainUrl" ? plainUrlDetail() : f.extra === "discovery" ? discoveryDetail() : f.extra === "awsSample" ? awsSampleDetail() : ""}
+    <div class="docs"><b>Official docs</b><ul>${f.docs.map(([t, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("")}</ul></div></div></details>`).join("")}
+  <h3>Setup checklist</h3>
+  <div class="card chk">${D.checklist.map(p => `<label><input type="checkbox">${md(p)}</label>`).join("")}
+   <div class="ref">Ticks are local to this page and not saved.</div></div>
+  ${foot("2026-10-27 · 2026-10-30")}`);
+  $("#fopen", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = true);
+  $("#fclose", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = false);
+}
+
+/* ---------------- 3 · Under the hood ---------------- */
+const H = {i: 0, user: "ds1", tool: "mall___get_hourly_traffic", legacy: false};
+function renderHood() {
+  const el = $("#hood");
+  const u = H.user, L = D.enforce[u].list, c = D.enforce[u].calls[H.tool];
+  const roleNeeded = {"mall___get_mall_list": "Tools.Mall.List", "mall___get_footfall_summary": "Tools.Mall.Footfall",
+    "mall___get_hourly_traffic": "Tools.Mall.Hourly", "mall___get_zone_comparison": "Tools.Mall.Zone"}[H.tool];
+  const hasRole = (L.roles || []).includes(roleNeeded);
+  const C = D.custom, cu = C.custom + "/mcp";
+  const hops = [
+    {t: "Quick → discovery (RFC 9728)", who: "CloudFront Function mcp-prm",
+     body: () => `<pre class="out">GET ${esc(C.custom)}/.well-known/oauth-protected-resource</pre>
+      <p>Answered at the CloudFront edge by <code>mcp-prm</code> (viewer request); the request never reaches the Gateway. It tells Quick which <code>resource</code> to name and which scope to ask for.</p>
+      <div class="grid g2"><div><b>Response (verified 2026-10-30)</b><pre class="out">${esc(C.prmAfter)}</pre></div>
+      <div><b>An unauthenticated MCP call gets the same pointer</b><pre class="out">${esc(C.wwwAfter)}</pre>
+       <div class="ref">header set by response headers policy <code>${esc(C.rhpName)}</code> (override=true)</div></div></div>
+      ${ev("discovery")}
+      ${shotsFor("cloudfront-01-mcp-prm-function-code.png", "cloudfront-02-mcp-prm-publish-association.png")}${lines(C.fnPrm)}`},
+    {t: "Quick → Entra authorize / token", who: "Microsoft Entra ID",
+     body: () => `<pre class="out">GET https://login.microsoftonline.com/${esc(D.ids.tenant)}/oauth2/v2.0/authorize
+  ?client_id=&lt;rsidc-quick-mcp-entra appId&gt;&amp;response_type=code
+  &amp;redirect_uri=https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback
+  &amp;scope=${esc(cu)}/mcp.access openid profile offline_access
+  &amp;resource=${esc(cu)}
+→ POST …/oauth2/v2.0/token  grant_type=authorization_code + client secret</pre>
+      <p class="ref">Request shape (the parameters Quick sends).</p>${ev("entra")}
+      <div class="toggle"><b>Why the plain Gateway URL fails:</b> Quick sends <code>resource=&lt;Base URL&gt;</code> (RFC 8707). Entra only accepts a <code>resource</code> that matches the Application ID URI of the API named in <code>scope</code>. An <code>https://</code> Application ID URI can only be registered on a domain verified in the tenant (or use the default <code>api://{appId}</code>). <code>${esc(D.quick.mcpUrl)}</code> is on amazonaws.com — not the customer's domain — so it can't be verified or registered as an Application ID URI, and Entra rejects the request (AADSTS9010010 / <code>invalid_target</code>). With a verified custom domain, <code>${esc(cu)}</code> is both the Application ID URI and Quick's Base URL, so the two match.
+        <div class="ref"><b>Official docs:</b> <a href="https://learn.microsoft.com/en-us/entra/identity-platform/reference-breaking-changes" target="_blank" rel="noopener">Microsoft Entra breaking changes: AppId URI must use a verified domain</a> · <a href="https://datatracker.ietf.org/doc/html/rfc8707" target="_blank" rel="noopener">RFC 8707: Resource Indicators for OAuth 2.0</a></div></div>
+      <div class="card" style="margin:10px 0"><b>Gateway's default discovery metadata (no custom domain)</b>
+        <div class="ref">Recorded response: <code>resource</code> = the amazonaws.com Gateway URL, <code>scopes_supported</code> = <code>[]</code>.</div>
+        <pre class="out">GET https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/.well-known/oauth-protected-resource
+
+{
+  "authorization_servers": ["https://login.microsoftonline.com/{entra-tenant-id}/v2.0"],
+  "resource": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp",
+  "scopes_supported": []
+}</pre>
+        <p>Quick reads <code>resource</code> from here and sends it to Entra as <code>resource=</code> → it's an amazonaws.com URL, not a valid Application ID URI → AADSTS9010010. <code>scopes_supported</code> is also empty, so Quick has no scope to request.</p>
+        <div class="ref">With the custom domain, Hop 1 shows <code>resource</code> = <code>${esc(cu)}</code> and the scope <code>${esc(cu)}/mcp.access</code>.</div></div>
+      <b>Entra checks</b><ul class="checks"><li><code>resource</code> = <code>${esc(cu)}</code> is an Application ID URI of rsidc-mall-api, on the <b>verified domain</b> <code>agentzone.click</code>, and matches the scope's API <span class="pill ok">accepted</span></li>
+      <li>user signs in (interactive; MFA if Security defaults are on)</li>
+      <li>delegated <code>mcp.access</code> + Graph <code>openid profile offline_access</code> with admin consent (granted 2026-10-30)</li>
+      <li>v2 token (<code>requestedAccessTokenVersion: 2</code>), <code>roles</code> from the user's App Role assignments</li></ul>
+      <p class="ref">The recorded test tokens below came from ROPC on the public test client with <code>api://&lt;appId&gt;/mcp.access</code>: same app, same <code>aud</code>, same <code>roles</code>.</p>
+      ${shotsFor("entra-12-mall-api-overview-app-id-uri.png", "entra-04-mall-api-expose-an-api.png", "entra-05-mall-api-manifest-identifieruris.png", "entra-03-quick-client-secrets.png")}
+      ${codeBlock("tokenReq")}${codeBlock("apiApp", "scope, App Roles, v2 tokens, api://&lt;appId&gt;")}`},
+    {t: "Entra → Quick: v2 access token", who: "Microsoft Entra ID (issuer)",
+     body: () => `<table class="claims"><tr><th>Claim</th><th>Value for ${esc(u)}</th></tr>
+      <tr><td>aud</td><td><code>${esc(D.ids.apiApp)}</code> (rsidc-mall-api app ID, even with the custom-domain scope; recorded 2026-10-30)</td></tr>
+      <tr><td>azp</td><td>the client app (Quick: rsidc-quick-mcp-entra; tests: <code>${esc(D.ids.testClient)}</code>); not checked downstream</td></tr>
+      <tr><td>ver</td><td><code>${esc(L.ver)}</code> <span class="pill ok">recorded</span></td></tr>
+      <tr><td>roles</td><td><code>${L.roles ? esc(JSON.stringify(L.roles)) : "(claim absent)"}</code> <span class="pill ok">recorded</span></td></tr>
+      <tr><td>preferred_username</td><td><code>${esc(upn(u))}</code> <span class="pill mut">from request</span></td></tr></table>
+      <p class="ref">Signed by the tenant's key (JWKS in the v2 discovery document). The token is not shown anywhere in this page.</p>
+      ${shotsFor("entra-02-mall-api-app-roles.png", "entra-01-wei-app-role-assignments.png")}
+      ${codeBlock("assign", "per-user App Role assignments → roles claim")}`},
+    {t: "Quick → CloudFront (MCP POST)", who: "CloudFront mcp.agentzone.click",
+     body: () => `<pre class="out">POST ${esc(cu)}
+Authorization: Bearer &lt;Entra v2 access token&gt;
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{"jsonrpc":"2.0","id":1,"method":"tools/call",
+ "params":{"name":"${H.tool}","arguments":{"mall_id":"HK01","date":"2026-10-01"}}}</pre>
+      <table class="kv" style="margin-top:10px"><tr><td>Cache policy</td><td><code>CachingDisabled</code> (every call is per-user)</td></tr>
+      <tr><td>Origin request policy</td><td><code>AllViewerExceptHostHeader</code> (forwards <code>Authorization</code> + MCP headers; origin's own Host)</td></tr>
+      <tr><td>Allowed methods</td><td>all (MCP uses POST)</td></tr>
+      <tr><td>Origin</td><td><code>${esc(C.gwHost.replace("https://", ""))}</code> (HTTPS only)</td></tr>
+      <tr><td>401 responses</td><td><code>WWW-Authenticate</code> replaced by response headers policy <code>${esc(C.rhpName)}</code></td></tr></table>
+      ${ev("cloudfront")}
+      ${codeBlock("rpc")}`},
+    {t: "Gateway inbound auth: CUSTOM_JWT", who: "AgentCore Gateway",
+     body: () => `<table class="kv"><tr><td>reached via</td><td>CloudFront origin <code>${esc(D.quick.mcpUrl)}</code> (origin behind CloudFront)</td></tr>
+      <tr><td>discoveryUrl</td><td><code>${esc(D.quick.discovery)}</code></td></tr>
+      <tr><td>allowedAudience</td><td><code>["${esc(D.ids.apiApp)}"]</code> (rsidc-mall-api app ID; unchanged for the custom domain)</td></tr>
+      <tr><td>allowedClients</td><td>not set: Entra v2 puts the client in <code>azp</code>, not <code>client_id</code>, so the <b>client ID is not checked</b></td></tr></table>
+      ${ev("gateway")}
+      <b>Checks for ${esc(u)}</b><ul class="checks"><li>signature against tenant JWKS <span class="pill ok">pass</span></li><li>issuer = tenant v2 <span class="pill ok">pass</span></li><li>aud ∈ allowedAudience <span class="pill ok">pass</span></li><li>result: tools/list HTTP ${L.http} <span class="pill ok">recorded</span></li></ul>
+      <b>Negative tokens (recorded ${D.runs.enforce.date})</b>
+      <table><tr><th>Case</th><th>Expect</th><th>Actual</th><th></th></tr>${D.negatives.map(n => `<tr><td>${esc(n.case)}</td><td>${esc(n.expect)}</td><td>${esc(n.actual)} <span class="ref">${esc(n.evidence)}</span></td><td>${n.pass ? '<span class="pill ok">PASS</span>' : '<span class="pill no">FAIL</span>'}</td></tr>`).join("")}</table>
+      ${codeBlock("gwHeader")}${codeBlock("gwAuth")}${codeBlock("negatives", "how the negative tokens are built")}
+      ${out("Gateway authorizer", "inbound: Entra v2 discovery + allowedAudience = API appId")}`},
+    {t: "Policy in AgentCore (Cedar) on roles", who: "Policy engine rsidc_mall_entra_pe (ENFORCE)",
+     body: () => `<p>Needed for <code>${H.tool}</code>: <code>${roleNeeded}</code> in <code>roles</code>. ${esc(u)} ${L.roles ? (hasRole ? "has it" : "does not have it") : "has no <code>roles</code> claim, so <code>principal.hasTag(\"roles\")</code> is false"} → ${pill(c.ok, "PERMIT", "DENY (no policy applies)")}</p>
+      <ul class="checks"><li><b>tools/list</b> is filtered by the same rules: ${esc(u)} sees ${L.tools.length} tool(s): ${L.tools.map(t => `<code>${short(t)}</code>`).join(" ") || "<i>none</i>"}</li>
+      <li><b>tools/call</b> denied → HTTP 200 with <code>isError</code>: <i>Tool Execution Denied</i> (recorded)</li>
+      <li>IAM decides here too: the Gateway role needs <code>bedrock-agentcore:AuthorizeAction</code> on this engine, else attaching the engine fails (<code>GetPolicyEngine</code> access denied).</li></ul>
+      ${ev("cedar")}
+      ${codeBlock("gwPolicy", "one fixed permit per tool")}${out("Deployed rule (hourly)", "Cedar rule for hourly requires roles ∋ Tools.Mall.Hourly (no group names)")}
+      ${codeBlock("gwAttach", "policy engine attached in LOG_ONLY / ENFORCE")}${codeBlock("iamPolicy")}`},
+    {t: "Gateway → Lambda rsidc-mall-tools", who: "Gateway IAM role",
+     body: () => `<p>Reached only if Cedar permits. Target <code>mall</code> → Lambda with <code>GATEWAY_IAM_ROLE</code>; the Lambda has no resource policy and no Function URL, so there is no path around the Gateway.</p>
+      <b>Recorded result for ${esc(u)} · ${short(H.tool)}</b> ${pill(c.ok)}<pre class="out">HTTP ${c.http} ${esc(c.text)}</pre>
+      ${codeBlock("gwTarget")}${out("Anti-bypass", "anti-bypass: Lambda has no resource policy and no Function URL")}`},
+  ];
+  const legacy = `<div class="toggle"><b>Without the custom domain</b> (Base URL = the amazonaws Gateway URL, scope <code>api://&lt;appId&gt;/mcp.access</code>): Quick sends <code>resource=${esc(D.quick.mcpUrl)}</code>, which is not an App ID URI of rsidc-mall-api, so Entra rejects it.
+    <div class="ref">${esc(D.aadstsExplain)}. ${md(D.aadstsCase)} Details: FAQ card 1.</div>
+    <div class="err" style="margin-top:6px">${esc(D.quick.aadsts)}</div><div class="err" style="margin-top:6px">Quick connector: ${esc(D.quick.invalidTarget)}</div>
+    <div class="ref">recorded 2026-10-27 (browser + Quick) and 2026-10-30 (token request with resource = amazonaws URL)</div></div>`;
+  safeRender(el, `<h2>Under the hood: one tool call, hop by hop</h2>
+  <p class="lead">The custom-domain path that Quick uses since 2026-10-30. Choose a user and a tool; each hop shows the call, the claims, who checks what, and the real code/config (file:line).</p>
+  <div class="row-btns" style="margin-bottom:8px"><button class="btn ${H.legacy ? "on" : ""}" id="hleg">${H.legacy ? "Hide" : "Show"}: without the custom domain (old failure)</button></div>
+  ${H.legacy ? legacy : ""}
+  <div class="row-btns">${["wei", "ds1", "chen"].map(x => `<button class="btn ${x === u ? "on" : ""}" data-u="${x}">${x}</button>`).join("")}
+   <span style="width:16px"></span>${D.tools.map(t => `<button class="btn ${t === H.tool ? "on" : ""}" data-t="${t}">${short(t)}</button>`).join("")}</div>
+  <div class="flow" style="margin-top:12px">${hops.map((h, i) => `${i ? '<div class="arrow">→</div>' : ""}<div class="node ${i === H.i ? "on" : ""} ${i === 5 ? (c.ok ? "good" : "bad") : ""}" data-i="${i}"><div class="n">hop ${i + 1}</div><div class="t">${esc(h.t)}</div><div class="s">${esc(h.who)}</div></div>`).join("")}</div>
+  <div class="card"><div class="hop-hd"><h3 style="margin:0">Hop ${H.i + 1} · ${esc(hops[H.i].t)}</h3><span class="pill mut who-chk">checked by: ${esc(hops[H.i].who)}</span>
+   <span style="flex:1"></span><button class="btn" id="hp" ${H.i ? "" : "disabled"}>← Prev</button><button class="btn pri" id="hn" ${H.i < hops.length - 1 ? "" : "disabled"}>Next →</button></div>
+   ${hops[H.i].body()}</div>
+  ${foot(D.runs.enforce.date + " · 2026-10-30 (custom domain)")}`);
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { H.user = b.dataset.u; renderHood(); });
+  el.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { H.tool = b.dataset.t; renderHood(); });
+  el.querySelectorAll(".node").forEach(n => n.onclick = () => { H.i = +n.dataset.i; renderHood(); });
+  $("#hp", el).onclick = () => { H.i--; renderHood(); };
+  $("#hleg", el).onclick = () => { H.legacy = !H.legacy; renderHood(); };
+  $("#hn", el).onclick = () => { H.i++; renderHood(); };
+}
+
+/* ---------------- 4 · Setup ---------------- */
+// Screenshot card, collapsed by default; the summary is the caption
+function screenCard(x) {
+  const loc = x.where ? `Console: <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.where)}</a>` : `Portal: <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a>`;
+  return `<details class="sc"><summary>Screenshot: ${esc(x.caption)}</summary><div class="b">
+    <a href="${esc(x.file)}" target="_blank" rel="noopener"><img src="${esc(x.file)}" alt="${esc(x.caption)}" loading="lazy"></a>
+    <div class="ref"><a href="${esc(x.file)}" target="_blank" rel="noopener">Open full size</a> · ${loc}</div>
+    <div class="ref"><b>What to look for:</b> ${esc(x.look)}</div></div></details>`;
+}
+const shotsFor = (...names) => names.map(n => D.screens.find(x => x.file === "img/" + n)).map(screenCard).join("");
+
+function renderSetup() {
+  const el = $("#setup"), Q = D.quick;
+  const pair = {"e1-api-approles": "API app: 4 App Roles, scope mcp.access, identifierUri api://<appId>, v2 tokens",
+    "e1-api-expose": "API app: 4 App Roles, scope mcp.access, identifierUri api://<appId>, v2 tokens",
+    "e1-api-manifest": "API app: 4 App Roles, scope mcp.access, identifierUri api://<appId>, v2 tokens",
+    "e1-assignments": "assignments resolve to the expected role values", "e1-client-perms": "test client: admin consent (AllPrincipals) for mcp.access",
+    "a2-gateway": "policy engine attached in ENFORCE", "a2-gateway-auth": "inbound: Entra v2 discovery + allowedAudience = API appId",
+    "a2-policies": "4 Cedar policies ACTIVE", "a2-iam-role": "IAM inline policy entra-gateway scoped to this engine + gateway",
+    "a2-lambda": "anti-bypass: Lambda has no resource policy and no Function URL"};
+  // Entra screenshots: collapsed by default; the summary is the caption
+  const screens = step => D.screens.filter(x => x.step === step).map(screenCard).join("");
+  // AWS-side recorded read-only checks (CLI output)
+  const checks = pre => D.shots.filter(x => x.name.startsWith(pre)).map(x => `<details class="sc"><summary>Recorded check: ${esc(pair[x.name])}</summary><div class="b">
+    <pre class="out">${esc(D.review[pair[x.name]])}</pre><div class="ref">${esc(x.caption)} · console URL: ${esc(x.url)}</div></div></details>`).join("");
+  const C = D.custom, host = C.custom.replace("https://", "");
+  safeRender(el, `<h2>Detailed setup</h2>
+  <p class="lead">In build order for the working path (2026-10-30): domain → Entra → CloudFront → Quick, then the Gateway that sits behind CloudFront. Only what decides who can call which tool; networking and plain IAM roles are skipped.</p>
+
+  <h3>(a) Domain registration + Route 53 name servers</h3>
+  <div class="card"><table class="kv"><tr><td>Domain</td><td><code>agentzone.click</code>, registered in Route 53 in a <b>separate AWS account</b> (shown as 123456789012)</td></tr>
+   <tr><td>Hosted zone</td><td>public hosted zone <code>agentzone.click</code> (holds the TXT, A/AAAA alias records)</td></tr>
+   <tr><td>Name servers</td><td>Registered domain → Name servers = the hosted zone's 4 NS (Registered domains → Actions → Edit name servers)</td></tr></table>
+</div>
+
+  <h3>(b) Entra ID</h3>
+  <p class="ref" style="margin-top:0">Entra admin center screenshots (2026-10-30). Click a title to show the screenshot and its portal link.</p>
+  <div class="grid g2"><div class="card"><b>1 · Custom domain <code>agentzone.click</code></b>
+    <table class="kv"><tr><td>Add</td><td>Entra admin center → Custom domain names → Add <code>agentzone.click</code></td></tr>
+    <tr><td>Verify</td><td>TXT <code>MS=ms…</code> at the apex in the hosted zone → Verify <span class="pill ok">verified 2026-10-30</span></td></tr></table>
+    <p class="ref">Needed because <code>https://</code> Application ID URIs must be on a domain verified in the tenant.</p></div>
+   <div class="card"><b>2 · rsidc-mall-api (<code>${esc(D.ids.apiApp)}</code>) → Expose an API</b>
+    <table class="kv"><tr><td>Application ID URIs</td><td><code>api://${esc(D.ids.apiApp)}</code> (kept) + <code>${esc(C.custom)}/mcp</code> (added 2026-10-30)</td></tr>
+    <tr><td>Scope</td><td><code>mcp.access</code> (= <code>${esc(C.custom)}/mcp/mcp.access</code>)</td></tr>
+    <tr><td>App Roles</td><td><code>Tools.Mall.List</code> <code>Tools.Mall.Footfall</code> <code>Tools.Mall.Hourly</code> <code>Tools.Mall.Zone</code></td></tr>
+    <tr><td>Manifest</td><td><code>requestedAccessTokenVersion: 2</code></td></tr>
+    <tr><td>User → App Role</td><td>wei: 4 · ds1: List + Footfall · chen: none</td></tr></table></div></div>
+  <div class="grid g2"><div class="card">${codeBlock("apiApp")}${codeBlock("assign")}</div>
+   <div class="card">${out("Graph check: API app", "API app: 4 App Roles, scope mcp.access, identifierUri api://<appId>, v2 tokens")}${out("Graph check: assignments", "assignments resolve to the expected role values")}</div></div>
+  <div class="card"><b>rsidc-mall-api and its role assignments: screenshots</b>${screens("api")}</div>
+  <div class="grid g2"><div class="card"><b>3 · Quick's confidential client <code>rsidc-quick-mcp-entra</code></b>
+    <table class="kv">${Q.clientTable.map(([k, v]) => `<tr><td>${md(k)}</td><td>${md(v)}</td></tr>`).join("")}
+    <tr><td>Graph permissions</td><td><code>openid profile offline_access</code> + admin consent (<code>offline_access</code> gives Quick a refresh token)</td></tr></table>
+    <div class="ref">Created in the Entra admin center. Keep the client secret in a secret store, never in source control or screenshots.</div>${screens("quick")}</div>
+   <div class="card"><b>Compare: the scripted public test client</b> <code>rsidc-mall-test-client</code> (PKCE, no secret) used by the recorded tests and the desktop token. <span class="pill warn">TEST client, not Quick's</span>
+    ${codeBlock("testClient")}${screens("test")}</div></div>
+
+  <h3>(c) ACM + CloudFront + Route 53 alias</h3>
+  <div class="card"><table class="kv">
+    <tr><td>ACM certificate</td><td><b>us-east-1</b>, <code>${esc(host)}</code> (DNS validation in the hosted zone)</td></tr>
+    <tr><td>Origin</td><td><code>${esc(C.gwHost.replace("https://", ""))}</code>, HTTPS only</td></tr>
+    <tr><td>Alternate domain</td><td><code>${esc(host)}</code></td></tr>
+    <tr><td>Cache policy</td><td><code>CachingDisabled</code></td></tr>
+    <tr><td>Origin request policy</td><td><code>AllViewerExceptHostHeader</code></td></tr>
+    <tr><td>Allowed methods</td><td>all (GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE): MCP uses POST</td></tr>
+    <tr><td>Viewer request function</td><td><code>mcp-prm</code> (cloudfront-js-2.0)</td></tr>
+    <tr><td>Response headers policy</td><td><code>${esc(C.rhpName)}</code>: <code>WWW-Authenticate</code>, override=true, <code>${esc(C.rhpValue)}</code></td></tr>
+    <tr><td>DNS</td><td>Route 53 A + AAAA alias <code>${esc(host)}</code> → the distribution</td></tr></table>
+    <div class="ref">The 401 header is set by a response headers policy because CloudFront doesn't run viewer-response functions on origin 4xx.</div></div>
+  <div class="card" id="mcp-prm"><h3 style="margin-top:0">CloudFront Function <code>mcp-prm</code>: what it is for</h3>
+   <b>1 · Why it's needed</b>
+   <p>Quick (an MCP client) discovers OAuth settings via <b>RFC 9728</b>: on the 401 it follows <code>WWW-Authenticate … resource_metadata=</code> and reads <code>/.well-known/oauth-protected-resource</code>.
+   It takes <code>resource</code> from there (sent to Entra as <code>resource=</code>) and <code>scopes_supported</code> (Quick's connector has no scope field).
+   The Gateway generates this document from its own amazonaws URL with <code>scopes_supported: []</code>, so behind the custom domain Quick would get the wrong resource (→ AADSTS9010010 / invalid_target) and no scope.</p>
+   <table><tr><th>Field</th><th>Gateway (before, recorded 2026-10-30)</th><th>mcp-prm (after, verified 2026-10-30)</th></tr>
+    <tr><td><code>resource</code></td><td><code>${esc(C.gwHost)}/mcp</code> <span class="pill no">wrong for Entra</span></td><td><code>${esc(C.custom)}/mcp</code> <span class="pill ok">= App ID URI</span></td></tr>
+    <tr><td><code>scopes_supported</code></td><td><code>[]</code> <span class="pill no">empty</span></td><td><code>["${esc(C.custom)}/mcp/mcp.access"]</code></td></tr>
+    <tr><td><code>authorization_servers</code></td><td><code>["https://login.microsoftonline.com/${esc(D.ids.tenant)}/v2.0"]</code></td><td>same (Entra v2 issuer)</td></tr>
+    <tr><td><code>bearer_methods_supported</code></td><td>(not present)</td><td><code>["header"]</code></td></tr></table>
+   <b style="display:block;margin-top:12px">2 · Where it is configured</b>
+   <p>In the <b>domain account's</b> CloudFront distribution for <code>${esc(host)}</code> (distribution and account IDs not shown; account = 123456789012).</p>
+   <table class="kv"><tr><td>Function</td><td>CloudFront console → <b>Functions</b> → <code>mcp-prm</code> (Code / Test / Publish) · runtime <code>cloudfront-js-2.0</code> · published to <b>LIVE</b></td></tr>
+    <tr><td>Association</td><td>CloudFront → <b>Distributions</b> → &lt;distribution for ${esc(host)}&gt; → <b>Behaviors</b> → <b>Default (*)</b> → Edit → <b>Function associations</b> → <b>Viewer request</b> = CloudFront Functions / <code>mcp-prm</code></td></tr>
+    <tr><td>Companion</td><td>same behavior → <b>Response headers policy</b> = <code>${esc(C.rhpName)}</code>: points the 401's <code>resource_metadata</code> at the custom domain (<code>${esc(C.rhpValue)}</code>)</td></tr></table>
+   <b style="display:block;margin-top:12px">3 · What it does at runtime</b>
+   <ul class="checks"><li>Runs at the edge on <b>every viewer request</b>, before CloudFront contacts the origin.</li>
+    <li>Path starts with <code>/.well-known/oauth-protected-resource</code> → returns a <b>200 JSON response directly</b> (resource, Entra v2 issuer, the <code>mcp.access</code> scope, bearer in header). The Gateway never sees that request.</li>
+    <li>Every other request passes through <b>unchanged</b> to the Gateway (MCP POSTs, token validation, Cedar).</li>
+    <li>It doesn't touch tokens or authorization: <b>security is unchanged</b>.</li>
+    <li>Verified: CloudFront <code>test-function</code> before publishing; after deploy, a curl of both <code>/.well-known/oauth-protected-resource</code> and <code>/.well-known/oauth-protected-resource/mcp</code> returned the JSON below.</li></ul>
+   <pre class="out">${esc(C.prmAfter)}</pre>
+   <b style="display:block;margin-top:12px">4 · Sequence</b>
+   <div class="seq"><div>Quick → <code>POST /mcp</code> (no token)</div><span>→</span>
+    <div>401 + <code>resource_metadata</code> (response headers policy)</div><span>→</span>
+    <div>Quick → <code>GET /.well-known/oauth-protected-resource</code></div><span>→</span>
+    <div class="edge">answered by <b>mcp-prm</b> at the edge</div><span>→</span>
+    <div>Entra authorize / token with <code>scope</code> + <code>resource</code></div><span>→</span>
+    <div><code>POST /mcp</code> + Bearer</div><span>→</span><div>CloudFront</div><span>→</span><div>Gateway (JWT + Cedar)</div></div>
+   <div class="ref" style="margin-top:10px"><b>mcp-prm.js</b> · viewer request</div>${lines(C.fnPrm)}
+   ${foot("2026-10-30")}</div>
+
+  <h3>(d) Quick connector (Quick UI)</h3>
+  <div class="grid g2"><div class="card"><b>Integrations → Model Context Protocol → Custom user based OAuth</b> <span class="pill ok">works (2026-10-30)</span>
+    <table class="kv"><tr><td>Name</td><td><code>agentzone-mall-entra</code></td></tr>
+    <tr><td>Base URL</td><td><code>${esc(C.custom)}/mcp</code></td></tr>
+    <tr><td>Authorization URL</td><td><code>https://login.microsoftonline.com/${esc(D.ids.tenant)}/oauth2/v2.0/authorize</code></td></tr>
+    <tr><td>Token URL</td><td><code>https://login.microsoftonline.com/${esc(D.ids.tenant)}/oauth2/v2.0/token</code></td></tr>
+    <tr><td>Client ID</td><td>the rsidc-quick-mcp-entra application (client) ID</td></tr>
+    <tr><td>Client secret</td><td>the client secret from (b) 3</td></tr>
+    <tr><td>Client type</td><td>confidential: <b>NOT</b> a public client</td></tr>
+    <tr><td>Redirect URL</td><td><code>https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback</code> (must match (b) 3)</td></tr></table>
+    <div class="ref">Quick learns <code>resource</code> and the scope from the discovery metadata served by <code>mcp-prm</code>.</div></div>
+   <div class="card"><div><b>Alternative: desktop Add MCP → Remote</b> <span class="pill ok">works (ds1, 2026-10-26)</span>
+    <table class="kv"><tr><td>URL</td><td><code>${esc(C.custom)}/mcp</code> or the origin URL</td></tr>
+    <tr><td>Header</td><td><code>Authorization</code> = <code>Bearer &lt;Entra access token&gt;</code></td></tr></table>
+    <p class="ref">${md(Q.desktopCheck)} Demo only: no OAuth sign-in, token expires in about 1 hour.</p><p class="ref">Classification: ${Q.classification.map(md).join(" · ")}</p></div></div></div>
+
+  <h3>Gateway: <code>rsidc-mall-entra-gateway</code> (origin behind CloudFront)</h3>
+  <div class="card"><table class="kv"><tr><td>Origin URL (behind CloudFront)</td><td><code>${esc(Q.mcpUrl)}</code> · clients use <code>${esc(C.custom)}/mcp</code></td></tr>
+   <tr><td>Inbound auth</td><td>CUSTOM_JWT · discovery <code>${esc(Q.discovery)}</code> · allowedAudience <code>${esc(D.ids.apiApp)}</code> (unchanged for the custom domain)</td></tr>
+   <tr><td>Policy</td><td>engine <code>${esc(D.ids.peId)}</code> (ENFORCE) · 4 rules <code>entra_mall_*</code>, one per tool, matched on <code>roles</code></td></tr>
+   <tr><td>Target</td><td><code>mall</code> → Lambda <code>rsidc-mall-tools</code> (GATEWAY_IAM_ROLE)</td></tr></table>
+   <div class="grid g2"><div>${codeBlock("gwAuth")}</div><div>${codeBlock("gwPolicy")}</div></div></div>
+  <div class="card"><b>AWS side: recorded read-only checks</b>${checks("a2-")}</div>
+  ${foot("2026-10-07 (setup, checks) · 2026-10-30 (custom domain, Entra screenshots)")}`);
+}
+
+renderReplay(); renderHood(); renderSetup(); renderFaq();
+</script>
+<style>
+details.codefold{margin:6px 0}
+details.codefold>summary{cursor:pointer;display:inline-block;padding:3px 10px;border:1px solid #8884;border-radius:6px;
+  font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:inherit;opacity:.85;user-select:none}
+details.codefold>summary:hover{opacity:1}
+details.codefold[open]>summary{margin-bottom:6px}
+</style>
+<script>
+(function () {
+  var CODE_FILE = /[\w./-]+\.(py|sh|js|mjs|ts|tsx|json|sql|html|md|txt|yaml|yml)(:\d+(-\d+)?)?/;
+  function label(el) {
+    var p = el.previousElementSibling, t = p && p.textContent.trim();
+    return t && t.length < 140 && CODE_FILE.test(t) ? t : '';
+  }
+  function wrap(el) {
+    if (el.dataset.codefold || el.closest('details.codefold')) return;
+    if (el.tagName === 'PRE' && el.parentElement && el.parentElement.closest('.code')) return;  // the outer .code is wrapped
+    el.dataset.codefold = '1';
+    var lines = (el.textContent.replace(/\n+$/, '').match(/\n/g) || []).length + 1;
+    var kind = el.classList.contains('out') ? 'Show output' : 'Show code';
+    var lb = label(el);
+    var d = document.createElement('details'), s = document.createElement('summary');
+    d.className = 'codefold';
+    s.textContent = '▸ ' + kind + (lb ? ' · ' + lb : '') + ' (' + lines + (lines === 1 ? ' line)' : ' lines)');
+    el.parentNode.insertBefore(d, el);
+    d.appendChild(s); d.appendChild(el);
+  }
+  function scan(root) {
+    if (root.nodeType !== 1) return;
+    if (root.matches('pre, .code')) wrap(root);
+    root.querySelectorAll('pre, .code').forEach(wrap);
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) { m.addedNodes.forEach(scan); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+</body></html>

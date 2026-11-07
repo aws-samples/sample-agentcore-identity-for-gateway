@@ -1,0 +1,15 @@
+{"Version":"2012-10-17","Statement":[
+ {"Sid":"OutboundOAuthTokens","Effect":"Allow","Action":["bedrock-agentcore:GetResourceOauth2Token"],
+  "Resource":["arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:token-vault/default",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:token-vault/default/oauth2credentialprovider/rsidc-2lo-cognito",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:token-vault/default/oauth2credentialprovider/rsidc-3lo-cognito",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:workload-identity-directory/default",
+              "arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:workload-identity-directory/default/workload-identity/rsidc_oauth_agent-*"]},
+ {"Sid":"ProviderClientSecrets","Effect":"Allow","Action":"secretsmanager:GetSecretValue",
+  "Resource":["__CP2LO_SECRET__","__CP3LO_SECRET__"]},
+ {"Sid":"WorkloadIdentity","Effect":"Allow","Action":["bedrock-agentcore:GetWorkloadAccessToken","bedrock-agentcore:GetWorkloadAccessTokenForJWT","bedrock-agentcore:GetWorkloadAccessTokenForUserId"],
+  "Resource":"arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:workload-identity-directory/default*"},
+ {"Sid":"Logs","Effect":"Allow","Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents","logs:DescribeLogStreams","logs:DescribeLogGroups"],
+  "Resource":"arn:aws:logs:__REGION__:__ACCOUNT__:log-group:/aws/bedrock-agentcore/runtimes/*"},
+ {"Sid":"Observability","Effect":"Allow","Action":["xray:PutTraceSegments","xray:PutTelemetryRecords","cloudwatch:PutMetricData"],"Resource":"*"},
+ {"Sid":"CodeArtifact","Effect":"Allow","Action":["s3:GetObject"],"Resource":"arn:aws:s3:::__BUCKET__/agent_oauth/*"}]}

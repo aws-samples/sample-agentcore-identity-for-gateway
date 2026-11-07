@@ -1,0 +1,12 @@
+{
+ "name": "rsidc-data-agent",
+ "displayName": "OBO data agent (Redshift as the user)",
+ "recordType": "CUSTOM",
+ "recordVersion": "1.0.0",
+ "description": "Strands agent on AgentCore Runtime. It exchanges the caller's Cognito JWT for an IAM Identity Center token (trusted token issuer) and queries Amazon Redshift as AWSIDC:<user>, so Redshift grants and row-level security apply per user.\nInvoke: POST https://bedrock-agentcore.ap-southeast-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aap-southeast-1%3A123456789012%3Aruntime%2F<obo-runtime-id>/invocations?qualifier=DEFAULT\nAuth: Bearer Cognito ID token; Cognito user pool <user-pool-id> (ap-southeast-1); audience = OBO client <obo-client-id>\nOwner: Jacky Wu (rsidc PoC)",
+ "descriptors": {
+  "custom": {
+   "data": "{\"kind\": \"agentcore-runtime\", \"name\": \"rsidc-data-agent\", \"description\": \"Strands agent on AgentCore Runtime. It exchanges the caller's Cognito JWT for an IAM Identity Center token (trusted token issuer) and queries Amazon Redshift as AWSIDC:<user>, so Redshift grants and row-level security apply per user.\", \"runtimeArn\": \"arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:runtime/<obo-runtime-id>\", \"invocationUrl\": \"https://bedrock-agentcore.ap-southeast-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aap-southeast-1%3A123456789012%3Aruntime%2F<obo-runtime-id>/invocations?qualifier=DEFAULT\", \"protocol\": \"HTTP (AgentCore Runtime invocations)\", \"inboundAuth\": \"Bearer Cognito ID token; Cognito user pool <user-pool-id> (ap-southeast-1); audience = OBO client <obo-client-id>\", \"owner\": \"Jacky Wu (rsidc PoC)\", \"version\": \"1.0.0\"}"
+  }
+ }
+}

@@ -1,0 +1,10 @@
+[
+ {"name": "get_mall_list", "description": "List all malls (id, name, city).",
+  "inputSchema": {"type": "object", "properties": {}}},
+ {"name": "get_footfall_summary", "description": "Daily footfall total for one mall.",
+  "inputSchema": {"type": "object", "properties": {"mall_id": {"type": "string"}, "date": {"type": "string", "description": "YYYY-MM-DD"}}}},
+ {"name": "get_hourly_traffic", "description": "Hourly visitor counts (10:00-21:00) for one mall.",
+  "inputSchema": {"type": "object", "properties": {"mall_id": {"type": "string"}, "date": {"type": "string", "description": "YYYY-MM-DD"}}}},
+ {"name": "get_zone_comparison", "description": "Visitors per zone for one mall, to compare zones.",
+  "inputSchema": {"type": "object", "properties": {"mall_id": {"type": "string"}, "date": {"type": "string", "description": "YYYY-MM-DD"}}}}
+]

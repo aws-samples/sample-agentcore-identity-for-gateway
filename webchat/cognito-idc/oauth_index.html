@@ -1,0 +1,94 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>rsidc 2LO / 3LO test GUI</title>
+<style>
+ body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f4f6f8;color:#16191f}
+ header{background:#232f3e;color:#fff;padding:10px 18px;display:flex;align-items:center;gap:14px}
+ header h1{font-size:16px;margin:0} header .u{margin-left:auto;font-size:13px} header a{color:#ff9900}
+ main{max-width:1180px;margin:16px auto;padding:0 12px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+ .card{background:#fff;border:1px solid #d5dbdb;border-radius:8px;padding:14px}
+ .card h2{margin:0 0 6px;font-size:16px} .tag{font-size:11px;padding:2px 8px;border-radius:10px;color:#fff;margin-left:6px}
+ .flow{font-size:12px;color:#545b64;background:#f8f9fa;border-left:3px solid #aab7b8;padding:6px 8px;margin:8px 0;line-height:1.5}
+ button,.btn{background:#ff9900;border:0;border-radius:6px;padding:9px 14px;font-weight:700;cursor:pointer;text-decoration:none;color:#000;display:inline-block;font-size:13px}
+ .btn2{background:#fff;border:1px solid #aab7b8;font-weight:400}
+ table{border-collapse:collapse;margin-top:6px;font-size:12px;width:100%} td,th{border:1px solid #ccc;padding:3px 6px;text-align:left} th{background:#232f3e;color:#fff}
+ pre{background:#f2f3f3;padding:8px;border-radius:6px;font-size:11.5px;overflow:auto;max-height:220px;white-space:pre-wrap}
+ .warn{background:#fdecea;border-left:4px solid #d13212;padding:6px 8px;font-size:12.5px;margin-top:8px}
+ .ok{background:#eaf6ea;border-left:4px solid #1d8102;padding:6px 8px;font-size:12.5px;margin-top:8px}
+ .login{grid-column:1/3;text-align:center;padding:70px 0}
+ label{font-size:12px;margin-right:12px}
+ button.lo{background:none;border:0;padding:0;color:#0972d3;text-decoration:underline;font-weight:400;font-size:inherit;cursor:pointer}
+</style></head><body>
+<header><h1>AgentCore Identity: 2LO vs 3LO test GUI <span style="font-weight:400;font-size:12px">(runtime rsidc_oauth_agent)</span></h1><span class="u" id="u"></span></header>
+<main id="app"></main>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+const ST = __STATE__;
+const app = document.getElementById("app");
+// Logout is a same-origin POST (a GET link could be triggered cross-site). The server answers {location} for the IdP sign-out.
+function wireLogout() {
+  document.querySelectorAll("[data-logout]").forEach(b => b.onclick = async () => {
+    const r = await fetch(b.dataset.logout, {method: "POST"});
+    if (r.ok) location.assign((await r.json()).location);
+  });
+}
+
+const esc = s => String(s ?? "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const table = (cols, rows) => `<table><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr>${rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</table>`;
+if (!ST.signedIn) {
+  safeRender(app, `<div class="card login"><p><b>LOGIN 1:</b> sign in to the app with a test user (wei / zhang / chen / ds1).</p><p><a class="btn" href="/login">Sign in</a></p>
+    <p style="font-size:12px;color:#545b64">For 3LO you will sign in a <b>second</b> time, at the consent step.</p></div>`);
+} else {
+  safeRender(document.getElementById("u"), `signed in as <b>${esc(ST.user)}</b> · <button class="lo" data-logout="/logout">sign out</button> · <a href="http://localhost:8080">OBO GUI ↗</a>`); wireLogout();
+  safeRender(app, `
+  <div class="card"><h2>2LO · client credentials <span class="tag" style="background:#ec7211">agent identity</span></h2>
+    <div class="flow">Agent → AgentCore Identity <code>GetResourceOauth2Token(M2M)</code> → Cognito client_credentials → <b>M2M token (no user)</b>
+      → AgentCore Gateway (allows only the 2LO client) → Lambda → Redshift as <b>svc_reporting</b>.</div>
+    <button id="b2">Run sales report via Gateway</button><div id="o2"></div></div>
+  <div class="card" id="c3"><h2>3LO · authorization code + consent <span class="tag" style="background:#8c4fff">user token in Token Vault</span></h2>
+    <div class="flow">Agent → <code>GetResourceOauth2Token(USER_FEDERATION)</code>. The first time, it returns a consent URL → <b>LOGIN 2</b> at Cognito
+      → AgentCore callback → back here → <code>CompleteResourceTokenAuth</code> (session binding) → token stored for (agent, you) → agent calls <code>userInfo</code>.</div>
+    <a class="btn" id="b3" href="/3lo/start">Connect my profile (3LO)</a>
+    <button class="btn2" id="b3c">Check vault only</button>
+    <div style="margin-top:6px"><label><input type="checkbox" id="force"> force re-consent</label><label><input type="checkbox" id="prompt"> prompt=login (observed: no token stored)</label></div>
+    <div id="o3"></div></div>`);
+  const upd = () => document.getElementById("b3").href = `/3lo/start?force=${document.getElementById("force").checked?1:0}&prompt=${document.getElementById("prompt").checked?1:0}`;
+  ["force","prompt"].forEach(i => document.getElementById(i).onchange = upd);
+  document.getElementById("b2").onclick = async () => {
+    const o = document.getElementById("o2"); safeRender(o, "…calling agent");
+    const r = await fetch("/api/2lo", {method:"POST"}).then(r => r.json());
+    if (!r.gateway_result) { safeRender(o, `<pre>${esc(JSON.stringify(r, null, 1))}</pre>`); return; }
+    const c = r.outbound_token_claims || {}, g = r.gateway_result;
+    safeRender(o, `<div class="warn"><b>Same result for every user.</b> Redshift session user = <code>${esc(g.rows[0][0])}</code>, not you (${esc(ST.user)}).</div>
+      <p style="font-size:12px;margin:8px 0 2px"><b>Outbound token the agent used</b> (no user claims):</p>
+      ${table(["claim","value"], Object.entries(c).map(([k,v]) => [k, v]))}
+      <p style="font-size:12px;margin:8px 0 2px"><b>Gateway tool result</b> (${g.rows.length} rows, PII included):</p>${table(g.columns, g.rows)}`);
+  };
+  const show3 = (r, binding, step) => {
+    const o = document.getElementById("o3"); let h = "";
+    if (step) h += `<p style="font-size:12px;margin:8px 0 2px"><b>Last step:</b> ${esc(step)}</p>`;
+    if (binding) h += `<div class="${String(binding.CompleteResourceTokenAuth).startsWith("OK") ? "ok" : "warn"}"><b>Session binding</b>: CompleteResourceTokenAuth → ${esc(binding.CompleteResourceTokenAuth)}<br><span style="font-size:11px">sessionUri ${esc(binding.sessionUri)} · matches the pending session: ${binding.matchesPending}</span></div>`;
+    if (r && r.status === "TOKEN_FROM_VAULT") {
+      h += `<div class="ok"><b>Token from the vault belongs to you.</b> The agent called Cognito <code>userInfo</code> with it, and the identity guard confirmed the token's email matches the caller.</div>`
+        + `<p style="font-size:12px;margin:8px 0 2px"><b>userInfo</b> (your own profile):</p>${table(["field","value"], Object.entries(r.userinfo||{}))}`
+        + `<p style="font-size:12px;margin:8px 0 2px"><b>User token claims</b>:</p>${table(["claim","value"], Object.entries(r.outbound_token_claims||{}))}`;
+    } else if (r && r.status === "IDENTITY_MISMATCH") {
+      h += `<div class="warn"><b>Identity guard blocked it.</b> Vault token email <code>${esc(r.vault_token_email)}</code> ≠ caller <code>${esc(r.caller_email)}</code>. Re-connect with "force re-consent" in a clean browser.</div>`;
+    } else if (r && r.status === "CONSENT_REQUIRED") {
+      h += `<div class="warn">No token in the vault yet for (agent, you). Click <b>Connect my profile (3LO)</b>.</div>`;
+    } else if (r) h += `<pre>${esc(JSON.stringify(r, null, 1))}</pre>`;
+    safeRender(o, h);
+  };
+  document.getElementById("b3c").onclick = async () => { safeRender(document.getElementById("o3"), "…checking"); show3(await fetch("/api/3lo", {method:"POST"}).then(r => r.json())); };
+  if (ST.last3lo) show3(ST.last3lo.agent, ST.last3lo.binding, ST.last3lo.step);
+}
+</script></body></html>

@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1 部分 · Amazon Quick → Cognito → rsidc-mall-gateway（基于 Cognito 组的按用户工具 RBAC）</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+</style>
+<body>
+<div class="banner"><b>静态演示</b> — 界面为模拟，数据为真实记录。本页不会调用 AWS。<a href="part1-quick.html" hreflang="en" lang="en" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">English</a></div>
+<div class="wrap">
+<nav>
+  <h1>第 1 部分 · Quick → Cognito Gateway</h1>
+  <div class="sub">Amazon Quick → Amazon Cognito → AgentCore Gateway，按用户进行工具级授权，权限来自 Cognito 组（Cedar 基于 <code>roles</code> claim）。</div>
+  <a data-s="arch" class="on">0 · 架构</a>
+  <a data-s="replay">1 · 回放（模拟登录）</a>
+  <a data-s="hood">2 · 原理剖析</a>
+  <a data-s="setup">3 · 配置</a>
+  <a data-s="faq">4 · FAQ · 发现</a>
+  <div class="meta" id="navmeta" style="position:static;margin:14px 18px 0"></div>
+  <div class="meta" style="bottom:auto;position:static;margin:14px 18px 0;line-height:1.7">
+    <b>其他部分</b><br>
+    <a href="part1-quick.zh-CN.html" style="display:inline;padding:0;border:0;color:var(--acc)">第 1 部分 · Quick</a> ·
+    <a href="part2-3lo.zh-CN.html" style="display:inline;padding:0;border:0;color:var(--acc)">第 2 部分 · 3LO</a><br>
+    <a href="part3-2lo.zh-CN.html" style="display:inline;padding:0;border:0;color:var(--acc)">第 3 部分 · 2LO</a> ·
+    <a href="part4-obo.zh-CN.html" style="display:inline;padding:0;border:0;color:var(--acc)">第 4 部分 · OBO</a><br>
+    <a href="gateway-rbac.zh-CN.html" style="display:inline;padding:0;border:0;color:var(--acc)">Gateway RBAC</a> ·
+    <a href="foundation.zh-CN.html" style="display:inline;padding:0;border:0;color:var(--acc)">基础环境</a><br>
+    <a href="../../README.md" style="display:inline;padding:0;border:0;color:var(--acc)">仓库 README</a>
+  </div>
+</nav>
+<main>
+<section id="arch" class="on">
+  <h2>架构：Quick → Cognito → Gateway → Cedar → Lambda</h2>
+  <p class="lead">Amazon Quick 是 OAuth 客户端。它让用户登录 Amazon Cognito（authorization code + PKCE，并带 RFC 8707 <code>resource</code> 参数），并保存
+  <b>该用户自己的</b> access token。Pre Token Generation trigger 根据用户的 Cognito 组写入 <code>roles</code> claim。随后 Quick 以 MCP 客户端身份直接调用 AgentCore Gateway
+  <code>rsidc-mall-gateway</code>；Gateway 校验 JWT，Policy in AgentCore（Cedar）根据 <code>roles</code> 逐个工具做出授权决策。
+  这条路径中<b>没有 AgentCore Runtime、没有 AgentCore Identity，也没有 token 交换</b>。Quick 可以与 Gateway 在同一个或不同的 AWS 账户（us-east-1）中运行；连接器只需要 Gateway URL。</p>
+  <div class="card arch"><a href="img/architecture-quick-mall.svg" target="_blank" rel="noopener">
+    <img src="img/architecture-quick-mall.svg" alt="架构图：Amazon Quick 让用户登录 Cognito，再携带用户的 access token 调用 AgentCore Gateway；Cedar 策略在 Lambda 工具运行前检查 roles claim"></a>
+    <div class="ref"><a href="img/architecture-quick-mall.svg" target="_blank" rel="noopener">查看原图</a> · 编号步骤：1 Quick 中的连接器（按用户连接）→ 2 授权（code + PKCE + <code>resource</code>）→ 3 登录 → 4 Pre Token trigger 添加 <code>roles</code> → 5 token（aud = Gateway URL）→ 6 以 Bearer 方式把用户 token 发给 Gateway → 7 Cedar 按用户判定 → Lambda。</div></div>
+  <div id="archx"></div>
+</section>
+<section id="replay"></section>
+<section id="hood"></section>
+<section id="setup"></section>
+<section id="faq"></section>
+</main></div>
+<script id="data" type="application/json">{"built": "2026-11-05", "ids": {"pool": "{user-pool-id}", "gwId": "{mall-gateway-id}", "gwUrl": "https://{mall-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp", "quickClient": "{quick-client-id}", "oboClient": "{obo-client-id}", "peId": "{mall-policy-engine-id}", "domain": "techfinance.example.com", "cognitoDomain": "https://rsidc-123456789012.auth.ap-southeast-1.amazoncognito.com"}, "tools": ["mall___get_mall_list", "mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_zone_comparison"], "toolDesc": {"mall___get_footfall_summary": "Daily footfall total for one mall", "mall___get_hourly_traffic": "Hourly visitor counts (10:00-21:00) for one mall", "mall___get_mall_list": "List all malls (id, name, city)", "mall___get_zone_comparison": "Visitors per zone for one mall, to compare zones"}, "roleOf": {"mall___get_mall_list": "Tools.Mall.List", "mall___get_footfall_summary": "Tools.Mall.Footfall", "mall___get_hourly_traffic": "Tools.Mall.Hourly", "mall___get_zone_comparison": "Tools.Mall.Zone"}, "questions": [["列出所有商场", "mall___get_mall_list"], ["HK01 在 2026-10-01 的客流量", "mall___get_footfall_summary"], ["HK01 在 2026-10-01 的每小时客流", "mall___get_hourly_traffic"], ["对比 HK01 在 2026-10-01 各区域的客流", "mall___get_zone_comparison"]], "users": {"wei": {"group": "mall-analyst", "desc": "[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall,Tools.Mall.Hourly,Tools.Mall.Zone"}, "ds1": {"group": "mall-viewer", "desc": "[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall"}, "chen": {"group": null, "desc": null}}, "enforce": {"wei": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "roles": ["Tools.CRM.Read", "Tools.Mall.Footfall", "Tools.Mall.Hourly", "Tools.Mall.List", "Tools.Mall.Zone", "Tools.Sales.Read"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "ds1": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_mall_list"], "http": 200, "roles": ["Tools.Mall.Footfall", "Tools.Mall.List", "Tools.Sales.Read"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_zone_comparison": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}}}, "chen": {"list": {"tools": [], "http": 200, "roles": [], "pass": true}, "calls": {"mall___get_mall_list": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_footfall_summary": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_hourly_traffic": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_zone_comparison": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}}}}, "log_only": {"wei": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "roles": ["Tools.CRM.Read", "Tools.Mall.Footfall", "Tools.Mall.Hourly", "Tools.Mall.List", "Tools.Mall.Zone", "Tools.Sales.Read"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "ds1": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "roles": ["Tools.Mall.Footfall", "Tools.Mall.List", "Tools.Sales.Read"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "chen": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "roles": [], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}}, "negatives": [{"case": "篡改过的 ds1 token（roles 伪造为全部 4 个）", "expect": 403, "actual": 403, "ev": "签名校验", "pass": true}, {"case": "2LO M2M token（客户端不被允许）", "expect": 403, "actual": 403, "ev": "allowedClients", "pass": true}, {"case": "用 ID token 代替 access token", "expect": 403, "actual": 403, "ev": "token_use", "pass": true}, {"case": "乱码 bearer", "expect": 401, "actual": 401, "ev": "", "pass": true}, {"case": "绕过：Lambda policy", "expect": "none", "actual": "none", "ev": "没有绕过 Gateway 的公网路径", "pass": true}, {"case": "绕过：Lambda function_url_config", "expect": "none", "actual": "none", "ev": "没有绕过 Gateway 的公网路径", "pass": true}, {"case": "绕过：rsidc-mall-gateway-role -> lambda:InvokeFunction", "expect": "allowed", "actual": "allowed", "ev": "IAM 策略模拟", "pass": true}, {"case": "绕过：rsidc-webchat-role -> lambda:InvokeFunction", "expect": "implicitDeny", "actual": "implicitDeny", "ev": "IAM 策略模拟", "pass": true}, {"case": "绕过：rsidc-oauth-runtime-role -> lambda:InvokeFunction", "expect": "implicitDeny", "actual": "implicitDeny", "ev": "IAM 策略模拟", "pass": true}], "change": [{"case": "变更前：ds1 调用 hourly", "actual": false, "ev": "roles=['Tools.Mall.Footfall', 'Tools.Mall.List', 'Tools.Sales.Read']", "pass": true}, {"case": "编辑后，新登录：ds1 调用 hourly", "actual": true, "ev": "roles=['Tools.Mall.Footfall', 'Tools.Mall.Hourly', 'Tools.Mall.List', 'Tools.Sales.Read'] 编辑后 0.9 秒", "pass": true}, {"case": "编辑后，旧 token：ds1 调用 hourly", "actual": false, "ev": "旧 token 在过期前 claims 保持不变", "pass": true}, {"case": "编辑后，refresh token（Quick 的做法）：ds1 调用 hourly", "actual": true, "ev": "roles=['Tools.Mall.Footfall', 'Tools.Mall.Hourly', 'Tools.Mall.List', 'Tools.Sales.Read']", "pass": true}, {"case": "已恢复：ds1 调用 hourly", "actual": false, "ev": "roles=['Tools.Mall.Footfall', 'Tools.Mall.List', 'Tools.Sales.Read']", "pass": true}], "recheck": {"date": "2026-10-26", "persona": "ds1", "listed": ["mall___get_footfall_summary", "mall___get_mall_list"], "denied": ["mall___get_hourly_traffic", "mall___get_zone_comparison"], "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deny…", "source": "在 Amazon Quick 中手工复查（由操作人员报告；无结果文件）"}, "runs": {"enforce": {"date": "2026-10-20", "pass": 25, "total": 25}, "log_only": {"date": "2026-10-06", "pass": 15, "total": 15}, "change": {"date": "2026-10-06", "pass": 5, "total": 5}}, "excerpts": {"groups": {"ref": "infra/cognito-idc/16-mall-cognito.py:14-15", "parts": [[[14, "GROUPS = {\"mall-analyst\": (\"[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall,Tools.Mall.Hourly,Tools.Mall.Zone\", [\"wei\"]),"], [15, "          \"mall-viewer\": (\"[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall\", [\"ds1\"])}"]]]}, "resource": {"ref": "infra/cognito-idc/16-mall-cognito.py:36-50", "parts": [[[36, "# Amazon Quick (MCP auth spec) sends RFC 8707 `resource=<gateway MCP URL>` on /authorize and /token. Cognito only honours a"], [37, "# resource that is a REGISTERED resource server (URL identifier); otherwise /token fails with invalid_grant and Quick shows"], [38, "# \"No access token was found for an OAuth authorization code connection\"."], [39, "# The gateway (16-mall-gateway.sh) needs QUICK_CLIENT_ID from this script, so on a fresh install MALL_GW_URL doesn't exist"], [40, "# yet: create the client without the gateway scope, then re-run this script after 16-mall-gateway.sh to add it."], [41, "GW_RES = os.environ.get(\"MALL_GW_URL\")"], [42, "SCOPES = [\"openid\", \"email\", \"profile\"]"], [43, "if GW_RES:"], [44, "    try:"], [45, "        idp.describe_resource_server(UserPoolId=POOL, Identifier=GW_RES)"], [46, "    except idp.exceptions.ResourceNotFoundException:"], [47, "        idp.create_resource_server(UserPoolId=POOL, Identifier=GW_RES, Name=\"rsidc-mall-gateway\","], [48, "                                   Scopes=[{\"ScopeName\": \"invoke\", \"ScopeDescription\": \"Call the mall MCP tools\"}])"], [49, "        print(\"resource server created:\", GW_RES)"], [50, "    SCOPES.append(f\"{GW_RES}/invoke\")"]]]}, "client": {"ref": "infra/cognito-idc/16-mall-cognito.py:56-65", "parts": [[[56, "    c = idp.create_user_pool_client("], [57, "        UserPoolId=POOL, ClientName=\"rsidc-quick-mcp\", GenerateSecret=True, AllowedOAuthFlows=[\"code\"],"], [58, "        AllowedOAuthScopes=SCOPES, AllowedOAuthFlowsUserPoolClient=True,"], [59, "        SupportedIdentityProviders=[\"COGNITO\"], CallbackURLs=CALLBACKS,"], [60, "        ExplicitAuthFlows=[\"ALLOW_REFRESH_TOKEN_AUTH\", \"ALLOW_ADMIN_USER_PASSWORD_AUTH\"],"], [61, "        AccessTokenValidity=60, IdTokenValidity=60, RefreshTokenValidity=30,"], [62, "        TokenValidityUnits={\"AccessToken\": \"minutes\", \"IdToken\": \"minutes\", \"RefreshToken\": \"days\"},"], [63, "        ReadAttributes=[\"email\", \"email_verified\", \"name\", \"given_name\", \"family_name\"],"], [64, "        WriteAttributes=[\"name\", \"given_name\", \"family_name\"],  # F-01: email is not user-writable"], [65, "        PreventUserExistenceErrors=\"ENABLED\", EnableTokenRevocation=True)[\"UserPoolClient\"]"]]]}, "pretoken": {"ref": "infra/cognito-idc/lambda/pretoken/handler.py:15-27,43-59", "parts": [[[15, "MAPPING = re.compile(r\"\\[rsidc-rbac\\]\\s*tools=([\\w.,]+)\")"], [16, ""], [17, ""], [18, "def parse(desc):"], [19, "    hit = MAPPING.search(desc or \"\")"], [20, "    return {t for t in hit.group(1).split(\",\") if t} if hit else set()"], [21, ""], [22, ""], [23, "def cognito_roles(pool_id, groups):"], [24, "    roles = set()"], [25, "    for g in groups:"], [26, "        roles |= parse(idp.get_group(UserPoolId=pool_id, GroupName=g)[\"Group\"].get(\"Description\"))"], [27, "    return roles"]], [[43, "def handler(event, _context):"], [44, "    roles = set()"], [45, "    if \"cognito\" in SOURCES:"], [46, "        groups = (event[\"request\"].get(\"groupConfiguration\") or {}).get(\"groupsToOverride\") or []"], [47, "        roles |= cognito_roles(event[\"userPoolId\"], groups)"], [48, "    attrs = event[\"request\"][\"userAttributes\"]"], [49, "    email = attrs.get(\"email\", \"\")"], [50, "    # Fail closed: an unverified email must never select an IdC identity (F-01). Log the reason, never the address."], [51, "    verified = str(attrs.get(\"email_verified\", \"\")).lower() == \"true\""], [52, "    if \"idc\" in SOURCES and email and not verified:"], [53, "        print(f\"user={event.get('userName')} idc roles skipped: email_verified is not true\")"], [54, "    elif \"idc\" in SOURCES and email:"], [55, "        roles |= roles_for(email)"], [56, "    roles = sorted(roles)"], [57, "    print(f\"user={event.get('userName')} trigger={event.get('triggerSource')} roles={roles}\")"], [58, "    event[\"response\"][\"claimsAndScopeOverrideDetails\"] = {"], [59, "        \"accessTokenGeneration\": {\"claimsToAddOrOverride\": {\"roles\": roles}}}"]]]}, "gwAuth": {"ref": "infra/cognito-idc/16-mall-gateway.sh:30-35", "parts": [[[30, "if [ -z \"${MALL_GW_ID:-}\" ]; then"], [31, "  save MALL_GW_ID $(aws bedrock-agentcore-control create-gateway --region $R --name ${PROJECT}-mall-gateway --role-arn arn:aws:iam::${ACCOUNT_ID}:role/$GR \\"], [32, "    --protocol-type MCP --authorizer-type CUSTOM_JWT --description \"rsidc Part 4: customer version (Amazon Quick -> Gateway MCP -> Lambda tools)\" \\"], [33, "    --authorizer-configuration \"{\\\"customJWTAuthorizer\\\":{\\\"discoveryUrl\\\":\\\"$COGNITO_DISCOVERY_URL\\\",\\\"allowedClients\\\":[\\\"$QUICK_CLIENT_ID\\\",\\\"$COGNITO_CLIENT_ID\\\"]}}\" \\"], [34, "    --query gatewayId --output text)"], [35, "fi"]]]}, "cedar": {"ref": "infra/cognito-idc/16-mall-policy.sh:13-22", "parts": [[[13, "policy() {  # $1 policy name, $2 action (target___tool), $3 required role value"], [14, "  aws bedrock-agentcore-control list-policies --region $R --policy-engine-id $MALL_PE_ID --query \"policies[?name=='$1'].policyId\" --output text | grep -q . && return"], [15, "  local stmt=\"permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\\\"$2\\\", resource == AgentCore::Gateway::\\\"$MALL_GW_ARN\\\") when { principal.hasTag(\\\"roles\\\") && principal.getTag(\\\"roles\\\") like \\\"*\\\\\\\"$3\\\\\\\"*\\\" };\""], [16, "  aws bedrock-agentcore-control create-policy --region $R --policy-engine-id $MALL_PE_ID --name $1 \\"], [17, "    --description \"$2 requires role $3\" --definition \"$(jq -cn --arg s \"$stmt\" '{cedar:{statement:$s}}')\" >/dev/null"], [18, "}"], [19, "policy mall_list     mall___get_mall_list        Tools.Mall.List"], [20, "policy mall_footfall mall___get_footfall_summary Tools.Mall.Footfall"], [21, "policy mall_hourly   mall___get_hourly_traffic   Tools.Mall.Hourly"], [22, "policy mall_zone     mall___get_zone_comparison  Tools.Mall.Zone"]]]}, "attach": {"ref": "infra/cognito-idc/16-mall-policy.sh:24-30", "parts": [[[24, "# Attach (or switch mode). UpdateGateway needs the full gateway definition, so the current one is copied back."], [25, "G=$(aws bedrock-agentcore-control get-gateway --region $R --gateway-identifier $MALL_GW_ID --output json)"], [26, "aws bedrock-agentcore-control update-gateway --region $R --gateway-identifier $MALL_GW_ID \\"], [27, "  --name \"$(jq -r .name <<<\"$G\")\" --role-arn \"$(jq -r .roleArn <<<\"$G\")\" --protocol-type MCP --description \"$(jq -r .description <<<\"$G\")\" \\"], [28, "  --authorizer-type CUSTOM_JWT --authorizer-configuration \"$(jq -c .authorizerConfiguration <<<\"$G\")\" \\"], [29, "  --policy-engine-configuration \"{\\\"arn\\\":\\\"$MALL_PE_ARN\\\",\\\"mode\\\":\\\"$MODE\\\"}\" >/dev/null"], [30, "for i in $(seq 30); do s=$(aws bedrock-agentcore-control get-gateway --region $R --gateway-identifier $MALL_GW_ID --query status --output text); [ \"$s\" = READY ] && break; sleep 5; done"]]]}, "lambda": {"ref": "infra/common/lambda/mall_tools/handler.py:39-44", "parts": [[[39, "def handler(event, context):"], [40, "    name = (context.client_context.custom or {}).get(\"bedrockAgentCoreToolName\", \"\") if context.client_context else \"\""], [41, "    tool = name.split(\"___\")[-1]  # the Gateway sends \"<target>___<tool>\""], [42, "    if tool not in TOOLS:"], [43, "        return {\"error\": f\"unknown tool {name!r}\"}"], [44, "    return {\"tool\": tool, \"result\": TOOLS[tool](event or {})}"]]]}}}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+// tiny markdown: `code`, **bold**
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+const short = t => t.replace("mall___", "");
+const email = u => `${u}@${D.ids.domain}`;
+const foot = date => `<div class="foot">已记录的测试结果（${esc(date)}）</div>`;
+const pill = (ok, yes = "允许", no = "拒绝") => `<span class="pill ${ok ? "ok" : "no"}">${ok ? yes : no}</span>`;
+const USERS = ["wei", "ds1", "chen"];
+const link = (u, t) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`;
+const docs = l => `<div class="docs"><b>官方文档</b><ul>${l.map(([t, u]) => `<li>${link(u, t)}</li>`).join("")}</ul></div>`;
+
+function codeBlock(key, note) {
+  const e = D.excerpts[key];
+  const body = e.parts.map(p => p.map(([n, t]) => `<div class="row"><span class="ln">${n}</span>${esc(t)}</div>`).join(""))
+    .join(`<div class="gap">…</div>`);
+  return `<div class="ref"><b>${esc(e.ref)}</b>${note ? " · " + note : ""}</div><pre>${body}</pre>`;
+}
+const cmd = text => `<pre class="out">${esc(text)}</pre>`;
+const kv = rows => `<table class="kv">${rows.map(([k, v]) => `<tr><td>${md(k)}</td><td>${md(v)}</td></tr>`).join("")}</table>`;
+
+/* ---------------- nav ---------------- */
+function go(sec) {
+  document.querySelectorAll("nav a[data-s]").forEach(x => x.classList.toggle("on", x.dataset.s === sec));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === sec));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav a[data-s]").forEach(a => a.onclick = () => go(a.dataset.s));
+safeRender($("#navmeta"), `页面生成于 ${esc(D.built)}<br>测试：enforce ${D.runs.enforce.pass}/${D.runs.enforce.total} · log_only ${D.runs.log_only.pass}/${D.runs.log_only.total} · change ${D.runs.change.pass}/${D.runs.change.total}`);
+
+/* ---------------- 0 · Architecture (extra cards) ---------------- */
+function renderArch() {
+  safeRender($("#archx"), `<h3>归类：Quick 作为 OAuth 客户端的 3LO，而非 OBO</h3>
+  <div class="card"><table><tr><th>问题</th><th>第 1 部分（Quick → Gateway）</th><th>第 2 部分 · AgentCore 3LO</th><th>第 4 部分 · OBO</th></tr>
+   <tr><td>谁是 OAuth 客户端？</td><td><b>Amazon Quick</b>（连接器 <code>rsidc-quick-mcp</code>）</td><td>代表 agent 的 AgentCore Identity（<code>rsidc-3lo-cognito</code>）</td><td>agent / Credential Provider（token 交换）</td></tr>
+   <tr><td>授权类型</td><td><b>authorization code + PKCE</b>（+ RFC 8707 <code>resource</code>）</td><td>authorization code（用户同意）</td><td>jwt-bearer (RFC 7523) / token exchange (RFC 8693)</td></tr>
+   <tr><td>是否交换 token？</td><td><b>否</b>：Quick 直接传递用户自己的 token</td><td>否</td><td><b>是</b>：入站用户 token 被换成下游 token</td></tr>
+   <tr><td>用户 token 存放在哪里？</td><td><b>Quick 中，按用户存放</b>：连接器页面显示 <i>"Signed in as wei@techfinance.example.com"</i></td><td>AgentCore Token Vault（按 agent、用户）</td><td>不存放：每次调用时交换</td></tr>
+   <tr><td>谁按用户执行授权？</td><td>Gateway 的 Cedar（基于 <code>roles</code> claim）</td><td>资源本身（Cognito <code>userInfo</code>）</td><td>Redshift (IdC) / Gateway Cedar</td></tr></table>
+   <p><b>为什么是 3LO：</b>用户登录后，Quick 收到 authorization code，再换得该用户的 access token（用户、客户端 = Quick、授权服务器 = Cognito）。每个 Quick 用户都有自己的连接和 token：连接器页面显示 "Signed in as wei@…"。</p>
+   <p><b>为什么不是 OBO：</b>没有任何环节把一个 token 换成另一个（无 RFC 8693 / 7523）。Quick 发给 Gateway 的 token，就是 Cognito 为该资源签发给用户的那一个（<code>aud</code> = Gateway URL）。</p></div>
+  <h3>设计决策（客户版本）</h3>
+  <div class="card"><p>客户的设计是：终端用户 → Amazon Quick（MCP 客户端）→ 带 4 个商场客流工具的 MCP server → MySQL。本页在此基础上加入按用户的工具 RBAC 并复现。</p>
+  <ol class="checks">
+   <li><b>Gateway 就是 MCP server。</b>Quick 连接 AgentCore Gateway URL，4 个工具成为<b>同一个 Lambda target</b>（<code>mall</code>）。工具本身没有任何按用户的代码。</li>
+   <li><b>组 → 工具的映射保存在 Cognito 组的 Description 中。</b>Gateway RBAC trigger 同时读取 Cognito 组（<code>ROLE_SOURCES=cognito,idc</code>）。形态与 Entra App Role 一致：claim 为 <code>roles</code>，值为 <code>Tools.Mall.*</code>。</li>
+   <li><b>每个工具一条固定的 Cedar permit。</b>Cedar 中不出现任何组名。</li>
+   <li><b>防绕过。</b>Lambda 没有 Function URL，也没有 resource policy，只有 Gateway 角色能调用它。</li></ol>
+  <pre class="out">User → Amazon Quick (MCP connector, user OAuth: Cognito client rsidc-quick-mcp)
+        → AgentCore Gateway rsidc-mall-gateway (inbound Cognito JWT; Policy rsidc_mall_pe ENFORCE)
+            → Lambda rsidc-mall-tools (target "mall": get_mall_list / get_footfall_summary / get_hourly_traffic / get_zone_comparison)
+Cognito sign-in → Pre Token Gen V2 (alias live) → Cognito group Description → access token roles=[Tools.Mall.*]</pre></div>`);
+}
+
+/* ---------------- 1 · Replay ---------------- */
+const R = {user: null, mode: "enforce", stage: 0, chat: []};
+function renderReplay() {
+  const stages = ["登录（Cognito managed login）", "解码后的 access token", "Quick 对话 + MCP 连接器"];
+  safeRender($("#replay"), `<h2>回放：一个用户、一个 token、四个问题</h2>
+  <p class="lead">选择一个用户，用任意密码登录（模拟），查看 access token 的 claims，然后在模拟的 Quick 对话中提出 4 个商场问题。
+  下面每个工具列表、每次允许/拒绝，都是使用 Quick 自己的应用客户端 <code>rsidc-quick-mcp</code> 签发的 token，针对 <code>rsidc-mall-gateway</code> 记录的<b>真实</b>结果。
+  Quick 围绕工具结果生成的自然语言回复没有被记录，因此不在此展示。</p>
+  <div class="steps">${stages.map((s, i) => `<span class="${i <= R.stage ? "on" : ""}">${i + 1} · ${s}</span>`).join("")}</div>
+  <div id="rp"></div>`);
+  [signIn, tokenView, quickView][R.stage]($("#rp"));
+}
+function signIn(el) {
+  const u = R.user || "wei";
+  safeRender(el, `<div class="ms">
+    <div class="logo" style="width:auto;font-weight:700;color:#232f3e;font-size:15px;margin-bottom:10px">Amazon Cognito · managed login</div>
+    <h4>登录</h4>
+    <div class="who">${USERS.map(x => `<button class="btn ${x === u ? "on" : ""}" data-u="${x}">${x}</button>`).join("")}</div>
+    <input value="${esc(email(u))}" readonly>
+    <input type="password" placeholder="密码（任意值，模拟）">
+    <button class="go" id="go" style="background:var(--acc)">登录</button>
+    <small>模拟的登录页面，密码不会发送到任何地方。在 Quick 中，每个用户在创建连接器时会经历一次；之后 Quick 显示 "Signed in as ${esc(email(u))}"。</small>
+  </div>
+  <div class="card"><b>用户、Cognito 组及其对应的工具</b>
+    <table><tr><th>用户</th><th>Cognito 组</th><th>组 Description（即映射）</th><th>预期工具数</th></tr>
+    ${USERS.map(x => { const g = D.users[x]; return `<tr><td><code>${esc(email(x))}</code></td><td>${g.group ? `<code>${g.group}</code>` : "<i>无</i>"}</td><td>${g.desc ? `<code>${esc(g.desc)}</code>` : "<i>无映射</i>"}</td><td>${D.enforce[x].list.tools.length}</td></tr>`; }).join("")}</table>
+    ${codeBlock("groups", "配置脚本创建的组")}
+  </div>${foot("2026-10-20")}`);
+  R.user = u;
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { R.user = b.dataset.u; signIn(el); });
+  $("#go", el).onclick = () => { R.stage = 1; renderReplay(); };
+}
+function tokenView(el) {
+  const u = R.user, L = D.enforce[u].list;
+  const rows = [
+    ["client_id", D.ids.quickClient + "  (rsidc-quick-mcp)", "已记录", "Gateway 用它与 allowedClients 比对"],
+    ["aud", "<gateway MCP URL>", "设计如此", "因为 Quick 发送 resource=<gateway MCP URL>，且该 URL 是已注册的 resource server，所以如此设置"],
+    ["roles", JSON.stringify(L.roles), "已记录", "由 Pre Token trigger 根据用户的 Cognito 组写入" + (u === "chen" ? " · 没有组 → 空列表" : " · Sales.Read / CRM.Read 来自同一 trigger 的 IAM Identity Center 数据源，商场策略不使用")],
+    ["email", email(u), "设计如此", "标识用户（显示为 \"Signed in as\"）；此处不用于授权"],
+  ];
+  safeRender(el, `<div class="grid g2">
+  <div class="card"><b>解码后的 payload：${esc(u)} 的 Cognito access token（Quick 的应用客户端）</b>
+    <p class="lead" style="margin:6px 0">本页不嵌入 token 本身（只有 claims），也不显示签名和 header。</p>
+    <table class="claims"><tr><th>Claim</th><th>值</th><th>来源</th></tr>
+    ${rows.map(([k, v, p, s]) => `<tr><td>${k}</td><td><code>${esc(v)}</code><div class="ref">${esc(s)}</div></td><td><span class="pill ${p === "已记录" ? "ok" : "mut"}">${p}</span></td></tr>`).join("")}</table>
+  </div>
+  <div class="card"><b>各 claim 的用途</b>
+    <ul class="checks">
+      <li><code>client_id</code>：Gateway 的 <code>allowedClients</code> = [Quick 客户端, OBO 客户端]。来自其他应用客户端的 token（例如 2LO 机器对机器客户端）会被 403 拒绝。</li>
+      <li><code>aud</code>：Gateway URL，因为 <code>resource</code> 参数指定了它。</li>
+      <li><code>roles</code>：Cedar 唯一关注的内容。每个工具一条规则： <code>principal.getTag("roles") like "*\\"Tools.Mall.X\\"*"</code>.</li>
+      <li>该 token 是 <b>access</b> token；ID token 会被 403 拒绝（已记录）。</li>
+    </ul>
+    <div class="row-btns"><button class="btn" id="back">← 换个用户登录</button><button class="btn pri" id="next">打开 Quick →</button></div>
+  </div></div>${foot("2026-10-20")}`);
+  $("#back", el).onclick = () => { R.stage = 0; renderReplay(); };
+  $("#next", el).onclick = () => { R.stage = 2; R.chat = []; renderReplay(); };
+}
+function quickView(el) {
+  const u = R.user, run = D[R.mode][u], meta = D.runs[R.mode];
+  const listed = new Set(run.list.tools), rc = D.recheck;
+  safeRender(el, `<div class="quick">
+   <div class="chat"><div class="hd"><span>Amazon Quick · 对话（模拟）</span>
+     <span class="row-btns"><button class="btn ${R.mode === "enforce" ? "on" : ""}" data-m="enforce">ENFORCE (${D.runs.enforce.date})</button><button class="btn ${R.mode === "log_only" ? "on" : ""}" data-m="log_only">LOG_ONLY (${D.runs.log_only.date})</button></span></div>
+     <div class="bd" id="bd"></div>
+     <div class="ft">${D.questions.map(([q], i) => `<button class="btn" data-q="${i}">${esc(q)}</button>`).join("")}<button class="btn" id="clr">清空</button></div></div>
+   <div><div class="conn"><b>MCP 连接器：rsidc-quick-mcp</b>
+     <div class="ref">认证方式：<b>Custom user based OAuth</b>（Amazon Cognito，confidential 客户端 <code>rsidc-quick-mcp</code>）</div>
+     <div style="margin:8px 0"><span class="dot" style="background:var(--ok)"></span>状态 Ready · Signed in as <b>${esc(email(u))}</b></div>
+     <div class="ref">Base URL <code>${esc(D.ids.gwUrl)}</code></div>
+     <div class="ref"><b>已启用的工具</b> = Gateway tools/list → HTTP ${run.list.http} · ${run.list.tools.length} 个工具（策略 ${R.mode.toUpperCase()}）</div>
+     ${D.tools.map(t => `<div class="t ${listed.has(t) ? "" : "off"}"><span>${t}</span>${listed.has(t) ? '<span class="pill ok">Read</span>' : '<span class="pill mut">未列出</span>'}</div>`).join("")}
+     <div class="row-btns" style="margin-top:12px"><button class="btn" id="out">退出登录 / 切换用户</button></div></div>
+     ${R.mode === "log_only" ? `<div class="ref" style="margin-top:8px"><b>LOG_ONLY：</b>Cedar 评估并记录每次决策，但不拦截。所有用户都列出并调用了全部 4 个工具；Gateway 日志记录了 6 条 <code>decision: DENY</code>（ds1 的 hourly 和 zone，chen 的全部 4 个）。</div>` : ""}
+     ${u === "ds1" && R.mode === "enforce" ? `<div class="ref" style="margin-top:8px"><b>复查 ${esc(rc.date)}（ds1）：</b>tools/list = ${rc.listed.map(short).join(", ")}；${rc.denied.map(short).join(" 和 ")} 被拒绝。</div>` : ""}
+     ${u === "ds1" ? changeCard() : ""}
+   </div></div>${matrixCard()}${foot(meta.date + " · " + meta.pass + "/" + meta.total + " PASS")}`);
+  const bd = $("#bd", el);
+  const paint = () => {
+    safeRender(bd, R.chat.length ? R.chat.join("") : `<div class="msg a">已以 ${esc(email(u))} 身份连接。可以问我商场相关的问题。（将显示工具调用结果。）</div>`);
+    bd.scrollTop = bd.scrollHeight;
+  };
+  paint();
+  el.querySelectorAll("[data-q]").forEach(b => b.onclick = () => {
+    const [q, t] = D.questions[+b.dataset.q], c = run.calls[t];
+    R.chat.push(`<div class="msg u">${esc(q)}</div>`);
+    R.chat.push(`<div class="msg a"><div class="tc">tools/call <code>${t}</code> {"mall_id":"HK01","date":"2026-10-01"} → HTTP ${c.http} ${pill(c.ok)}</div>
+      ${listed.has(t) ? "" : `<div class="ref">该工具不在 ${esc(u)} 的 tools/list 中，Quick agent 通常不会提供它。这里回放的是测试中仍然发出的<b>直接</b> tools/call：Cedar 对每次调用做出决策，而不仅仅是过滤列表。</div>`}
+      <pre class="out">${esc(c.text)}</pre><div class="ref">已记录的证据（结果的前 110 个字符）</div></div>`);
+    paint();
+  });
+  el.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { R.mode = b.dataset.m; R.chat = []; quickView(el); });
+  $("#clr", el).onclick = () => { R.chat = []; paint(); };
+  $("#out", el).onclick = () => { R.stage = 0; R.chat = []; renderReplay(); };
+}
+function changeCard() {
+  return `<div class="conn" style="margin-top:12px"><b>附加测试：修改 ds1 的组 Description（记录于 ${D.runs.change.date}）</b>
+   <div class="ref">只在 <code>mall-viewer</code> 的 Description 中加入了 <code>Tools.Mall.Hourly</code>。</div>
+   <table>${D.change.map(c => `<tr><td>${esc(c.case)}</td><td>${c.pass ? '<span class="pill ok">PASS</span>' : '<span class="pill no">FAIL</span>'}<div class="ref">${esc(c.ev)}</div></td></tr>`).join("")}</table>
+   <div class="ref">只修改了 Cognito 组的 Description；Cedar、Lambda 和 Gateway 都没有改动。0.9 秒后 ds1 重新登录即可调用 hourly，<b>refresh token</b> 路径（Quick 使用的方式）同样生效。旧 token 仍被拒绝，因为 claims 在过期前保持不变。Description 已恢复并验证。</div></div>`;
+}
+function matrixCard() {
+  return `<h3>已记录的测试矩阵</h3><div class="card"><table><tr><th>阶段</th><th>结果</th><th>关键证据</th></tr>
+   <tr><td>LOG_ONLY</td><td>${D.runs.log_only.pass}/${D.runs.log_only.total}</td><td>所有用户都列出并调用了全部 4 个工具（HTTP 200，返回数据）。Gateway 日志记录了 6 条 <code>decision: DENY</code>：ds1 的 hourly 和 zone，chen 的全部 4 个。</td></tr>
+   <tr><td rowspan="5">ENFORCE</td><td rowspan="5">${D.runs.enforce.pass}/${D.runs.enforce.total}</td><td><b>wei：</b>列表显示 4 个工具，4 次调用全部成功。使用 OBO 客户端的 token 结果相同。</td></tr>
+   <tr><td><b>ds1：</b>列表显示 2 个工具（<code>mall___get_footfall_summary</code>、<code>mall___get_mall_list</code>）。手工构造的 hourly 和 zone 调用返回 HTTP 200、<code>isError</code>、<code>Tool Execution Denied: Tool call not allowed due to policy enforcement</code>。</td></tr>
+   <tr><td><b>chen：</b>列表为 <code>[]</code>，所有调用均被拒绝。</td></tr>
+   <tr><td><b>被拒绝的 token：</b>${D.negatives.slice(0, 4).map(n => `${esc(n.case)} → ${esc(n.actual)}`).join(" · ")}.</td></tr>
+   <tr><td><b>绕过：</b>Lambda 没有 resource policy 也没有 URL。IAM 模拟：<code>rsidc-mall-gateway-role</code> 允许，<code>rsidc-webchat-role</code> 和 <code>rsidc-oauth-runtime-role</code> 为 implicitDeny。</td></tr>
+   <tr><td>change</td><td>${D.runs.change.pass}/${D.runs.change.total}</td><td>修改组 Description 对新登录和 refresh token 路径生效；旧 token 在过期前保持不变（见上方 ds1）。</td></tr>
+   <tr><td>回归</td><td>PASS</td><td>Gateway RBAC 演示 12/12；OBO 16/16；2LO/3LO 18/18；两个 webchat URL 均返回 200</td></tr></table></div>`;
+}
+
+/* ---------------- 2 · Under the hood ---------------- */
+const H = {i: 0, user: "ds1", tool: "mall___get_hourly_traffic"};
+function renderHood() {
+  const el = $("#hood");
+  const u = H.user, L = D.enforce[u].list, c = D.enforce[u].calls[H.tool], need = D.roleOf[H.tool];
+  const hasRole = (L.roles || []).includes(need);
+  const gw = D.ids.gwUrl;
+  const hops = [
+    {t: "Quick → Cognito authorize", who: "Amazon Cognito（resource server）",
+     body: () => `<pre class="out">GET ${esc(D.ids.cognitoDomain)}/oauth2/authorize
+  ?response_type=code&amp;client_id=${esc(D.ids.quickClient)}&amp;code_challenge=…
+  &amp;redirect_uri=https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback
+  &amp;scope=openid email profile ${esc(gw)}/invoke
+  &amp;resource=${esc(gw)}     ← RFC 8707，由 Quick 发送</pre>
+      <p>Quick 遵循 MCP 授权规范，指明想要获取哪个 MCP server 的 token。只有当 <code>resource</code> 是<b>已注册的 resource server</b> 标识符时，Cognito 才会接受；否则 <code>/oauth2/token</code> 返回 <code>invalid_grant</code>，Quick 显示 "No access token was found for an OAuth authorization code connection"。</p>
+      <ul class="checks"><li>resource server 标识符 = Gateway MCP URL，scope 为 <code>invoke</code> <span class="pill ok">由配置脚本注册</span></li>
+      <li>${esc(u)} 在 managed login 页面登录；之后 Quick 显示 "Signed in as ${esc(email(u))}"</li></ul>
+      ${codeBlock("resource", "resource server = Gateway URL")}`},
+    {t: "Cognito → Pre Token trigger", who: "Lambda rsidc-pretoken-roles（alias live）",
+     body: () => `<p>对于 <code>TokenGeneration_*</code> 事件，Cognito 调用 Pre Token Generation V2 Lambda（alias <code>live</code>），用户的 Cognito 组位于 <code>groupConfiguration.groupsToOverride</code>。trigger 读取每个组的 <b>Description</b>（<code>[rsidc-rbac] tools=Tools.Mall.List,…</code>），把并集作为 <code>roles</code> 写入 <b>access token</b>。它采用 fail closed：出错时登录失败，而不是签发不带 <code>roles</code> 的 token。可选的 IdC 来源仅在 <code>email_verified</code> 为 <code>true</code> 时使用。</p>
+      <table class="kv"><tr><td>${esc(u)} 所属的组</td><td>${D.users[u].group ? `<code>${D.users[u].group}</code> → <code>${esc(D.users[u].desc)}</code>` : "<i>无</i> → 无映射 → <code>roles</code> 中不含 Tools.Mall.*"}</td></tr>
+      <tr><td>已记录的 <code>roles</code></td><td><code>${esc(JSON.stringify(L.roles))}</code> <span class="pill ok">已记录</span></td></tr></table>
+      ${codeBlock("pretoken", "roles 来自 Cognito 组（可选再加 IdC）")}`},
+    {t: "Cognito → Quick: access token", who: "Amazon Cognito（issuer）",
+     body: () => `<pre class="out">POST ${esc(D.ids.cognitoDomain)}/oauth2/token
+grant_type=authorization_code&amp;code=…&amp;code_verifier=…
+&amp;resource=${esc(gw)}     （client secret 先放在 Basic header 中，再放在 body 中）</pre>
+      <table class="claims"><tr><th>Claim</th><th>${esc(u)} 的值</th></tr>
+      <tr><td>client_id</td><td><code>${esc(D.ids.quickClient)}</code> <span class="pill ok">已记录</span></td></tr>
+      <tr><td>aud</td><td><code>${esc(gw)}</code> （已注册的 resource server）</td></tr>
+      <tr><td>roles</td><td><code>${esc(JSON.stringify(L.roles))}</code> <span class="pill ok">已记录</span></td></tr></table>
+      <p class="ref">Quick <b>按用户</b>保存该 token（3LO，而非 OBO），并用 refresh token 刷新；access token 有效期为 60 分钟。本页任何位置都不显示 token 本身。</p>
+      ${codeBlock("client", "confidential 客户端、code 流程、60 分钟 access token")}`},
+    {t: "Quick → Gateway: CUSTOM_JWT", who: "AgentCore Gateway",
+     body: () => `<pre class="out">POST ${esc(gw)}
+Authorization: Bearer &lt;user access token&gt;
+Content-Type: application/json
+
+{"jsonrpc":"2.0","id":1,"method":"tools/call",
+ "params":{"name":"${H.tool}","arguments":{"mall_id":"HK01","date":"2026-10-01"}}}</pre>
+      <table class="kv" style="margin-top:10px"><tr><td>discoveryUrl</td><td>用户池的 OIDC discovery 文档（Cognito）</td></tr>
+      <tr><td>allowedClients</td><td><code>["${esc(D.ids.quickClient)}", "${esc(D.ids.oboClient)}"]</code> （Quick 客户端；OBO 客户端用于脚本化测试）</td></tr></table>
+      <b>对 ${esc(u)} 的检查</b><ul class="checks"><li>用用户池的 JWKS 校验签名 <span class="pill ok">通过</span></li><li><code>client_id</code> ∈ allowedClients <span class="pill ok">通过</span></li><li>结果：tools/list HTTP ${L.http} <span class="pill ok">已记录</span></li></ul>
+      <b>负面 token 测试（记录于 ${D.runs.enforce.date}）</b>
+      <table><tr><th>用例</th><th>预期</th><th>实际</th><th></th></tr>${D.negatives.slice(0, 4).map(n => `<tr><td>${esc(n.case)}</td><td>${esc(n.expect)}</td><td>${esc(n.actual)} <span class="ref">${esc(n.ev)}</span></td><td>${n.pass ? '<span class="pill ok">PASS</span>' : '<span class="pill no">FAIL</span>'}</td></tr>`).join("")}</table>
+      ${codeBlock("gwAuth", "配置了 allowedClients 的 Gateway")}`},
+    {t: "Policy in AgentCore (Cedar) 基于 roles", who: "Policy engine rsidc_mall_pe（ENFORCE）",
+     body: () => `<p><code>${H.tool}</code> 需要：<code>roles</code> 中包含 <code>${need}</code>。${esc(u)} ${L.roles && L.roles.length ? (hasRole ? "具备该角色" : "不具备该角色") : "的 <code>roles</code> claim 为空"} → ${pill(c.ok, "PERMIT", "DENY（无适用策略）")}</p>
+      <ul class="checks"><li>Principal 是 <code>AgentCore::OAuthUser</code>，JWT claims 作为 tags。数组类型的 claim 会以<b>一个字符串</b>形式到达，因此使用 <code>like "*\\"Tools.Mall.X\\"*"</code>。没有 permit 即拒绝。</li>
+      <li><b>tools/list</b> 按同样的规则过滤：${esc(u)} 看到 ${L.tools.length} 个工具：${L.tools.map(t => `<code>${short(t)}</code>`).join(" ") || "<i>无</i>"}</li>
+      <li><b>tools/call</b> 被拒绝 → <b>HTTP 200</b>，带 <code>isError</code>：<i>Tool Execution Denied</i>（不是 403），因此 Quick 把拒绝文本当作工具结果显示。</li>
+      <li>Gateway 角色需要对该 engine 拥有 <code>bedrock-agentcore:AuthorizeAction</code> 权限，否则挂载 engine 会失败。</li></ul>
+      ${codeBlock("cedar", "每个工具一条固定的 permit")}${codeBlock("attach", "以 LOG_ONLY / ENFORCE 模式挂载 policy engine")}`},
+    {t: "Gateway → Lambda rsidc-mall-tools", who: "Gateway IAM 角色",
+     body: () => `<p>只有 Cedar 放行后才会到达这里。Target <code>mall</code> → 以 Gateway IAM 角色调用 Lambda；Lambda 通过 <code>context.client_context.custom["bedrockAgentCoreToolName"]</code> 获得工具名，<b>没有任何按用户的逻辑</b>。Lambda 没有 resource policy，也没有 Function URL，因此无法绕过 Gateway。</p>
+      <b>${esc(u)} · ${short(H.tool)} 的已记录结果</b> ${pill(c.ok)}<pre class="out">HTTP ${c.http} ${esc(c.text)}</pre>
+      ${codeBlock("lambda", "工具 Lambda")}`},
+  ];
+  safeRender(el, `<h2>原理剖析：一次工具调用，逐跳解析</h2>
+  <p class="lead">选择一个用户和一个工具；每一跳都会展示调用内容、claims、由谁检查什么，以及真实的代码/配置（文件:行号）。</p>
+  <div class="row-btns">${USERS.map(x => `<button class="btn ${x === u ? "on" : ""}" data-u="${x}">${x}</button>`).join("")}
+   <span style="width:16px"></span>${D.tools.map(t => `<button class="btn ${t === H.tool ? "on" : ""}" data-t="${t}">${short(t)}</button>`).join("")}</div>
+  <div class="flow" style="margin-top:12px">${hops.map((h, i) => `${i ? '<div class="arrow">→</div>' : ""}<div class="node ${i === H.i ? "on" : ""} ${i === 4 ? (c.ok ? "good" : "bad") : ""}" data-i="${i}"><div class="n">第 ${i + 1} 跳</div><div class="t">${esc(h.t)}</div><div class="s">${esc(h.who)}</div></div>`).join("")}</div>
+  <div class="card"><div class="hop-hd"><h3 style="margin:0">第 ${H.i + 1} 跳 · ${esc(hops[H.i].t)}</h3><span class="pill mut who-chk">检查方：${esc(hops[H.i].who)}</span>
+   <span style="flex:1"></span><button class="btn" id="hp" ${H.i ? "" : "disabled"}>← 上一步</button><button class="btn pri" id="hn" ${H.i < hops.length - 1 ? "" : "disabled"}>下一步 →</button></div>
+   ${hops[H.i].body()}</div>
+  ${foot(D.runs.enforce.date)}`);
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { H.user = b.dataset.u; renderHood(); });
+  el.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { H.tool = b.dataset.t; renderHood(); });
+  el.querySelectorAll(".node").forEach(n => n.onclick = () => { H.i = +n.dataset.i; renderHood(); });
+  $("#hp", el).onclick = () => { H.i--; renderHood(); };
+  $("#hn", el).onclick = () => { H.i++; renderHood(); };
+}
+
+/* ---------------- 3 · Setup ---------------- */
+const RES161 = `16.1  group mall-analyst  members=['wei'] description='[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall,Tools.Mall.Hourly,Tools.Mall.Zone'
+      group mall-viewer   members=['ds1'] description='[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall'
+      client rsidc-quick-mcp id={quick-client-id} flows=['code'] scopes=['email','openid','profile'] secret=<kept in a local gitignored file>
+      AllowAdminCreateUserOnly: True
+16.2  pre-flight ds1 roles=['Tools.Mall.Footfall','Tools.Mall.List','Tools.Sales.Read']   wei roles=[...all 4 Tools.Mall.*, Tools.CRM.Read, Tools.Sales.Read]   chen/zhang roles=[]
+      promoted version 1 -> alias live
+      UpdateUserPool diff: only LambdaConfig.PreTokenGeneration(Config).LambdaArn  ...:function:rsidc-pretoken-roles -> ...:rsidc-pretoken-roles:live
+16.3  gateway {mall-gateway-id} READY  url=https://{mall-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp
+      allowedClients=[{quick-client-id} (Quick), {obo-client-id} (OBO, scripted tests)]   target mall READY
+      Lambda resource policy: ResourceNotFoundException; Function URL: ResourceNotFoundException
+16.5  policies mall_list / mall_footfall / mall_hourly / mall_zone ACTIVE; engine {mall-policy-engine-id} mode ENFORCE`;
+const DENY_CMD = `aws logs filter-log-events --region ap-southeast-1 \\
+  --log-group-name /aws/vendedlogs/bedrock-agentcore/gateway/rsidc-mall-gateway \\
+  --start-time $(( ($(date +%s)-1800)*1000 )) --filter-pattern DENY \\
+  --query 'events[].message' --output text | grep -o '"decision":"DENY","reason":"[^"]*"' | sort | uniq -c`;
+const TEARDOWN = `source infra/state.env; R=ap-southeast-1
+aws logs delete-delivery --region $R --id $(aws logs describe-deliveries --region $R --query "deliveries[?deliverySourceName=='rsidc-mall-gw-logs'].id" --output text)
+aws logs delete-delivery-source --region $R --name rsidc-mall-gw-logs; aws logs delete-delivery-destination --region $R --name rsidc-mall-gw-cwl
+aws logs delete-log-group --region $R --log-group-name /aws/vendedlogs/bedrock-agentcore/gateway/rsidc-mall-gateway
+for t in $(aws bedrock-agentcore-control list-gateway-targets --region $R --gateway-identifier $MALL_GW_ID --query 'items[].targetId' --output text); do
+  aws bedrock-agentcore-control delete-gateway-target --region $R --gateway-identifier $MALL_GW_ID --target-id $t; done
+aws bedrock-agentcore-control delete-gateway --region $R --gateway-identifier $MALL_GW_ID
+for p in $(aws bedrock-agentcore-control list-policies --region $R --policy-engine-id $MALL_PE_ID --query 'policies[].policyId' --output text); do
+  aws bedrock-agentcore-control delete-policy --region $R --policy-engine-id $MALL_PE_ID --policy-id $p; done
+aws bedrock-agentcore-control delete-policy-engine --region $R --policy-engine-id $MALL_PE_ID
+aws lambda delete-function --region $R --function-name rsidc-mall-tools
+aws cognito-idp delete-user-pool-client --region $R --user-pool-id $COGNITO_POOL_ID --client-id $QUICK_CLIENT_ID
+for g in mall-analyst mall-viewer; do aws cognito-idp delete-group --region $R --user-pool-id $COGNITO_POOL_ID --group-name $g; done
+rm -f tests/.quick-client.env`;
+
+function renderSetup() {
+  const I = D.ids;
+  safeRender($("#setup"), `<h2>详细配置</h2>
+  <p class="lead">按构建顺序：先是 AWS 侧的 Cognito 和 Gateway，然后是 Quick 连接器，最后是检查。所有脚本都通过 <code>infra/common/run.sh</code> 运行，它会加载 <code>infra/common/00-config.sh</code> 和已保存的状态。Quick 本身在 Quick 界面中手工配置；Quick 中的任何内容都不是自动化创建的。</p>
+
+  <h3>(a) Cognito 与 Gateway（AWS 侧）</h3>
+  <div class="card"><table><tr><th>步骤</th><th>命令</th><th>用途</th></tr>
+   <tr><td>16.1</td><td><code>infra/common/run.sh .venv/bin/python infra/cognito-idc/16-mall-cognito.py</code></td><td>创建带映射 Description 的组 <code>mall-analyst</code>（wei）和 <code>mall-viewer</code>（ds1）；Quick 应用客户端 <code>rsidc-quick-mcp</code>；resource server = Gateway URL（scope <code>invoke</code>）；Quick 回调地址。client secret 只写入本地被 gitignore 的文件 <code>tests/.quick-client.env</code>，不会打印。</td></tr>
+   <tr><td>16.2</td><td><code>infra/common/run.sh .venv/bin/python infra/cognito-idc/15-rbac-pretoken.py</code></td><td>重新运行：trigger 现在读取 Cognito 组以及 IdC。Cognito 调用 alias <b><code>live</code></b>，该 alias 只有在 pre-flight 通过后才会移动。</td></tr>
+   <tr><td>16.3</td><td><code>infra/common/run.sh bash infra/cognito-idc/16-mall-gateway.sh</code></td><td>Lambda <code>rsidc-mall-tools</code>、角色、Gateway <code>rsidc-mall-gateway</code>（<code>allowedClients = [Quick 客户端, OBO 客户端]</code>）、target <code>mall</code>。</td></tr>
+   <tr><td>16.4</td><td><code>infra/common/run.sh bash infra/cognito-idc/16-mall-logs.sh</code></td><td>Policy 决策日志 → <code>/aws/vendedlogs/bedrock-agentcore/gateway/rsidc-mall-gateway</code>（保留 7 天）；用于确认 DENY 决策。</td></tr>
+   <tr><td>16.5</td><td><code>infra/common/run.sh bash infra/cognito-idc/16-mall-policy.sh LOG_ONLY</code>，然后 <code>ENFORCE</code></td><td>Policy engine <code>rsidc_mall_pe</code>，基于 <code>roles</code> 的 4 条固定 Cedar permit，并挂载。</td></tr>
+   <tr><td>16.6</td><td>Quick 连接器，见 (b)</td><td><b>手工：</b>先以 wei、再以 ds1 身份把你的 Quick 连接到 Gateway。</td></tr></table>
+   <div class="ref">Gateway 需要 16.1 产生的 <code>QUICK_CLIENT_ID</code>，而 resource server 需要 16.3 产生的 Gateway URL。全新安装时，16.1 会先创建不带 Gateway scope 的客户端；请在 16.3 之后重新运行 16.1，以添加 resource server 和 <code>invoke</code> scope。</div></div>
+  <div class="grid g2"><div class="card"><b>脚本配置了什么</b><ul class="checks">
+   <li><b>Cognito resource server：</b>标识符 = <code>${esc(I.gwUrl)}</code>，scope 为 <code>invoke</code>。之所以必需，是因为 Quick 会发送 <code>resource=&lt;该 URL&gt;</code>（见 FAQ 1）。</li>
+   <li><b>应用客户端 <code>rsidc-quick-mcp</code>：</b>confidential；<code>code</code> 流程；scopes 为 <code>openid email profile &lt;gateway URL&gt;/invoke</code>；回调地址 <code>https://{us-east-1,us-west-2,ap-southeast-2,eu-west-1}.quicksight.aws.amazon.com/sn/oauthcallback</code>；access token 有效期 60 分钟。</li>
+   <li><b>Gateway 入站认证：</b><code>customJWTAuthorizer</code>、Cognito discovery、 <code>allowedClients = ["${I.quickClient}", "${I.oboClient}"]</code>.</li>
+   <li><b>无需跨账户 IAM：</b>Quick 使用 OAuth bearer token 访问 Gateway 的公网 HTTPS 端点。</li>
+   <li><b>Cognito 自助注册已关闭：</b>脚本输出 <code>AllowAdminCreateUserOnly: True</code>；只有管理员能创建用户。</li></ul></div>
+   <div class="card">${codeBlock("groups")}${codeBlock("client")}</div></div>
+  <div class="grid g2"><div class="card">${codeBlock("gwAuth")}</div><div class="card">${codeBlock("cedar")}</div></div>
+  <div class="card"><b>已记录的结果（2026-10-06）</b><pre class="out">${esc(RES161)}</pre>
+   <div class="ref">本页任何位置都不显示 client secret 的值。</div></div>
+
+  <h3>(b) Quick 连接器（Quick 界面）</h3>
+  <p class="ref" style="margin-top:0">目标：在<b>你自己的</b> Amazon Quick 账户中，以<b>用户级 OAuth</b> 把 Gateway 连接为 MCP server。为什么不用服务认证（client credentials）？因为所有 Quick 用户会共用一个不含 <code>roles</code> 的 token，按用户的 RBAC 就无法实现。请选择<b>用户认证（Custom user based OAuth）</b>。</p>
+  <div class="grid g2"><div class="card"><b>Integrations → Actions → Model Context Protocol → +</b> <span class="pill ok">Ready（10/20/2026）</span>
+    ${kv([["Connector", "Model Context Protocol"], ["Name / Description", "`rsidc-quick-mcp`"], ["Connection purpose", "On-demand actions"], ["Authentication type", "Custom user based OAuth（**不是** service authentication；不要勾选 *Public OAuth client*）"],
+      ["MCP server endpoint / Base URL", "`" + I.gwUrl + "`。请使用你自己的 Gateway URL：它显示在 AgentCore 控制台的 Gateway 页面，也由 `infra/cognito-idc/16-mall-gateway.sh` 打印。"],
+      ["Authorization URL", "`" + I.cognitoDomain + "/oauth2/authorize`"], ["Token URL", "`" + I.cognitoDomain + "/oauth2/token`"],
+      ["Client ID", "`" + I.quickClient + "`（Cognito 应用客户端 `rsidc-quick-mcp`，由 16.1 打印）"],
+      ["Client secret", "来自 16.1 写入的本地文件（`QUICK_CLIENT_SECRET`）；请保存在 secret store 中，不要粘贴到其他任何地方。如果它曾经可见，**演示后请轮换**。"],
+      ["Scopes（如被询问）", "`openid email profile`"], ["Redirect URL", "`https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback`（Quick 自动填入；必须在客户端的回调列表中）"]])}
+    <div class="ref">连接器页面上的 "Signed in as wei@techfinance.example.com" 证明该连接是<b>按用户</b>的：Quick 持有的是 wei 自己的 token。</div></div>
+   <div class="card"><b>说明</b><ul class="checks">
+    <li><b>回调列表：</b>该客户端允许 us-east-1、us-west-2、ap-southeast-2 和 eu-west-1 的 Quick 回调地址。如果 Quick 显示的 Redirect URL 不同，请添加后重新运行：
+      <pre class="out">QUICK_REDIRECTS="https://&lt;region&gt;.quicksight.aws.amazon.com/sn/oauthcallback" infra/common/run.sh .venv/bin/python infra/cognito-idc/16-mall-cognito.py</pre></li>
+    <li><b>登录方式：</b>Cognito 不支持 Dynamic Client Registration，因此 Quick 回退到上面的手工填写字段。请使用测试用户的密码登录（创建用户时设置）。</li>
+    <li><b>排查 "No access token was found for an OAuth authorization code connection"：</b>Quick 会发送 RFC 8707 的 <code>resource=&lt;gateway MCP URL&gt;</code>。只有存在标识符与该 URL 完全一致的 resource server 时，Cognito 才会接受（在已知 Gateway URL 后由 16.1 创建）。请取消该连接器并重新创建。</li></ul></div></div>
+
+  <h3>(c) 创建集成并测试（wei → ds1）</h3>
+  <div class="card"><ol class="checks">
+   <li><b>Connect：</b>粘贴端点并为集成命名（此处为 <code>rsidc-quick-mcp</code>）。</li>
+   <li><b>Authenticate：</b>填入 (b) 中的值。</li>
+   <li><b>Authorize：</b>会打开 Cognito managed login。以 <b>wei</b> 身份登录。</li>
+   <li><b>Review：</b>Quick 列出发现的工具。预期：4 个工具，因为 wei 的 token 具备全部 4 个角色。名称可能显示为 <code>mall___get_mall_list</code> 等。</li>
+   <li><b>Publish：</b>如果你的 Quick 账户是共享的，请把访问范围限制为<b>仅自己</b>；不要发布给整个组织。</li></ol>
+   <p><b>wei 已启用的工具</b>（已记录）：</p>
+   <table><tr><th>工具</th><th>类型</th><th>说明</th></tr>${["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"].map(t => `<tr><td><code>${t}</code></td><td>Read</td><td>${esc(D.toolDesc[t])}</td></tr>`).join("")}</table>
+   <div class="ref">这与 wei 的 roles 一致：<code>mall-analyst</code> 组提供 Tools.Mall.List、Footfall、Hourly 和 Zone。Gateway 的 <code>tools/list</code> 由 Cedar 根据 Quick 为 wei 持有的 token 过滤。</div>
+   <p><b>以 wei 测试。</b>在启用了该集成的 Quick 对话或 agent 中依次提出每个问题；都应成功。</p>
+   <table><tr><th>提示词</th><th>工具</th></tr>${D.questions.map(([q, t]) => `<tr><td>"${esc(q)}"</td><td><code>${short(t)}</code></td></tr>`).join("")}</table>
+   <p><b>把连接切换为 ds1。</b></p>
+   <ol class="checks"><li>在 Quick 的集成或连接页面，<b>退出登录</b>或<b>断开</b> OAuth 连接。</li>
+    <li>清除 Cognito 会话，避免被悄悄重新登录为 wei：为 Quick 使用浏览器隐私窗口，或删除 <code>rsidc-123456789012.auth.ap-southeast-1.amazoncognito.com</code> 的 cookie。</li>
+    <li><b>重新连接</b>并以 <b>ds1</b> 身份登录。测试前先确认连接器页面显示 "Signed in as" ds1 的邮箱。如果仍显示 wei，说明你测试的是 wei 的 token。</li></ol>
+   <p><b>以 ds1 测试（关键观察点）</b></p>
+   <table><tr><th>检查项</th><th>预期（由 Gateway 强制执行）</th><th>观察什么</th></tr>
+    <tr><td>A. Quick 中显示的工具列表</td><td>Gateway 只向 ds1 返回 <b>2 个工具</b>（<code>get_mall_list</code>、<code>get_footfall_summary</code>）。</td><td>Quick 界面显示的是 2 个还是仍是 4 个？如果是 4 个，说明 Quick 在创建时（用 wei 的 token）缓存了工具列表。</td></tr>
+    <tr><td>B. "列出所有商场" / "HK01 的客流量"</td><td>成功</td><td>-</td></tr>
+    <tr><td>C. "HK01 的每小时客流"</td><td><b>必须失败。</b><code>Tool Execution Denied: Tool call not allowed due to policy enforcement</code> （HTTP 200，<code>isError=true</code>）。</td><td>Quick 显示错误，或模型表示无法访问该工具。它<b>绝不能</b>显示每小时数据。</td></tr>
+    <tr><td>D. "对比 HK01 各区域的客流"</td><td>必须失败，与 C 相同</td><td>与 C 相同</td></tr></table>
+   <div class="ref">如果 Quick 缓存了 4 个工具（检查项 A），模型仍可能<i>尝试</i>调用 hourly 或 zone。这对安全没有影响，因为每次调用都由 Gateway 上的 Cedar 决定；它只影响用户体验。也可以用同样方式测试 chen：零个工具，所有调用均被拒绝。</div>
+   <div class="ev"><span class="pill ok">已记录</span> 在 Gateway 上，使用 Quick 自己的应用客户端签发的 token：ds1 列出 2 个工具，hourly 和 zone 被拒绝（2026-10-20 测试矩阵；2026-10-26 复查）。</div></div>
+
+  <h3>(d) 在 AWS 侧确认</h3>
+  <div class="card"><p>Gateway 会记录每一次 Policy 决策。预期 ds1 的 hourly 和 zone 调用会出现 <code>decision":"DENY"</code> 记录，而每个被允许的调用对应一条没有 DENY 的 <code>Tool invocation</code>。</p>${cmd(DENY_CMD)}
+   <p><b>如何自行验证</b>（AWS CLI 和 Gateway 本身）：</p>
+   ${cmd(`# policy engine attached in ENFORCE
+aws bedrock-agentcore-control get-gateway --region ap-southeast-1 --gateway-identifier {mall-gateway-id} --query policyEngineConfiguration   # mode ENFORCE
+# the group Description is the mapping
+aws cognito-idp get-group --region ap-southeast-1 --user-pool-id {user-pool-id} --group-name mall-viewer --query Group.Description
+# Cognito calls the versioned alias, not $LATEST
+aws lambda get-alias --region ap-southeast-1 --function-name rsidc-pretoken-roles --name live --query FunctionVersion
+# the resource server Quick's resource= parameter needs
+aws cognito-idp describe-resource-server --region ap-southeast-1 --user-pool-id {user-pool-id} --identifier ${D.ids.gwUrl} --query ResourceServer.Scopes
+# anti-bypass: both calls must fail with ResourceNotFoundException
+aws lambda get-policy --region ap-southeast-1 --function-name rsidc-mall-tools
+aws lambda get-function-url-config --region ap-southeast-1 --function-name rsidc-mall-tools
+# tools/list with a user's access token (for example the one Quick holds): ds1 should get 2 tools
+curl -s -X POST ${D.ids.gwUrl} -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \\
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`)}
+   <div class="ref">预期：wei 能看到并使用 4 个工具；ds1 的 hourly 和 zone 被拒绝。已记录的检查：ENFORCE 25/25，change 5/5。</div></div>
+
+  <h3>(e) 权限变更时</h3>
+  <div class="card"><ul class="checks">
+   <li><b>只修改 Cognito 组的 Description</b>（例如 <code>mall-viewer</code>）。下一个 token 就会生效，无论是新登录，还是 Quick 自动使用 refresh token 刷新时。</li>
+   <li>已签发的 token 在过期前保持旧的 <code>roles</code>，最长 60 分钟（客户端的 access token 有效期）。</li>
+   <li>其他地方无需任何改动：人员或组变化时，MCP 工具（Lambda）、Gateway 和 Cedar 都不需要改。</li></ul></div>
+
+  <h3>(f) 清理与成本</h3>
+  <div class="card"><b>Quick：</b>在你的 Quick 账户中删除 <code>rsidc-quick-mcp</code> 连接器。它是独立的 Quick 资源。
+   <p><b>AWS（客户版本），按顺序：</b></p>${cmd(TEARDOWN)}
+   <ul class="checks"><li><b>Cognito resource server：</b><code>aws cognito-idp delete-resource-server --region ap-southeast-1 --user-pool-id {user-pool-id} --identifier ${esc(D.ids.gwUrl)}</code></li>
+    <li><b>IAM：</b>删除角色 <code>rsidc-mall-gateway-role</code> 和 <code>rsidc-mall-tools-role</code>（先移除它们的 inline policy）。</li>
+    <li><b>Trigger：</b>它与 Gateway RBAC 演示共用。请通过该演示的清理步骤移除（<code>infra/cognito-idc/15-rbac-pretoken.py --detach</code>）。</li>
+    <li><b>Client secret：</b>演示后请轮换或删除 <code>rsidc-quick-mcp</code> 的 client secret（删除应用客户端即可做到）。</li>
+    <li><b>成本：</b>Gateway、Policy 和 Lambda 按请求计费，没有闲置成本。</li></ul></div>
+  <div class="card chk"><b>配置检查清单</b>${[
+    "Resource server 标识符 = Gateway MCP URL（必须完全一致），scope 为 `invoke`",
+    "应用客户端 `rsidc-quick-mcp` 为 confidential、`code` 流程，并包含 Quick 所在区域的回调 URL",
+    "Pre Token trigger 通过 alias `live` 调用；组 Description 中包含 `[rsidc-rbac] tools=…`",
+    "Gateway 的 `allowedClients` 包含 Quick 客户端 ID",
+    "Policy engine `rsidc_mall_pe` 处于 ENFORCE；4 条 Cedar permit 为 ACTIVE",
+    "Lambda `rsidc-mall-tools` 没有 resource policy，也没有 Function URL",
+    "Quick 连接器为 *Custom user based OAuth*，而非 service authentication；\"Signed in as\" 显示的是你要测试的用户",
+    "Client secret 保存在 secret store 中；演示后已轮换"].map(p => `<label><input type="checkbox">${md(p)}</label>`).join("")}
+   <div class="ref">勾选状态仅保存在本页，不会持久化。</div></div>
+  ${foot("2026-10-06（配置）· 2026-10-20（测试矩阵）")}`);
+}
+
+/* ---------------- 4 · FAQ · Findings ---------------- */
+function resourceDetail() {
+  return `<h3>已记录的尝试过程</h3>
+  <ol class="checks"><li><b>现象：</b>点击 "Create and continue" 并以 wei 登录后，Quick 显示 <i>"No access token was found for an OAuth authorization code connection"</i>。</li>
+   <li><b>CloudTrail（Cognito，ap-southeast-1）：</b><code>OAuth2_Authorize_GET</code> 302 → <code>login_POST</code> 204 → <code>Token_POST</code> <b>400</b>，每次尝试发生两次（client secret 先放在 Basic header，再放在 body）。两个请求都带有 <code>resource=https://rsidc-mall-gateway-…/mcp</code>。</li>
+   <li><b>用 OBO 客户端复现：</b></li></ol>
+  <table><tr><th>请求</th><th>结果</th></tr><tr><td>不带 <code>resource</code></td><td>200</td></tr><tr><td>任意未注册的 <code>resource</code>（即使是 <code>https://example.com</code>）</td><td><code>invalid_grant</code></td></tr>
+   <tr><td><code>resource</code> = 已注册的 resource server（Gateway URL）</td><td>access token，<code>aud</code> = Gateway URL，<code>roles</code> 完整</td></tr></table>
+  <div class="ref">失败的尝试中 Pre Token trigger 从未被调用：请求在 token 生成之前就被拒绝了。</div>
+  ${codeBlock("resource")}`;
+}
+function renderFaq() {
+  const el = $("#faq");
+  const row = (cls, label, v) => v ? `<dt class="${cls}">${label}</dt><dd>${md(v)}</dd>` : "";
+  const DOC = {
+    rfc8707: ["RFC 8707 · Resource Indicators for OAuth 2.0", "https://datatracker.ietf.org/doc/html/rfc8707"],
+    mcp: ["MCP specification · Authorization", "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"],
+    quick: ["Amazon Quick · MCP integration", "https://docs.aws.amazon.com/quick/latest/userguide/mcp-integration.html"],
+    res: ["Amazon Cognito · resource servers", "https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-define-resource-servers.html"],
+    pre: ["Amazon Cognito · Pre token generation Lambda trigger", "https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-pre-token-generation.html"],
+    inb: ["AgentCore Gateway · inbound authorization", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"],
+    pol: ["Policy in Amazon Bedrock AgentCore (Cedar)", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html"]};
+  const F = [
+   {q: "Quick 显示 \"No access token was found for an OAuth authorization code connection\"：为什么？", extra: "res",
+    wrong: "登录后，Quick 报告没有 access token。Cognito 的 `/oauth2/token` 返回 HTTP 400（`invalid_grant`）。",
+    why: "Quick 遵循 MCP 授权规范，在 `/authorize` 和 `/token` 上发送 RFC 8707 的 `resource=<gateway MCP URL>`。只有当 resource 是**已注册的 resource server** 标识符时，Cognito 才会绑定；否则 token 请求失败。",
+    fix: "注册一个标识符恰好等于 Gateway MCP URL 的 Cognito resource server（scope 为 `invoke`），并在 `rsidc-quick-mcp` 上允许该 scope。知道 Gateway URL 后，`16-mall-cognito.py` 会幂等地完成这些操作。",
+    verified: "记录于 2026-10-20：带上 `resource` 后，Cognito 签发的 access token 中 `aud` = Gateway URL 且 `roles` 完整；wei 得到 4 个工具；ds1 得到 2 个，直接调用 hourly 被拒绝；ENFORCE 矩阵 25/25；Quick 连接器达到 **Ready**。",
+    docs: [DOC.rfc8707, DOC.mcp, DOC.quick, DOC.res]},
+   {q: "为什么这是 3LO 而不是 OBO？",
+    why: "Quick 是 OAuth 客户端。用户登录（authorization code + PKCE），Quick 保存该用户自己的 access token。没有任何环节把一个 token 换成另一个（无 RFC 8693 / 7523）：Quick 发给 Gateway 的 token，就是 Cognito 为该资源签发的那一个。路径中没有 AgentCore Runtime、AgentCore Identity 或 Token Vault。",
+    docs: [DOC.mcp, DOC.quick]},
+   {q: "为什么连接器必须使用用户级 OAuth？",
+    why: "使用 *service* authentication（client credentials）时，所有 Quick 用户共用一个不含 `roles` claim 的 token，按用户的 RBAC 无法实现，而且 2LO 机器对机器客户端不在 `allowedClients` 中（403，已记录）。用户认证则让每个人拥有自己的 token，其 `roles` 来自各自的 Cognito 组。",
+    fix: "选择 *Custom user based OAuth*；不要勾选 *Public OAuth client*（该 Cognito 客户端是 confidential）。",
+    docs: [DOC.quick, DOC.inb]},
+   {q: "Cedar 中不出现组名，Cognito 组如何变成工具权限？",
+    why: "Pre Token Generation V2 trigger 读取每个 Cognito 组的 **Description**（`[rsidc-rbac] tools=Tools.Mall.List,…`），把并集作为 Entra App Role 形态的 `roles` claim 写入 access token。Cedar 对每个工具有一条匹配 `roles` 的固定 permit；数组类型的 claim 以一个字符串到达，因此规则使用 `like \"*\\\"Tools.Mall.X\\\"*\"`。没有映射组的用户得到 `roles=[]`：没有适用的 permit，所有调用都被拒绝。",
+    fix: "只需编辑组 Description 即可修改映射。Lambda、Gateway 和 Cedar 保持不变。",
+    docs: [DOC.pre, DOC.pol]},
+   {q: "为什么被拒绝的调用返回 HTTP 200 而不是 403？",
+    why: "认证和授权是两个独立的层。无效或来源不对的 token 会被 Gateway 的 JWT 检查以 401/403 拒绝（篡改 `roles`、2LO token、ID token、乱码 bearer：均已记录）。有效但缺少角色的 token 能通过 JWT 检查，随后被 Cedar 拒绝，返回 **HTTP 200**，带 `result.isError` 和 `Tool Execution Denied`。因此 Quick 把拒绝文本当作工具结果显示。",
+    docs: [DOC.inb, DOC.pol]},
+   {q: "组的变更何时对 Quick 生效？",
+    why: "trigger 在 `TokenGeneration_RefreshTokens` 时也会运行，因此组 Description 的变更会在 Quick 下一次刷新 token 时生效，用户无需重新登录。延迟最长为 access token 的有效期（60 分钟）。已签发的 token 保持原有 `roles`：claims 在过期前不会改变。",
+    verified: "记录于 2026-10-06：向 `mall-viewer` 添加 `Tools.Mall.Hourly` 后，0.9 秒后的新登录和 refresh token 路径都能调用 hourly；ds1 的旧 token 仍被拒绝；Description 已恢复并验证。",
+    docs: [DOC.pre]},
+   {q: "如何更新 Pre Token trigger 而不把用户锁在门外？",
+    why: "更新正在使用的 `$LATEST` trigger 时，如果新的 IAM 权限尚未传播完成，trigger 会对属于 Cognito 组的用户 fail closed，持续约一分钟。",
+    fix: "Cognito 调用带版本的 alias（`live`），只有在 pre-flight（为已知用户计算 roles）通过后才会提升该 alias。`UpdateUserPool` 的改动仅限于 trigger ARN（`…:rsidc-pretoken-roles` → `…:rsidc-pretoken-roles:live`），并把未指定的用户池设置原样复制回去，避免被重置。",
+    docs: [DOC.pre]},
+   {q: "Quick 会缓存工具列表吗？",
+    why: "Quick 可能会保留创建连接器时发现的工具列表（用的是第一个用户的 token）。这在 AWS 侧无法观察，因此需要手工检查（配置页的检查项 A）。安全性不依赖于此：每次 `tools/call` 都由 Cedar 决定，所以缓存下来但用户无权使用的工具会被拒绝。",
+    docs: [DOC.quick, DOC.pol]},
+   {q: "我们需要自己的 MCP server 吗？",
+    why: "不需要。让 Gateway 充当 MCP server 就够了：工具名变为 `mall___<tool>`，4 个工具共用一个带 inline schema 的 Lambda target，Lambda 通过 `context.client_context.custom[\"bedrockAgentCoreToolName\"]` 获得工具名。工具本身没有任何按用户的代码。",
+    docs: [DOC.inb, DOC.pol]},
+   {q: "调用方能绕过 Gateway 直接调用 Lambda 吗？",
+    why: "不能。Lambda 没有 resource policy，也没有 Function URL。IAM 策略模拟（已记录）：`rsidc-mall-gateway-role` 被允许调用它；`rsidc-webchat-role` 和 `rsidc-oauth-runtime-role` 得到 implicitDeny。",
+    docs: [DOC.inb]}];
+  safeRender(el, `<h2>FAQ · 发现</h2>
+  <p class="lead">解释 Quick + Cognito 方案中每个组件为什么存在，以及我们的发现。点击问题即可展开。</p>
+  <div class="row-btns" style="margin-bottom:12px"><button class="btn" id="fopen">全部展开</button><button class="btn" id="fclose">全部收起</button></div>
+  ${F.map((f, i) => `<details class="faq"><summary>${i + 1}. ${md(f.q)}</summary><div class="bd"><dl class="qa">
+    ${row("w", "问题现象", f.wrong)}${row("y", "原因", f.why)}${row("f", "解决", f.fix)}${row("v", "证据", f.verified)}</dl>
+    ${f.extra === "res" ? resourceDetail() : ""}${docs(f.docs)}</div></details>`).join("")}
+  ${foot("2026-10-06 · 2026-10-20")}`);
+  $("#fopen", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = true);
+  $("#fclose", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = false);
+}
+
+renderArch(); renderReplay(); renderHood(); renderSetup(); renderFaq();
+</script>
+<style>
+details.codefold{margin:6px 0}
+details.codefold>summary{cursor:pointer;display:inline-block;padding:3px 10px;border:1px solid #8884;border-radius:6px;
+  font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:inherit;opacity:.85;user-select:none}
+details.codefold>summary:hover{opacity:1}
+details.codefold[open]>summary{margin-bottom:6px}
+</style>
+<script>
+(function () {
+  var CODE_FILE = /[\w./-]+\.(py|sh|js|mjs|ts|tsx|json|sql|html|md|txt|yaml|yml)(:\d+(-\d+)?)?/;
+  function label(el) {
+    var p = el.previousElementSibling, t = p && p.textContent.trim();
+    return t && t.length < 140 && CODE_FILE.test(t) ? t : '';
+  }
+  function wrap(el) {
+    if (el.dataset.codefold || el.closest('details.codefold')) return;
+    if (el.tagName === 'PRE' && el.parentElement && el.parentElement.closest('.code')) return;  // the outer .code is wrapped
+    el.dataset.codefold = '1';
+    var lines = (el.textContent.replace(/\n+$/, '').match(/\n/g) || []).length + 1;
+    var kind = el.classList.contains('out') ? '显示输出' : '显示代码';
+    var lb = label(el);
+    var d = document.createElement('details'), s = document.createElement('summary');
+    d.className = 'codefold';
+    s.textContent = '▸ ' + kind + (lb ? ' · ' + lb : '') + '（' + lines + ' 行）';
+    el.parentNode.insertBefore(d, el);
+    d.appendChild(s); d.appendChild(el);
+  }
+  function scan(root) {
+    if (root.nodeType !== 1) return;
+    if (root.matches('pre, .code')) wrap(root);
+    root.querySelectorAll('pre, .code').forEach(wrap);
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) { m.addedNodes.forEach(scan); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+</body></html>

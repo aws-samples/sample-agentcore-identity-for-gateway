@@ -1,0 +1,442 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第 3 部分 · 2LO — 通过 AgentCore Identity 使用 Entra ID 客户端凭据</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+/* part 3 specifics, in the part 1 theme */
+:root{--bl:var(--acc);--or:#ec7211;--gr:var(--ok);--rd:var(--no)}
+nav .sub code{word-break:normal;overflow-wrap:anywhere}#v-arch>h2{margin-bottom:14px}
+.card h2{font-size:17px;margin:0 0 8px}.card h3{font-size:14px;margin:14px 0 6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid2>*,.grid3>*{min-width:0}@media(max-width:1000px){.grid2,.grid3{grid-template-columns:1fr}}
+.note{color:var(--mut);font-size:12.5px}.src{font-size:12px;color:var(--mut);margin:10px 0 4px}.src b{color:var(--ink)}
+.users{display:flex;gap:10px;flex-wrap:wrap}.user{border:2px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;min-width:200px;background:#fff;transition:.15s}
+.user.on{border-color:var(--acc);background:#f0f6fc;box-shadow:0 0 0 3px #d6e8fa}.user b{font-size:15px}
+.chip{display:inline-block;border-radius:999px;padding:1px 8px;margin:2px 3px 2px 0;font-size:12px;font-weight:600;background:#e8f1fb;color:var(--acc)}
+.chip.app{background:var(--warnb);color:var(--warn)}.chip.none{background:var(--nob);color:var(--no)}.chip.g{background:#eef1f4;color:var(--mut)}
+button.act{border:1px solid var(--acc);background:var(--acc);color:#fff;border-radius:8px;padding:7px 14px;cursor:pointer;font:inherit;font-weight:600}
+button.act:disabled{opacity:.5;cursor:default}
+button.sec{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}button.sec:hover{border-color:var(--acc)}button.sec:disabled{opacity:.5;cursor:default}
+td.ok{background:none;color:var(--ok);font-weight:600}td.no{background:none;color:var(--no);font-weight:600}td.diff{background:var(--warnb)}
+pre.code{margin:6px 0 12px}pre.code .ln{display:block;width:auto;text-align:left;padding:0 14px 0 0;color:inherit;user-select:auto;white-space:pre}
+pre.code .ln i{display:inline-block;width:42px;color:#6b7c8f;text-align:right;margin-right:12px;font-style:normal;user-select:none}
+pre.code .ln.h{background:#1f3a2a}pre.code.wrap .ln{white-space:pre-wrap;padding-left:12px}
+.tag{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+.tag.rec{background:var(--okb);color:var(--ok)}.tag.der{background:#f0f6fc;color:var(--acc)}
+.fake{border:1px solid var(--line);border-radius:6px;max-width:420px;padding:24px 30px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.fake .ms{display:flex;gap:3px;margin:0 0 10px;max-width:none;border:0;padding:0;background:none;box-shadow:none}.fake .ms span{width:10px;height:10px;display:inline-block}
+.fake input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin:6px 0 12px;outline:none;background:#fff}
+.flow{flex-wrap:wrap;gap:6px;margin:10px 0;overflow:visible}.flow span{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;background:#fff;transition:all .25s}
+.flow span.lit{background:var(--acc);color:#fff;border-color:var(--acc)}
+.big{font-size:28px;font-weight:700;color:var(--acc)}.kpi{text-align:center;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+.steps{flex-wrap:wrap}.steps button{border:0;background:#eef1f4;color:var(--mut);border-radius:6px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer}
+.steps button:hover{color:var(--acc)}.steps button.on{background:var(--acc);color:#fff}
+.who{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:#f0f6fc;color:var(--acc)}
+.cmp td.u{font-weight:600}.cmp tr.sel td{background:#f0f6fc}
+.bar{height:14px;border-radius:3px;display:inline-block;vertical-align:middle}
+div.warn{background:var(--nob);color:var(--ink);border:1px solid #f3c2c4;border-radius:8px;padding:8px 12px;margin:8px 0}
+.info{background:#f0f6fc;border:1px solid #c9dff3;border-radius:8px;padding:8px 12px;margin:8px 0}
+</style></head><body>
+<div class="banner"><b>静态演示</b> — 界面为模拟，数据为真实记录。本页不会调用 AWS 或 Entra。<a href="part3-2lo.html" hreflang="en" lang="en" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">English</a></div>
+<div class="wrap">
+<nav id="nav">
+  <h1>第 3 部分 · 2LO — 通过 AgentCore Identity 使用 Entra ID 客户端凭据</h1>
+  <div class="sub">Runtime <code>rsidc_entra_agent</code> → 凭证提供程序 <code>rsidc-entra</code> (MicrosoftOauth2, oauth2Flow = M2M) → app-only token → Gateway <code>rsidc-mall-entra-gateway</code> → Cedar 基于 <code>roles</code> 授权 → mall Lambda。出站身份是 <b>agent</b>，而不是用户。</div>
+</nav>
+<main>
+<section class="view on" id="v-arch">
+  <h2>架构：用户 → AgentCore Runtime → AgentCore Identity (M2M) → Entra ID → AgentCore Gateway → Lambda</h2>
+  <div class="card arch">
+    <a href="img/architecture-entra-2lo.svg" target="_blank" rel="noopener"><img src="img/architecture-entra-2lo.svg" alt="Entra ID 2LO 架构：agent 通过 AgentCore Identity 从 Entra 获取自己的 app-only token，并调用 AgentCore Gateway"></a>
+    <div class="src" style="margin-top:8px"><a href="img/architecture-entra-2lo.svg" target="_blank" rel="noopener">查看原图</a> · 用户的 token 只到达 Runtime；Gateway 和 Cedar 看到的是 app-only token，其 <code>roles</code> 是 agent 应用的 App Roles，因此每个用户拿到的工具都相同。</div></div>
+</section>
+<section class="view" id="v-replay"></section>
+<section class="view" id="v-hood"></section>
+<section class="view" id="v-rights"></section>
+<section class="view" id="v-setup"></section>
+<section class="view" id="v-faq"></section>
+</main></div>
+<script type="application/json" id="data">{"ids": {"tenant": "{entra-tenant-id}", "agent": "{entra-agent-app-id}", "api": "{mall-api-app-id}", "client": "{test-client-app-id}", "domain": "techfinance.onmicrosoft.com"}, "results": {"phase": "2lo", "time": "2026-10-20T11:07:02+0800", "runtime": "arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:runtime/{entra-runtime-id}", "cases": [{"case": "wei: 2LO token is app-only (no user, no scp)", "expect": [null, null, "{entra-agent-app-id}"], "actual": [null, null, "{entra-agent-app-id}"], "pass": true, "evidence": "http=200 roles=['Tools.Mall.List', 'Tools.Mall.Footfall'] err=None", "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"], "http": 200}, {"case": "wei: 2LO tools/list = the app's roles", "expect": ["mall___get_footfall_summary", "mall___get_mall_list"], "actual": ["mall___get_footfall_summary", "mall___get_mall_list"], "pass": true, "evidence": "allowed={'mall___get_mall_list': True, 'mall___get_footfall_summary': True, 'mall___get_hourly_traffic': False, 'mall___get_zone_comparison': False}", "allowed": {"mall___get_mall_list": true, "mall___get_footfall_summary": true, "mall___get_hourly_traffic": false, "mall___get_zone_comparison": false}}, {"case": "ds1: 2LO token is app-only (no user, no scp)", "expect": [null, null, "{entra-agent-app-id}"], "actual": [null, null, "{entra-agent-app-id}"], "pass": true, "evidence": "http=200 roles=['Tools.Mall.List', 'Tools.Mall.Footfall'] err=None", "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"], "http": 200}, {"case": "ds1: 2LO tools/list = the app's roles", "expect": ["mall___get_footfall_summary", "mall___get_mall_list"], "actual": ["mall___get_footfall_summary", "mall___get_mall_list"], "pass": true, "evidence": "allowed={'mall___get_mall_list': True, 'mall___get_footfall_summary': True, 'mall___get_hourly_traffic': False, 'mall___get_zone_comparison': False}", "allowed": {"mall___get_mall_list": true, "mall___get_footfall_summary": true, "mall___get_hourly_traffic": false, "mall___get_zone_comparison": false}}, {"case": "chen: 2LO token is app-only (no user, no scp)", "expect": [null, null, "{entra-agent-app-id}"], "actual": [null, null, "{entra-agent-app-id}"], "pass": true, "evidence": "http=200 roles=['Tools.Mall.List', 'Tools.Mall.Footfall'] err=None", "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"], "http": 200}, {"case": "chen: 2LO tools/list = the app's roles", "expect": ["mall___get_footfall_summary", "mall___get_mall_list"], "actual": ["mall___get_footfall_summary", "mall___get_mall_list"], "pass": true, "evidence": "allowed={'mall___get_mall_list': True, 'mall___get_footfall_summary': True, 'mall___get_hourly_traffic': False, 'mall___get_zone_comparison': False}", "allowed": {"mall___get_mall_list": true, "mall___get_footfall_summary": true, "mall___get_hourly_traffic": false, "mall___get_zone_comparison": false}}, {"case": "no bearer -> runtime rejects", "expect": true, "actual": true, "pass": true, "evidence": "http=401", "http": 401}]}, "recorded": "2026-10-20", "x": {"signin_test": {"title": "脚本化登录：用户获取「面向 agent」的 Entra token", "file": "Entra 身份测试脚本（节选）", "start": 20, "end": 25, "code": "def user_token(u):  # the user's Entra token FOR THE AGENT (aud = rsidc-entra-agent)\n    r = requests.post(f\"https://login.microsoftonline.com/{T}/oauth2/v2.0/token\", timeout=30, data=dict(\n        grant_type=\"password\", client_id=CLI, username=f\"{u}@{D}\", password=<password: redacted>,\n        scope=f\"api://{AGENT}/access_as_user\")).json()\n    if \"access_token\" not in r: raise RuntimeError(f\"{u}: {r.get('error')} {r.get('error_description', '')[:120]}\")\n    return r[\"access_token\"]", "hl": ["scope=", "grant_type"]}, "signin_gui": {"title": "GUI 登录 scope（授权码 + PKCE）", "file": "webchat/entra-id/entra_app.py", "start": 20, "end": 20, "code": "SCOPE = f\"openid profile offline_access api://{AGENT}/access_as_user\"", "hl": []}, "signin_gui2": {"title": "GUI：授权码 + PKCE 重定向", "file": "webchat/entra-id/entra_app.py", "start": 60, "end": 65, "code": "        if u.path == \"/entra/login\":\n            verifier, state = secrets.token_urlsafe(48), secrets.token_urlsafe(16); PENDING[state] = verifier\n            ch = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip(\"=\")\n            p = dict(response_type=\"code\", client_id=CLIENT, redirect_uri=REDIRECT, scope=SCOPE, state=state, prompt=\"login\",\n                     code_challenge=ch, code_challenge_method=\"S256\")\n            return self.send(302, headers=[(\"Location\", f\"{AUTHORITY}/authorize?{urllib.parse.urlencode(p)}\")])", "hl": ["code_challenge", "scope=SCOPE"]}, "gui_server_side": {"title": "GUI：用户 token 只保存在服务端", "file": "webchat/entra-id/entra_app.py", "start": 75, "end": 78, "code": "            inbound = claims(r[\"access_token\"]); sid = secrets.token_urlsafe(24)\n            SESSIONS[sid] = {\"token\": r[\"access_token\"], \"login_hint\": idc.get(\"login_hint\"), \"inbound\": inbound,\n                             \"user\": inbound.get(\"preferred_username\", \"?\")}\n            return self.send(302, headers=[(\"Location\", \"/\"), (\"Set-Cookie\", cookie(\"esid\", sid, BASE))])", "hl": ["cookie("]}, "rt_auth": {"title": "Runtime 入站认证（customJWTAuthorizer）", "file": "infra/entra-id/04-entra-agentcore.sh", "start": 42, "end": 44, "code": "  \"authorizerConfiguration\": {\"customJWTAuthorizer\": {\"discoveryUrl\": f\"https://login.microsoftonline.com/{e['ENTRA_TENANT_ID']}/v2.0/.well-known/openid-configuration\",\n                                                      \"allowedAudience\": [e[\"ENTRA_AGENT_APP_ID\"]]}},\n  \"requestHeaderConfiguration\": {\"requestHeaderAllowlist\": [\"Authorization\"]},", "hl": ["discoveryUrl", "allowedAudience", "requestHeaderAllowlist"]}, "rt_env": {"title": "Runtime 环境变量：agent 使用哪个 provider / API / gateway", "file": "infra/entra-id/04-entra-agentcore.sh", "start": 46, "end": 46, "code": "  \"environmentVariables\": {\"CP_ENTRA\": \"rsidc-entra\", \"MALL_API_APP_ID\": e[\"ENTRA_API_APP_ID\"], \"ENTRA_GW_URL\": e[\"ENTRA_GW_URL\"]},", "hl": []}, "wat": {"title": "Agent 入口：从运行时上下文获取 WAT；mode=2lo", "file": "agents/entra-id/main.py", "start": 94, "end": 103, "code": "@app.entrypoint\ndef invoke(payload, context):\n    wat = BedrockAgentCoreContext.get_workload_access_token()\n    if not wat:\n        return {\"error\": \"no workload access token (inbound JWT required)\"}\n    auth = {k.lower(): v for k, v in (context.request_headers or {}).items()}.get(\"authorization\", \"\")\n    inbound = claims(auth.split(\" \", 1)[1]) if auth.lower().startswith(\"bearer \") else {}\n    mode = payload.get(\"mode\")\n    try:\n        if mode == \"whoami\": return {\"flow\": \"inbound\", \"inbound_token_claims\": inbound}", "hl": ["get_workload_access_token", "two_lo(wat)"]}, "keep": {"title": "Agent 回传的 claims（从不回传 token 本身）", "file": "agents/entra-id/main.py", "start": 23, "end": 23, "code": "KEEP = (\"ver\", \"iss\", \"aud\", \"azp\", \"appid\", \"idtyp\", \"scp\", \"roles\", \"preferred_username\", \"upn\", \"name\", \"oid\", \"sub\")", "hl": []}, "m2m": {"title": "GetResourceOauth2Token(oauth2Flow=M2M) 与 2LO 调用", "file": "agents/entra-id/main.py", "start": 59, "end": 66, "code": "def token(wat: str, flow: str, scopes: list[str], **extra) -> dict:\n    return identity.get_resource_oauth2_token(workloadIdentityToken=wat, resourceCredentialProviderName=CP,\n                                              scopes=scopes, oauth2Flow=flow, **extra)\n\n\ndef two_lo(wat):\n    t = token(wat, \"M2M\", [f\"api://{MALL_API}/.default\"])[\"accessToken\"]\n    return {\"flow\": \"2LO\", \"outbound_token_claims\": claims(t), \"gateway\": gateway_check(t)}", "hl": ["\"M2M\"", ".default", "resourceCredentialProviderName"]}, "gw_check": {"title": "Gateway 探测：先 tools/list，再对每个工具执行 tools/call", "file": "agents/entra-id/main.py", "start": 47, "end": 56, "code": "def gateway_check(token: str) -> dict:\n    \"\"\"tools/list, then tools/call on every tool. A Cedar deny is HTTP 200 + result.isError.\"\"\"\n    s, j = http_json(GW, token, {\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/list\"})\n    listed = sorted(t[\"name\"] for t in j.get(\"result\", {}).get(\"tools\", []))\n    calls = {}\n    for t in TOOLS:\n        cs, cj = http_json(GW, token, {\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\",\n                                       \"params\": {\"name\": t, \"arguments\": {\"mall_id\": \"HK01\", \"date\": \"2026-10-01\"}}})\n        calls[t] = cs == 200 and \"error\" not in cj and not cj.get(\"result\", {}).get(\"isError\")\n    return {\"list_http\": s, \"listed\": listed, \"allowed\": calls}", "hl": ["tools/list", "isError"]}, "cp": {"title": "凭证提供程序 rsidc-entra（MicrosoftOauth2）", "file": "infra/entra-id/04-entra-agentcore.sh", "start": 6, "end": 21, "code": "# 1) credential provider (client secret read from the gitignored file, never echoed)\nif ! aws bedrock-agentcore-control get-oauth2-credential-provider --region $R --name $CP >/dev/null 2>&1; then\n  ROOT=\"$ROOT\" \"$ROOT/.venv/bin/python\" - \"$CP\" <<'PY'\nimport json, os, subprocess, sys, tempfile\nsec = dict(l.strip().split(\"=\", 1) for l in open(os.path.join(os.environ[\"ROOT\"], \"<secret store>\")) if \"=\" in l)[\"ENTRA_AGENT_CLIENT_SECRET\"]\nspec = {\"name\": sys.argv[1], \"credentialProviderVendor\": \"MicrosoftOauth2\", \"oauth2ProviderConfigInput\": {\"microsoftOauth2ProviderConfig\": {\n        \"clientId\": os.environ[\"ENTRA_AGENT_APP_ID\"], \"clientSecret\": sec, \"tenantId\": os.environ[\"ENTRA_TENANT_ID\"]}}}\nfd, spec_path = tempfile.mkstemp(suffix=\".json\")  # mkstemp creates the file 0600; the secret never goes on argv\ntry:\n    with os.fdopen(fd, \"w\", encoding=\"utf-8\") as f:\n        json.dump(spec, f)\n    subprocess.run([\"aws\", \"bedrock-agentcore-control\", \"create-oauth2-credential-provider\", \"--region\", os.environ[\"RT_REGION\"],\n                    \"--cli-input-json\", \"file://\" + spec_path], check=True, stdout=subprocess.DEVNULL)\nfinally:\n    os.unlink(spec_path)\nPY", "hl": ["MicrosoftOauth2", "clientSecret", "tenantId"]}, "cp_secret": {"title": "密钥保存在 AgentCore Identity 中（clientSecretArn）", "file": "infra/entra-id/04-entra-agentcore.sh", "start": 24, "end": 24, "code": "save CP_ENTRA_SECRET_ARN $(aws bedrock-agentcore-control get-oauth2-credential-provider --region $R --name $CP --query clientSecretArn.secretArn --output text)", "hl": []}, "roles_const": {"title": "AGENT 自身持有的 App Roles", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 19, "end": 19, "code": "APP_ROLES_FOR_AGENT = [\"Tools.Mall.List\", \"Tools.Mall.Footfall\"]   # 2LO: what the AGENT itself may call", "hl": []}, "app_member": {"title": "rsidc-mall-api App Roles：allowedMemberTypes 增加 Application", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 59, "end": 65, "code": "# --- rsidc-mall-api: let applications hold the Tools.Mall.* roles (2LO) ---\napi = one(\"/applications\", \"displayName eq 'rsidc-mall-api'\")\nroles = api[\"appRoles\"]\nif any(\"Application\" not in r[\"allowedMemberTypes\"] for r in roles):\n    for r in roles: r[\"allowedMemberTypes\"] = sorted(set(r[\"allowedMemberTypes\"]) | {\"Application\"})\n    g(\"PATCH\", f\"/applications/{api['id']}\", {\"appRoles\": roles}); print(\"rsidc-mall-api: App Roles now allow Application\")\nrole_ids = {r[\"value\"]: r[\"id\"] for r in roles}", "hl": ["Application"]}, "rra": {"title": "Agent 应用 manifest：以应用程序权限（type Role）请求 App Roles", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 84, "end": 86, "code": "    \"requiredResourceAccess\": merge_rra(agent, {\n        GRAPH_APP: {(graph_scope[s], \"Scope\") for s in (\"User.Read\", \"openid\", \"profile\", \"offline_access\")},\n        api[\"appId\"]: {(mcp_scope, \"Scope\")} | {(role_ids[r], \"Role\") for r in APP_ROLES_FOR_AGENT}})})", "hl": ["\"Role\""]}, "assign": {"title": "应用程序权限的管理员同意 = appRoleAssignedTo", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 91, "end": 94, "code": "have = {(a[\"principalId\"], a[\"appRoleId\"]) for a in g(\"GET\", f\"/servicePrincipals/{api_sp['id']}/appRoleAssignedTo\")[\"value\"]}\nfor r in APP_ROLES_FOR_AGENT:                                                      # 2LO: application permissions\n    if (agent_sp[\"id\"], role_ids[r]) not in have:\n        g(\"POST\", f\"/servicePrincipals/{api_sp['id']}/appRoleAssignedTo\", {\"principalId\": agent_sp[\"id\"], \"resourceId\": api_sp[\"id\"], \"appRoleId\": role_ids[r]})", "hl": ["appRoleAssignedTo"]}, "secret": {"title": "Client secret：有效期 90 天，只存放在密钥存储中", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 96, "end": 102, "code": "# --- client secret (only when there is none on disk) ---\nif not os.path.exists(SECRET_FILE):\n    end = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=90)).strftime(\"%Y-%m-%dT%H:%M:%SZ\")\n    pw = g(\"POST\", f\"/applications/{agent['id']}/addPassword\", {\"passwordCredential\": {\"displayName\": \"agentcore-credential-provider\", \"endDateTime\": end}})\n    os.makedirs(os.path.dirname(SECRET_FILE), exist_ok=True)\n    with os.fdopen(os.open(SECRET_FILE, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600), \"w\", encoding=\"utf-8\") as f: f.write(f\"ENTRA_AGENT_CLIENT_SECRET={pw['secretText']}\\n\")\n    os.chmod(SECRET_FILE, 0o600); print(\"client secret created (90 days) -> <secret store>\")", "hl": ["addPassword", "0o600"]}, "agent_app": {"title": "Agent 应用 rsidc-entra-agent（其自身 API = runtime 的 audience）", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 73, "end": 78, "code": "    agent = g(\"POST\", \"/applications\", {\n        \"displayName\": \"rsidc-entra-agent\", \"signInAudience\": \"AzureADMyOrg\",\n        \"api\": {\"requestedAccessTokenVersion\": 2, \"oauth2PermissionScopes\": [{\n            \"id\": str(uuid.uuid4()), \"value\": \"access_as_user\", \"type\": \"User\", \"isEnabled\": True,\n            \"adminConsentDisplayName\": \"Call the rsidc Entra agent\", \"adminConsentDescription\": \"Call the rsidc Entra agent on AgentCore Runtime\",\n            \"userConsentDisplayName\": \"Call the rsidc Entra agent\", \"userConsentDescription\": \"Call the rsidc Entra agent on AgentCore Runtime\"}]}})", "hl": ["access_as_user", "requestedAccessTokenVersion"]}, "gw_auth": {"title": "Gateway 入站认证（CUSTOM_JWT，audience = rsidc-mall-api）", "file": "infra/entra-id/02-entra-gateway.sh", "start": 11, "end": 13, "code": "DISC=\"https://login.microsoftonline.com/$ENTRA_TENANT_ID/v2.0/.well-known/openid-configuration\"\nGR=${PROJECT}-mall-gateway-role; MALL_FN=arn:aws:lambda:$R:${ACCOUNT_ID}:function:${PROJECT}-mall-tools\nAUTH=\"{\\\"customJWTAuthorizer\\\":{\\\"discoveryUrl\\\":\\\"$DISC\\\",\\\"allowedAudience\\\":[\\\"$ENTRA_API_APP_ID\\\"]}}\"", "hl": ["allowedAudience"]}, "gw_target": {"title": "Gateway target：通过 gateway IAM 角色调用 mall Lambda", "file": "infra/entra-id/02-entra-gateway.sh", "start": 25, "end": 27, "code": "  aws bedrock-agentcore-control create-gateway-target --region $R --gateway-identifier $ENTRA_GW_ID --name mall \\\n    --description \"Customer mall-footfall tools (4)\" --target-configuration \"$CFG\" \\\n    --credential-provider-configurations '[{\"credentialProviderType\":\"GATEWAY_IAM_ROLE\"}]' >/dev/null", "hl": ["GATEWAY_IAM_ROLE"]}, "cedar": {"title": "Cedar：每个工具一条 permit，匹配 Entra `roles` claim", "file": "infra/entra-id/02-entra-gateway.sh", "start": 37, "end": 46, "code": "policy() {  # identical rule shape to the Cognito customer version; only the gateway ARN differs\n  aws bedrock-agentcore-control list-policies --region $R --policy-engine-id $ENTRA_PE_ID --query \"policies[?name=='$1'].policyId\" --output text | grep -q . && return\n  local stmt=\"permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\\\"$2\\\", resource == AgentCore::Gateway::\\\"$ENTRA_GW_ARN\\\") when { principal.hasTag(\\\"roles\\\") && principal.getTag(\\\"roles\\\") like \\\"*\\\\\\\"$3\\\\\\\"*\\\" };\"\n  aws bedrock-agentcore-control create-policy --region $R --policy-engine-id $ENTRA_PE_ID --name $1 \\\n    --description \"$2 requires Entra App Role $3\" --definition \"$(jq -cn --arg s \"$stmt\" '{cedar:{statement:$s}}')\" >/dev/null\n}\npolicy entra_mall_list     mall___get_mall_list        Tools.Mall.List\npolicy entra_mall_footfall mall___get_footfall_summary Tools.Mall.Footfall\npolicy entra_mall_hourly   mall___get_hourly_traffic   Tools.Mall.Hourly\npolicy entra_mall_zone     mall___get_zone_comparison  Tools.Mall.Zone", "hl": ["getTag(\\\"roles\\\")", "policy entra_"]}, "pe_attach": {"title": "以 LOG_ONLY 或 ENFORCE 模式挂载策略引擎", "file": "infra/entra-id/02-entra-gateway.sh", "start": 55, "end": 55, "code": "  --policy-engine-configuration \"{\\\"arn\\\":\\\"$ENTRA_PE_ARN\\\",\\\"mode\\\":\\\"$MODE\\\"}\" >/dev/null && break; sleep 10; done  # IAM propagation", "hl": []}, "test_expect": {"title": "测试预期：用户自身的 roles 与应用（APP）的 roles", "file": "Entra 身份测试脚本（节选）", "start": 15, "end": 16, "code": "USER_EXPECT = {\"wei\": set(TOOLS), \"ds1\": {\"mall___get_mall_list\", \"mall___get_footfall_summary\"}, \"chen\": set()}\nAPP_EXPECT = {\"mall___get_mall_list\", \"mall___get_footfall_summary\"}   # the AGENT app's own App Roles (2LO)", "hl": ["APP_EXPECT"]}, "test_2lo": {"title": "2LO 测试阶段：wei / ds1 / chen 发起相同调用，再测试不带 bearer", "file": "Entra 身份测试脚本（节选）", "start": 45, "end": 50, "code": "    if phase == \"2lo\":\n        for u in (\"wei\", \"ds1\", \"chen\"):   # same answer whoever calls: the token is the AGENT's\n            s, b = call(user_token(u), {\"mode\": \"2lo\"}); c = b.get(\"outbound_token_claims\", {}); gw = b.get(\"gateway\", {})\n            rec(f\"{u}: 2LO token is app-only (no user, no scp)\", (None, None, AGENT), (c.get(\"preferred_username\"), c.get(\"scp\"), c.get(\"azp\")), f\"http={s} roles={c.get('roles')} err={b.get('error')}\")\n            rec(f\"{u}: 2LO tools/list = the app's roles\", sorted(APP_EXPECT), gw.get(\"listed\"), f\"allowed={gw.get('allowed')}\")\n        s, b = invoke(None, {\"mode\": \"2lo\"}, runtime_arn=RT); rec(\"no bearer -> runtime rejects\", True, s in (401, 403), f\"http={s}\")", "hl": ["AGENT", "None"]}}, "arch": "img/architecture-entra-2lo.svg", "oboPage": "part4-obo.html", "screens": [{"file": "img/entra-08-agent-app-api-permissions.png", "caption": "rsidc-entra-agent · API permissions：在 rsidc-mall-api 上拥有应用程序权限（APPLICATION）Tools.Mall.List + Tools.Mall.Footfall（已授予管理员同意）—— 它们会成为 app-only token 中的 roles", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/CallAnAPI/appId/{entra-agent-app-id}", "look": "在 rsidc-mall-api 下，Tools.Mall.Footfall 和 Tools.Mall.List 的 Type = Application、Admin consent required = Yes、Status = Granted（委托权限那几行服务于其他流程）。"}, {"file": "img/entra-02-mall-api-app-roles.png", "caption": "rsidc-mall-api · App roles：允许的成员类型包含 Applications", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/AppRoles/appId/{mall-api-app-id}", "look": "Tools.Mall.* 各角色的允许成员类型中包含 Applications，因此应用（而不只是用户）也可以被分配这些角色。"}, {"file": "img/entra-11-mall-api-users-and-groups.png", "caption": "rsidc-mall-api · Enterprise application · Users and groups：rsidc-entra-agent 服务主体持有 App Role 分配（另有各用户的分配）", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Users/objectId/{entra-sp-object-id}/appId/{mall-api-app-id}", "look": "rsidc-entra-agent 出现两次，对象类型为 Service principal（每个 App Role 一行：List、Footfall）；用户行是用户自己的分配。"}, {"file": "img/entra-10-agent-app-certificates-secrets.png", "caption": "rsidc-entra-agent · Certificates & secrets：client secret 只由 AgentCore Identity 凭证提供程序持有（值已打码）", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Credentials/appId/{entra-agent-app-id}", "look": "只有一个 client secret（description 为 agentcore-credential-provider，并显示到期时间）；值和 secret ID 均已涂黑。"}], "faq": [{"q": "为什么 2LO token 携带的是应用（APP）的 roles，而不是用户的？", "why": "2LO 即 OAuth 2.0 **客户端凭据（client credentials）** 授权：agent 应用用自己的 client ID + secret 进行认证，全程没有用户参与。Entra 在 `roles` 中写入的是分配给**客户端服务主体**的 App Roles（即已获管理员同意的应用程序权限）。用户的入站 token 只用于认证对 AgentCore Runtime 的调用，并绑定 workload access token；在此流程中它从不会被发送给 Entra。", "fix": "这是预期行为。只授予 agent 应用其确实需要的 App Roles：调用该 agent 的每个人都会继承这些权限。", "verified": "wei、ds1 和 chen 的记录一致：`azp` = rsidc-entra-agent，没有 `preferred_username`，没有 `scp`，`roles` = [Tools.Mall.List, Tools.Mall.Footfall]。", "docs": [["Microsoft Entra · OAuth 2.0 客户端凭据流程（client credentials）", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow"], ["Microsoft Entra · 访问令牌（aud、azp、roles、scp）", "https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens"], ["RFC 6749 · OAuth 2.0（第 4.4 节 client credentials grant）", "https://datatracker.ietf.org/doc/html/rfc6749"], ["AgentCore Identity · 获取 OAuth 2.0 访问令牌（M2M 与用户流程）", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-authentication.html"], ["AgentCore API · GetResourceOauth2Token", "https://docs.aws.amazon.com/bedrock-agentcore/latest/APIReference/API_GetResourceOauth2Token.html"]]}, {"q": "为什么 App Roles 必须允许成员类型 Application？", "wrong": "如果某个角色只允许 Users/Groups，它就不会出现在 *API permissions → Add a permission* 的**应用程序权限**列表中，也无法分配给服务主体。", "why": "`allowedMemberTypes` 决定谁可以持有某个角色：`User`（用户和组，委托场景）和/或 `Application`（应用，app-only token）。只有包含 `Application` 的角色才会出现在客户端凭据 token 中。", "fix": "将 Tools.Mall.* 各角色的 `allowedMemberTypes` 设为 `[\"Application\", \"User\"]`。这是增量修改：用户已有的分配继续有效。", "verified": "来自配置以及 App roles 截图（配置页）：Tools.Mall.* 各角色均列出 Applications。", "docs": [["Microsoft Entra · 添加应用角色并在 token 中接收", "https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-app-roles-in-apps"], ["Microsoft Entra · 应用清单（appRoles、allowedMemberTypes）", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-app-manifest"], ["Microsoft Entra · OAuth 2.0 客户端凭据流程（client credentials）", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow"]]}, {"q": "为什么应用程序权限必须经过管理员同意？", "wrong": "没有同意时，app-only token 中不含针对 rsidc-mall-api 的 `roles` claim，因此 Cedar 不会放行任何工具。", "why": "客户端凭据流程中没有可以表示同意的登录用户，而且应用程序权限在整个租户范围内生效，因此只有管理员才能授予。授予同意会在资源的服务主体（rsidc-mall-api）上创建一条 **appRoleAssignment**，principal 为 agent 的服务主体；Entra 填写 `roles` 时读取的正是这条分配。", "fix": "在 *API permissions* 中授予管理员同意，或通过 Microsoft Graph `POST /servicePrincipals/{resource-sp}/appRoleAssignedTo` 创建该分配。", "verified": "API permissions 截图：两个应用程序权限均显示 Granted。Users and groups 截图：rsidc-entra-agent 服务主体持有两条 App Role 分配。", "docs": [["Microsoft Entra · 为应用授予租户范围的管理员同意", "https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/grant-admin-consent"], ["Microsoft Entra · 权限与同意概述（委托权限 vs 应用程序权限）", "https://learn.microsoft.com/en-us/entra/identity-platform/permissions-consent-overview"], ["Microsoft Graph · 为服务主体授予 appRoleAssignment（appRoleAssignedTo）", "https://learn.microsoft.com/en-us/graph/api/serviceprincipal-post-approleassignedto"], ["Microsoft Entra · OAuth 2.0 客户端凭据流程（client credentials）", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow"]]}, {"q": "为什么每个用户拿到的工具都一样？", "why": "Gateway 和 Cedar 只能看到传给它们的 token。在 2LO 中，这个 token 描述的是 **agent 应用**，因此 Cedar 规则（`roles` 包含 `Tools.Mall.X`）每次评估的都是应用的 roles。请求背后的真人对资源来说是不可见的。", "fix": "如果权限必须因人而异，要么在 agent 调用前自行检查用户权限，要么使用 OBO，让下游 token 携带用户身份（第 4 部分）。", "verified": "已记录：wei（自身 4 个角色）、ds1（2 个）和 chen（0 个）都拿到相同的 2 个工具；三人调用 hourly 和 zone 均被拒绝。", "docs": [["Amazon Bedrock AgentCore 中的 Policy（Cedar）", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html"], ["AgentCore Gateway · 入站授权", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"], ["AgentCore API · CustomJWTAuthorizerConfiguration", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html"], ["Microsoft Entra · 访问令牌（aud、azp、roles、scp）", "https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens"]]}, {"q": "什么时候用 2LO，什么时候用 OBO？", "why": "**2LO** 适合 agent 自有、非个人化的访问：共享参考数据、定时或批处理任务、没有用户在场的调用。资源侧的授权与审计以应用为单位。**OBO** 将用户的 token 交换为保留用户身份（`preferred_username`、用户的 `roles`）的下游 token，因此资源可以按用户执行权限控制并记录审计日志。", "fix": "同一个凭证提供程序，不同的 `oauth2Flow`：2LO 用 `M2M`，OBO 用 `ON_BEHALF_OF_TOKEN_EXCHANGE`。使用 2LO 时，请在 agent 中记录入站用户以便审计。", "docs": [["Microsoft Entra · OAuth 2.0 客户端凭据流程（client credentials）", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow"], ["Microsoft Entra · On-Behalf-Of 流程", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-on-behalf-of-flow"], ["AgentCore Identity · 概述", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-overview.html"], ["AgentCore Identity · 获取 OAuth 2.0 访问令牌（M2M 与用户流程）", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-authentication.html"], ["AgentCore Runtime · 入站与出站认证", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-oauth.html"]]}, {"q": "为什么客户端凭据请求使用 `api://<rsidc-mall-api>/.default`？", "why": "客户端凭据授权无法请求 `mcp.access` 这类单个委托 scope。`.default` scope 会向 Entra 请求该应用在该资源上已获授予的**全部**应用程序权限，结果列在 `roles` 中。", "fix": "调用 `GetResourceOauth2Token` 时传入 `scopes = [\"api://<rsidc-mall-api appId>/.default\"]`，并设置 `oauth2Flow = M2M`。", "verified": "已记录：使用 `.default` 的 M2M 调用返回的 token 中 `aud` = rsidc-mall-api，并带有两个已授予的角色。", "docs": [["Microsoft Entra · OAuth 2.0 客户端凭据流程（client credentials）", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow"], ["Microsoft Entra · scope、权限与同意（.default）", "https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc"], ["AgentCore API · GetResourceOauth2Token", "https://docs.aws.amazon.com/bedrock-agentcore/latest/APIReference/API_GetResourceOauth2Token.html"]]}, {"q": "Client secret 存放在哪里？agent 代码能看到它吗？", "why": "Secret 由 AgentCore Identity 的**凭证提供程序** `rsidc-entra`（vendor MicrosoftOauth2）保存，实际存放在 AWS Secrets Manager 中（`clientSecretArn`）。Agent 只出示自己的 workload access token；由 AgentCore Identity 发起客户端凭据请求并返回访问令牌。", "fix": "在 secret 过期前通过更新凭证提供程序进行轮换，或改用证书凭据以获得更高保障。切勿把 secret 放进 agent 代码、环境变量或截图中。", "verified": "Certificates & secrets 截图：只有一个 client secret（agentcore-credential-provider），值已打码。", "docs": [["AgentCore Identity · 管理凭证提供程序", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-outbound-credential-provider.html"], ["AgentCore API · CreateOauth2CredentialProvider", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html"], ["AgentCore Identity · Microsoft（Entra ID）提供程序", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-idp-microsoft.html"], ["Microsoft Entra · 为应用添加凭据（secret、证书）", "https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-credentials"], ["Microsoft Entra · 证书凭据", "https://learn.microsoft.com/en-us/entra/identity-platform/certificate-credentials"]]}, {"q": "Gateway 会对 app-only token 检查什么？", "why": "Gateway 入站认证为 CUSTOM_JWT：用租户 JWKS（来自 Entra v2 discovery 文档）校验签名，并检查 issuer、过期时间，以及 `aud` ∈ `allowedAudience` = rsidc-mall-api 的 app ID。Entra v2 访问令牌以资源的 app ID 作为 `aud`，并在 `azp` 中携带客户端；这里没有配置客户端允许列表，因此 audience 就是校验点。", "fix": "无需改动：2LO 复用与用户流程相同的 Gateway 和 Cedar 策略，区别只在 token 的 `roles`。", "verified": "已记录：三位用户使用 app-only token 调用 `tools/list` 均返回 HTTP 200。", "docs": [["AgentCore Gateway · 入站授权", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"], ["AgentCore API · CustomJWTAuthorizerConfiguration", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html"], ["Microsoft Entra · 访问令牌（aud、azp、roles、scp）", "https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens"]]}, {"q": "故障排查：agent 运行之前 Runtime 就返回 401", "wrong": "`InvokeAgentRuntime` 返回 HTTP 401。", "why": "当 bearer token 缺失、已过期、来自其他 issuer，或其 `aud` 不是 agent 应用（rsidc-entra-agent）时，Runtime 的 customJWTAuthorizer 会拒绝请求。此时 agent 代码根本不会运行，因此也无法请求 2LO token。", "fix": "发送 `Authorization: Bearer <user token>`，且该 token 须以 `scope = api://<rsidc-entra-agent>/access_as_user` 请求获得；如果 agent 需要读取 `Authorization` 头，还要在 runtime 上将其加入允许列表。", "verified": "已记录：不带 bearer 的调用 → HTTP 401。", "docs": [["AgentCore Runtime · 入站与出站认证", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-oauth.html"], ["AgentCore API · CustomJWTAuthorizerConfiguration", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html"], ["Microsoft Entra · 访问令牌（aud、azp、roles、scp）", "https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens"]]}], "userRoles": {"wei": ["Tools.Mall.List", "Tools.Mall.Footfall", "Tools.Mall.Hourly", "Tools.Mall.Zone"], "ds1": ["Tools.Mall.List", "Tools.Mall.Footfall"], "chen": []}, "tools": {"mall___get_mall_list": "Tools.Mall.List", "mall___get_footfall_summary": "Tools.Mall.Footfall", "mall___get_hourly_traffic": "Tools.Mall.Hourly", "mall___get_zone_comparison": "Tools.Mall.Zone"}}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ID = D.ids, RES = D.results, TOOLS = Object.keys(D.tools);
+const USERS = ["wei", "ds1", "chen"];
+const caseOf = (u, kind) => RES.cases.find(c => c.case.startsWith(u + ":") && c.case.includes(kind));
+const chips = (r, cls = "") => r && r.length ? r.map(x => `<span class="chip ${cls}">${esc(x)}</span>`).join("") : `<span class="chip none">无 roles</span>`;
+const tag = k => ({rec: '<span class="tag rec">已记录</span>', der: '<span class="tag der">来自配置</span>'})[k];
+const foot = () => `<div class="foot">测试记录（${esc(D.recorded)}）</div>`;
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+function code(x) {
+  if (!x) return "";
+  const rows = x.code.split("\n").map((l, i) => `<span class="ln${x.hl.some(h => l.includes(h)) ? " h" : ""}"><i>${x.start + i}</i>${esc(l)}</span>`).join("");
+  return `<div class="src"><b>${esc(x.title)}</b> · <code>${esc(x.file)}:${x.start}-${x.end}</code></div><pre class="code">${rows}</pre>`;
+}
+function claimsTable(rows) {
+  return `<table><tr><th>claim</th><th>值</th><th>状态</th></tr>${rows.map(r =>
+    `<tr><td><code>${esc(r[0])}</code></td><td class="${r[3] || ""}">${r[1]}</td><td>${tag(r[2])}</td></tr>`).join("")}</table>`;
+}
+const absent = '<span class="note">不存在</span>';
+
+// ---------- tabs ----------
+const TABS = [["arch", "0 · 架构"], ["replay", "1 · 回放（模拟登录）"], ["hood", "2 · 原理剖析"], ["rights", "3 · 2LO 与用户自身权限"], ["setup", "4 · 配置"], ["faq", "5 · FAQ · 技术难点"]];
+safeRender($("#nav"), TABS.map(([k, t]) => `<a data-s="${k}">${t}</a>`).join(""), true);
+function show(v) {
+  document.querySelectorAll("nav a").forEach(a => a.classList.toggle("on", a.dataset.s === v));
+  document.querySelectorAll(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  history.replaceState(null, "", "#" + v);
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav a").forEach(a => a.onclick = () => show(a.dataset.s));
+
+// ---------- Replay ----------
+const state = {user: "wei", signedIn: false, runs: {}};
+function inboundRows(u) {
+  return [["ver", "2.0", "der"], ["iss", `https://login.microsoftonline.com/${esc(ID.tenant)}/v2.0`, "der"],
+    ["aud", `<code>${esc(ID.agent)}</code> (rsidc-entra-agent)`, "der"], ["azp", `<code>${esc(ID.client)}</code> (rsidc-mall-test-client)`, "der"],
+    ["scp", "access_as_user", "der"], ["preferred_username", `${esc(u)}@${esc(ID.domain)}`, "der"],
+    ["roles", absent + ' <span class="note">（用户在 rsidc-entra-agent 上没有任何 App Role）</span>', "der"]];
+}
+function outboundRows(u) {
+  const c = caseOf(u, "app-only"), [pu, scp, azp] = c.actual;
+  return [["aud", `<code>${esc(ID.api)}</code> (rsidc-mall-api)`, "der"], ["azp", `<code>${esc(azp)}</code> (rsidc-entra-agent)`, "rec", "diff"],
+    ["scp", scp == null ? absent : esc(scp), "rec", "diff"], ["preferred_username", pu == null ? absent : esc(pu), "rec", "diff"],
+    ["roles", chips(c.roles, "app"), "rec", "diff"]];
+}
+function gwTable(u) {
+  const c = caseOf(u, "tools/list"), listed = c.actual || [];
+  return `<table><tr><th>工具</th><th>所需 App Role</th><th>tools/list</th><th>直接 tools/call（Cedar）</th></tr>${TOOLS.map(t => {
+    const l = listed.includes(t), ok = c.allowed[t];
+    return `<tr><td><code>${esc(t)}</code></td><td>${esc(D.tools[t])}</td><td class="${l ? "ok" : "no"}">${l ? "✓ 已列出" : "✗ 已隐藏"}</td><td class="${ok ? "ok" : "no"}">${ok ? "✓ 允许" : "✗ 拒绝"}</td></tr>`; }).join("")}</table>`;
+}
+function renderReplay() {
+  const u = state.user;
+  const userCards = USERS.map(x => `<div class="user ${x === u ? "on" : ""}" data-u="${x}"><b>${x}</b><div class="note">${esc(x)}@${esc(ID.domain)}</div>
+     <div class="note">自身在 rsidc-mall-api 上的 App Roles（${D.userRoles[x].length}）：</div>${chips(D.userRoles[x].map(r => r.replace("Tools.Mall.", "")))}</div>`).join("");
+  const run = state.runs[u];
+  const runsDone = USERS.filter(x => state.runs[x]);
+  safeRender($("#v-replay"), `
+  <div class="card"><h2>1 · 选择用户并使用 Entra ID 登录 <span class="note">（模拟）</span></h2>
+    <div class="users">${userCards}</div>
+    <div style="margin-top:12px">${state.signedIn ? `<span class="note">已登录为 <b>${esc(u)}@${esc(ID.domain)}</b> · scope <code>api://rsidc-entra-agent/access_as_user</code> · token 保留在服务端，本页只展示 claims。</span> <button class="sec" id="signout">退出登录</button>`
+      : `<div class="fake"><div class="ms"><span style="background:#f25022"></span><span style="background:#7fba00"></span><span style="background:#00a4ef"></span><span style="background:#ffb900"></span></div>
+         <b>登录</b><div class="note">rsidc-mall-test-client · 公共客户端，授权码 + PKCE（模拟对话框）</div>
+         <input value="${esc(u)}@${esc(ID.domain)}" readonly><input type="password" value="••••••••" readonly>
+         <button class="act" id="signin">登录（模拟）</button></div>`}</div>
+    <p class="note">对应 Entra 演示 Web GUI 的操作：“Sign in with Entra ID” → 2LO 面板 → “Run 2LO”。记录中的运行使用脚本化的非交互式登录（Entra 身份测试脚本），因此无需 MFA 即可覆盖 wei / ds1 / chen。</p></div>
+  <div class="card" style="border-left:5px solid var(--or)"><h2>2 · 2LO · agent 以其<b>自身</b>身份行事（客户端凭据，M2M）</h2>
+    <div class="info">预期：出站 token 中没有用户信息（没有 <code>preferred_username</code>，没有 <code>scp</code>）；<code>azp</code> = agent 应用；<code>roles</code> = 应用（APP）的 App Roles（List + Footfall）→ <b>每个</b>用户都拿到同样的 2 个工具。</div>
+    <button class="act" id="run" ${state.signedIn ? "" : "disabled"}>运行 2LO</button> <button class="sec" id="nobearer">不带 bearer 调用 runtime</button>
+    <div class="flow" id="flow">${["用户 token → Runtime", "customJWTAuthorizer", "WAT", "GetResourceOauth2Token(M2M)", "Entra client_credentials", "app-only token", "Gateway CUSTOM_JWT", "Cedar on roles", "Lambda"].map(s => `<span>${s}</span>`).join("")}</div>
+    <div id="nb"></div>
+    ${run ? `<div class="grid2"><div><h3>入站 token（用户 → AgentCore Runtime）</h3>${claimsTable(inboundRows(u))}
+        <p class="note">由 runtime 的 customJWTAuthorizer 校验（Entra v2 discovery，allowedAudience = rsidc-entra-agent）。数值来自配置：authorizer 设置和登录 scope。</p></div>
+      <div><h3>出站 token（agent → Gateway），app-only</h3>${claimsTable(outboundRows(u))}
+        <p class="note">已记录：<code>${esc(caseOf(u, "app-only").case)}</code> → 预期 ${esc(JSON.stringify(caseOf(u, "app-only").expect))} · 实际 ${esc(JSON.stringify(caseOf(u, "app-only").actual))} · <b>${caseOf(u, "app-only").pass ? "PASS" : "FAIL"}</b> · ${esc(caseOf(u, "app-only").evidence)}.
+        <code>aud</code> 来自配置（请求的 scope 为 <code>api://&lt;rsidc-mall-api&gt;/.default</code>）。</p></div></div>
+      <h3>Gateway rsidc-mall-entra-gateway · tools/list HTTP ${esc(caseOf(u, "app-only").http)} · 列出 ${caseOf(u, "tools/list").actual.length} 个工具；并对每个工具直接调用</h3>${gwTable(u)}
+      <p class="note">已记录：<code>${esc(caseOf(u, "tools/list").case)}</code> · <b>${caseOf(u, "tools/list").pass ? "PASS" : "FAIL"}</b> · ${esc(caseOf(u, "tools/list").evidence)}</p>` : `<p class="note">${state.signedIn ? "点击“运行 2LO”。" : "请先登录。"}</p>`}
+  </div>
+  <div class="card"><h2>3 · 切换用户并对比</h2>
+    <p class="note">分别以每个用户运行 2LO。用户自身的权限各不相同（wei 4 · ds1 2 · chen 0），但 2LO 的结果完全一样。</p>
+    <table class="cmp"><tr><th>用户</th><th>自身 App Roles</th><th>出站 azp</th><th>出站 roles</th><th>2LO 允许的工具</th></tr>
+    ${USERS.map(x => { const r = state.runs[x], c = caseOf(x, "app-only"), g = caseOf(x, "tools/list");
+      return `<tr class="${x === u ? "sel" : ""}"><td class="u">${x}</td><td>${D.userRoles[x].length}</td>${r ? `<td><code>${esc(c.actual[2]).slice(0, 8)}…</code></td><td>${chips(c.roles, "app")}</td><td><b>${Object.values(g.allowed).filter(Boolean).length}</b> · ${esc(g.actual.join(", "))}</td>` : `<td colspan="3" class="note">尚未运行</td>`}</tr>`; }).join("")}</table>
+    ${runsDone.length === 3 ? `<div class="warn" style="margin-top:10px"><b>三人结果完全相同。</b>chen 没有任何 App Role，agent 却能访问 List + Footfall：在 2LO 中，资源授权的是 <b>agent</b>。如果需要按用户限制，agent 必须自行执行控制，或改用 OBO（<a href="${esc(D.oboPage)}">第 4 部分</a>）。</div>` : ""}
+  </div><div class="foot">测试记录（${esc(D.recorded)}） · ${RES.cases.filter(c => c.pass).length}/${RES.cases.length} PASS</div>`);
+  document.querySelectorAll(".user").forEach(e => e.onclick = () => { state.user = e.dataset.u; state.signedIn = false; renderReplay(); });
+  const si = $("#signin"); if (si) si.onclick = () => { state.signedIn = true; renderReplay(); };
+  const so = $("#signout"); if (so) so.onclick = () => { state.signedIn = false; renderReplay(); };
+  $("#run").onclick = animateRun;
+  $("#nobearer").onclick = () => { const c = RES.cases.find(c => c.case.startsWith("no bearer"));
+    safeRender($("#nb"), `<div class="warn">已记录：<code>${esc(c.case)}</code> · ${esc(c.evidence)} · <b>${c.pass ? "PASS" : "FAIL"}</b> — runtime 的 authorizer 在 agent 代码运行之前就拒绝了请求。</div>`); };
+}
+function animateRun() {
+  const spans = [...document.querySelectorAll("#flow span")]; $("#run").disabled = true;
+  spans.forEach((s, i) => setTimeout(() => s.classList.add("lit"), i * 160));
+  setTimeout(() => { state.runs[state.user] = true; renderReplay(); }, spans.length * 160 + 150);
+}
+
+// ---------- Under the hood ----------
+const X = D.x;
+const HOPS = [
+  {t: "1 · 用户登录", who: "Entra ID（租户）· 测试客户端",
+   call: `POST https://login.microsoftonline.com/${ID.tenant}/oauth2/v2.0/token  （脚本：grant_type=password；GUI：authorization_code + PKCE）\nclient_id = ${ID.client} (rsidc-mall-test-client)\nscope     = api://${ID.agent}/access_as_user`,
+   out: [["aud", ID.agent + " (rsidc-entra-agent)"], ["azp", ID.client + "（测试客户端）"], ["scp", "access_as_user"], ["preferred_username", "<user>@" + ID.domain]], outTag: "der",
+   check: "Entra 认证用户（密码 / MFA），并检查测试客户端是否持有 agent API 上已获管理员同意的委托 scope access_as_user。",
+   code: [X.signin_test, X.signin_gui, X.signin_gui2, X.gui_server_side]},
+  {t: "2 · Runtime 入站认证", who: "AgentCore Runtime（customJWTAuthorizer）",
+   call: `InvokeAgentRuntime  agentRuntimeArn = ${RES.runtime}\nAuthorization: Bearer <user's Entra access token>\npayload = {"mode": "2lo"}`,
+   out: [["result", "接受 → agent 代码运行；不带 bearer → HTTP 401（已记录）"]], outTag: "rec",
+   check: "用租户 JWKS（来自 v2 discovery 文档）校验签名，并检查 issuer、过期时间，以及 aud ∈ allowedAudience = rsidc-entra-agent。Authorization 头之所以会转发给 agent，是因为它已被加入允许列表。",
+   code: [X.rt_auth, X.rt_env]},
+  {t: "3 · Workload access token", who: "AgentCore Runtime → agent 代码",
+   call: "BedrockAgentCoreContext.get_workload_access_token()",
+   out: [["WAT", "rsidc_entra_agent 工作负载身份的不透明 token，绑定入站用户（不展示）"]], outTag: "der",
+   check: "入站认证成功后，runtime 签发 WAT；agent 从不接触 client secret。没有 WAT → agent 返回错误。",
+   code: [X.wat, X.keep]},
+  {t: "4 · GetResourceOauth2Token (M2M)", who: "AgentCore Identity（Token Vault）",
+   call: `bedrock-agentcore GetResourceOauth2Token\n  workloadIdentityToken          = <WAT>\n  resourceCredentialProviderName = rsidc-entra   (vendor MicrosoftOauth2)\n  oauth2Flow                     = M2M\n  scopes                         = ["api://${ID.api}/.default"]`,
+   out: [["accessToken", "app-only Entra token（claims 见第 6 跳）"]], outTag: "rec",
+   check: "AgentCore Identity 校验 WAT，检查 runtime 角色是否有权使用该 provider，然后用 provider 保存的 secret 执行 client_credentials。M2M token 按 agent 缓存；不需要逐个用户同意。",
+   code: [X.m2m, X.cp, X.cp_secret]},
+  {t: "5 · Entra client_credentials", who: "Entra ID token 端点",
+   call: `POST https://login.microsoftonline.com/${ID.tenant}/oauth2/v2.0/token\ngrant_type    = client_credentials\nclient_id     = ${ID.agent} (rsidc-entra-agent)\nclient_secret = <held by the credential provider>\nscope         = api://${ID.api}/.default\n（由 AgentCore Identity 发出的标准 OAuth 2.0 请求；内容来自配置）`,
+   out: [["roles", "rsidc-mall-api 中分配给 agent 应用（APP）的全部 App Role"]], outTag: "der",
+   check: "Entra 认证应用（client secret），并把已获管理员同意的应用程序权限（appRoleAssignedTo）原样写入 roles。App Roles 必须允许成员类型 Application。",
+   code: [X.roles_const, X.app_member, X.rra, X.assign]},
+  {t: "6 · App-only token", who: "返回给 agent",
+   call: "token(wat, \"M2M\", [f\"api://{MALL_API}/.default\"])[\"accessToken\"]  → claims(t)",
+   out: [["aud", ID.api + " (rsidc-mall-api) — 来自配置"], ["azp", RES.cases[0].actual[2] + " (rsidc-entra-agent) — 已记录"], ["roles", (RES.cases[0].roles || []).join(", ") + " — 已记录"], ["preferred_username", "不存在 — 已记录"], ["scp", "不存在 — 已记录"]], outTag: "rec",
+   check: "用户的任何信息都没有保留下来：wei、ds1 和 chen 的 token 结构完全相同（3 个已记录的 PASS 用例）。",
+   code: [X.test_2lo]},
+  {t: "7 · Gateway 入站认证", who: "AgentCore Gateway rsidc-mall-entra-gateway（CUSTOM_JWT）",
+   call: "POST <gateway>/mcp  {\"jsonrpc\":\"2.0\",\"method\":\"tools/list\"}\nAuthorization: Bearer <app-only token>",
+   out: [["result", "接受（tools/list HTTP 200，已记录）"]], outTag: "rec",
+   check: "用同一租户 JWKS 校验签名，并检查 issuer、过期时间以及 aud ∈ allowedAudience = rsidc-mall-api。Entra v2 token 在 azp（而非 client_id）中携带客户端，因此 audience 就是校验点。",
+   code: [X.gw_auth]},
+  {t: "8 · Cedar 基于 roles 授权", who: "策略引擎 rsidc_mall_entra_pe（ENFORCE）",
+   call: "对每个工具：permit when principal.getTag(\"roles\") like \"*\\\"Tools.Mall.X\\\"*\"",
+   out: [["listed", "mall___get_footfall_summary, mall___get_mall_list（已记录）"], ["denied", "hourly、zone：HTTP 200 + result.isError（已记录）"]], outTag: "rec",
+   check: `Cedar 只能看到 token 的 roles，因此它授权的是 agent 应用（APP）。tools/list 会被过滤；对未获许可工具的直接 tools/call 会被拒绝。策略引擎模式：ENFORCE。`,
+   code: [X.cedar, X.pe_attach, X.gw_check]},
+  {t: "9 · Lambda", who: "mall Lambda target（GATEWAY_IAM_ROLE）",
+   call: "Gateway → Lambda rsidc-mall-tools  arguments {\"mall_id\": \"HK01\", \"date\": \"2026-10-01\"}",
+   out: [["called", "只有 2 个获许可的工具会到达 Lambda"]], outTag: "rec",
+   check: "Lambda 信任的是 gateway 的 IAM 角色，而不是终端用户。它永远不知道背后的真人是谁。",
+   code: [X.gw_target]},
+];
+let hop = 0;
+function renderHood() {
+  hop = Math.max(0, Math.min(HOPS.length - 1, hop | 0));
+  const h = HOPS[hop];
+  safeRender($("#v-hood"), `<div class="card"><h2>原理剖析 · 一次 2LO 调用，共 ${HOPS.length} 跳</h2>
+    <div class="steps">${HOPS.map((x, i) => `<button class="${i === hop ? "on" : ""}" data-h="${i}">${esc(x.t)}</button>`).join("")}</div>
+    <div class="grid2"><div><h3>${esc(h.t)} <span class="who">${esc(h.who)}</span></h3>
+      <div class="src"><b>实际调用 / 参数</b></div><pre class="code wrap">${h.call.split("\n").map(l => `<span class="ln"><i></i>${esc(l)}</span>`).join("")}</pre>
+      <div class="src"><b>输出的 token / 结果</b> ${tag(h.outTag)}</div><table>${h.out.map(r => `<tr><td><code>${esc(r[0])}</code></td><td>${esc(r[1])}</td></tr>`).join("")}</table>
+      <h3>检查什么，由谁检查</h3><p>${esc(h.check)}</p>
+      <p><button class="sec" id="prev" ${hop ? "" : "disabled"}>← 上一步</button> <button class="sec" id="next" ${hop < HOPS.length - 1 ? "" : "disabled"}>下一步 →</button></p></div>
+      <div><h3>真实代码 / 配置</h3>${h.code.map(code).join("")}</div></div>
+    ${foot()}</div>`);
+  document.querySelectorAll("#v-hood .steps button[data-h]").forEach(b => b.onclick = () => { hop = +b.dataset.h; renderHood(); });
+  $("#prev").onclick = () => { hop--; renderHood(); }; $("#next").onclick = () => { hop++; renderHood(); };
+}
+
+// ---------- 2LO vs user rights ----------
+let sel = "chen";
+function renderRights() {
+  const appAllowed = u => Object.entries(caseOf(u, "tools/list").allowed).filter(([, v]) => v).map(([k]) => k);
+  const userTools = u => TOOLS.filter(t => D.userRoles[u].includes(D.tools[t]));
+  const row = u => { const a = appAllowed(u), o = userTools(u);
+    return `<tr class="${u === sel ? "sel" : ""}" data-u="${u}" style="cursor:pointer"><td class="u">${u}</td><td>${chips(D.userRoles[u].map(r => r.replace("Tools.Mall.", "")))}</td>
+      <td><span class="bar" style="width:${o.length * 22}px;background:var(--bl)"></span> ${o.length} <span class="note">预期</span></td>
+      <td><span class="bar" style="width:${a.length * 22}px;background:var(--or)"></span> <b>${a.length}</b> <span class="note">已记录</span></td>
+      <td>${o.length === a.length ? "数量相同" : (a.length > o.length ? `<b style="color:var(--rd)">超出自身权限 +${a.length - o.length}</b>` : `<b style="color:var(--bl)">比自身权限少 ${o.length - a.length} 个</b>`)}</td></tr>`; };
+  const u = sel, a = appAllowed(u), o = userTools(u);
+  safeRender($("#v-rights"), `<div class="card"><h2>2LO 与用户自身权限</h2>
+    <p class="note">点击某个用户。“自身权限” = 该用户在 rsidc-mall-api 上的 App Role 分配（即按用户授权的流程会允许的范围：<code>USER_EXPECT</code>，${esc(X.test_expect.file)}:${X.test_expect.start}）。“2LO” = 记录的运行中 agent 实际能访问的工具。</p>
+    <table class="cmp"><tr><th>用户</th><th>自身 App Roles</th><th>自身权限（工具）</th><th>2LO 工具</th><th>差异</th></tr>${USERS.map(row).join("")}</table>
+    <h3>逐个工具 · ${esc(u)}</h3>
+    <table><tr><th>工具</th><th>App Role</th><th>${esc(u)} 是否持有？</th><th>agent 应用是否持有？</th><th>2LO tools/call（已记录）</th></tr>
+    ${TOOLS.map(t => { const uh = o.includes(t), ah = (caseOf(u, "app-only").roles || []).includes(D.tools[t]), ok = a.includes(t);
+      return `<tr><td><code>${esc(t)}</code></td><td>${esc(D.tools[t])}</td><td class="${uh ? "ok" : "no"}">${uh ? "是" : "否"}</td><td class="${ah ? "ok" : "no"}">${ah ? "是" : "否"}</td><td class="${ok ? "ok" : "no"}${uh !== ok ? " diff" : ""}">${ok ? "✓ 允许" : "✗ 拒绝"}</td></tr>`; }).join("")}</table>
+    <div class="grid3" style="margin-top:12px"><div class="kpi"><div class="note">测试用户数</div><div class="big">3</div></div>
+      <div class="kpi"><div class="note">不同的 2LO 结果数</div><div class="big">${new Set(USERS.map(x => appAllowed(x).sort().join())).size}</div></div>
+      <div class="kpi"><div class="note">自身权限范围</div><div class="big">${Math.min(...USERS.map(x => userTools(x).length))}–${Math.max(...USERS.map(x => userTools(x).length))}</div></div></div>
+    <div class="warn"><b>架构师解读。</b>2LO 让资源侧的授权决策与真人脱钩：chen（0 个角色）拿到 2 个工具，wei（4 个角色）被限制为 2 个。2LO 适用于 agent 自有、非个人化的数据（共享参考数据、批处理任务）。当数据涉及个人或权限因人而异时，要么在 agent 调用前执行按用户的检查，要么改用 OBO，让资源能看到用户。</div>
+    <div class="info">2LO 运行不涉及按用户的权限。交换后的 token 携带用户身份的记录运行，请参见 <a href="${esc(D.oboPage)}">第 4 部分 · OBO</a>（预期：wei 4 · ds1 2 · chen 0）。</div>
+    ${foot()}</div>
+    <div class="card"><h3>预期写在哪里</h3>${code(X.test_expect)}${code(X.test_2lo)}</div>`);
+  document.querySelectorAll("#v-rights tr[data-u]").forEach(tr => tr.onclick = () => { sel = tr.dataset.u; renderRights(); });
+}
+
+// ---------- Setup ----------
+// Entra screenshots: collapsed cards, title = caption
+const screens = () => D.screens.map(x => `<details class="sc"><summary>截图：${esc(x.caption)}</summary><div class="b">
+    <a href="${esc(x.file)}" target="_blank" rel="noopener"><img src="${esc(x.file)}" alt="${esc(x.caption)}" loading="lazy"></a>
+    <div class="src"><a href="${esc(x.file)}" target="_blank" rel="noopener">查看原图</a> · 门户：<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a></div>
+    <div class="src"><b>查看要点：</b>${esc(x.look)}</div></div></details>`).join("");
+function renderSetup() {
+  safeRender($("#v-setup"), `
+  <div class="card"><h2>A · Entra ID (Free) — <code>infra/entra-id/03-entra-agent-setup.py</code></h2>
+    <table><tr><th>对象</th><th>设置</th><th>对 2LO 的意义</th></tr>
+    <tr><td>应用 <b>rsidc-entra-agent</b><br><code>${esc(ID.agent)}</code></td><td>机密客户端；公开 <code>api://…/access_as_user</code>（v2 token）</td><td>其 appId 既是 runtime 的 allowedAudience（用户 → agent），<b>也是</b> client_credentials 的 client_id（agent → API）</td></tr>
+    <tr><td>client secret</td><td>有效期 90 天，显示名称 <code>agentcore-credential-provider</code>；由 AgentCore Identity 凭证提供程序持有</td><td>应用用它向 Entra 认证；agent 代码从不接触它</td></tr>
+    <tr><td>rsidc-mall-api App Roles</td><td><code>allowedMemberTypes</code> += <code>Application</code></td><td>缺少它，就无法把 Tools.Mall.* 分配给应用</td></tr>
+    <tr><td>应用程序权限</td><td>Tools.Mall.List、Tools.Mall.Footfall（<code>requiredResourceAccess</code> type <code>Role</code>）</td><td>声明 agent 应用申请哪些权限</td></tr>
+    <tr><td>管理员同意</td><td>在 rsidc-mall-api 服务主体上的 <code>appRoleAssignedTo</code>，principal = agent SP</td><td>正是这条分配让 app-only token 中出现 <code>roles</code></td></tr></table>
+    <h3>Entra 管理中心截图</h3><p class="note" style="margin-top:0">点击标题可展开截图及其门户链接。</p>${screens()}
+    <div class="grid2" style="margin-top:10px"><div>${code(X.agent_app)}${code(X.roles_const)}${code(X.app_member)}</div><div>${code(X.rra)}${code(X.assign)}${code(X.secret)}</div></div></div>
+  <div class="card"><h2>B · AgentCore Identity + Runtime — <code>infra/entra-id/04-entra-agentcore.sh</code></h2>
+    <table><tr><th>资源</th><th>设置</th></tr>
+    <tr><td>凭证提供程序 <b>rsidc-entra</b></td><td>vendor <code>MicrosoftOauth2</code>；clientId = rsidc-entra-agent；tenantId = <code>${esc(ID.tenant)}</code>；secret 由 AgentCore Identity 保存（<code>clientSecretArn</code>）。同一个 provider 同时服务 2LO、3LO 和 OBO；具体流程在每次调用时选择（<code>oauth2Flow</code>）。</td></tr>
+    <tr><td>runtime <b>rsidc_entra_agent</b></td><td>customJWTAuthorizer：discovery = 租户 v2 OIDC 元数据，allowedAudience = [rsidc-entra-agent]；<code>Authorization</code> 头已加入允许列表；环境变量 <code>CP_ENTRA</code>、<code>MALL_API_APP_ID</code>、<code>ENTRA_GW_URL</code></td></tr></table>
+    <div class="grid2" style="margin-top:10px"><div>${code(X.cp)}${code(X.cp_secret)}</div><div>${code(X.rt_auth)}${code(X.rt_env)}</div></div></div>
+  <div class="card"><h2>C · Gateway + Cedar — <code>infra/entra-id/02-entra-gateway.sh</code></h2>
+    <p class="note">Gateway <code>rsidc-mall-entra-gateway</code>：CUSTOM_JWT，allowedAudience = rsidc-mall-api（<code>${esc(ID.api)}</code>）；策略引擎含 4 条 permit（每个工具一条），模式 ENFORCE。与第 1 部分和第 4 部分共用：2LO 在这里没有新增任何配置，只是出示一个 <code>roles</code> 属于应用的 token。</p>
+    <div class="grid2"><div>${code(X.gw_auth)}${code(X.gw_target)}</div><div>${code(X.cedar)}${code(X.pe_attach)}</div></div></div>
+  <div class="card"><h2>D · 命令与验证</h2>
+<pre class="code">${["python infra/entra-id/03-entra-agent-setup.py              # Entra：应用 rsidc-entra-agent + 应用角色 List/Footfall（应用程序权限）",
+"bash infra/entra-id/04-entra-agentcore.sh                   # 凭证提供程序 rsidc-entra + runtime rsidc_entra_agent",
+"# 已记录的 2LO 测试运行（Entra 身份测试脚本，2lo 阶段）：7/7 PASS", "",
+"# 验证",
+"aws bedrock-agentcore-control get-oauth2-credential-provider --name rsidc-entra --region ap-southeast-1 \\",
+"    --query credentialProviderVendor            # -> \"MicrosoftOauth2\"",
+"# Entra admin center -> Enterprise applications -> rsidc-mall-api -> Users and groups:",
+"#   rsidc-entra-agent 持有 Tools.Mall.List 和 Tools.Mall.Footfall"].map(l => `<span class="ln"><i></i>${esc(l)}</span>`).join("")}</pre>
+    <div class="info"><b>加固建议。</b>定期轮换 90 天有效期的 client secret（或改用证书凭据）；把应用的应用程序权限控制在 agent 所需的最小范围，因为每个调用方都会继承这些权限；在 agent 中记录入站用户以便审计，因为资源侧只能看到应用。</div>
+    ${foot()}</div>`);
+}
+
+// ---------- FAQ ----------
+function renderFaq() {
+  const row = (cls, label, v) => v ? `<dt class="${cls}">${label}</dt><dd>${md(v)}</dd>` : "";
+  safeRender($("#v-faq"), `<div class="card"><h2>FAQ</h2>
+  <p class="note">解释 2LO 配置为何如此设计。点击问题即可展开。</p>
+  <p><button class="sec" id="fopen">全部展开</button> <button class="sec" id="fclose">全部收起</button></p>
+  ${D.faq.map((f, i) => `<details class="faq"><summary>${i + 1}. ${md(f.q)}</summary><div class="bd"><dl class="qa">
+    ${row("w", "问题现象", f.wrong)}${row("y", "原因", f.why)}${row("f", "解决方法", f.fix)}${row("v", "验证证据", f.verified)}</dl>
+    <div class="docs"><b>官方文档</b><ul>${f.docs.map(([t, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("")}</ul></div></div></details>`).join("")}
+  ${foot()}</div>`);
+  $("#fopen").onclick = () => document.querySelectorAll("#v-faq details.faq").forEach(d => d.open = true);
+  $("#fclose").onclick = () => document.querySelectorAll("#v-faq details.faq").forEach(d => d.open = false);
+}
+
+renderReplay(); renderHood(); renderRights(); renderSetup(); renderFaq();
+{ const h = (location.hash || "").slice(1); show(TABS.some(([k]) => k === h) ? h : "arch"); }
+</script>
+<style>
+details.codefold{margin:6px 0}
+details.codefold>summary{cursor:pointer;display:inline-block;padding:3px 10px;border:1px solid #8884;border-radius:6px;
+  font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:inherit;opacity:.85;user-select:none}
+details.codefold>summary:hover{opacity:1}
+details.codefold[open]>summary{margin-bottom:6px}
+</style>
+<script>
+(function () {
+  var CODE_FILE = /[\w./-]+\.(py|sh|js|mjs|ts|tsx|json|sql|html|md|txt|yaml|yml)(:\d+(-\d+)?)?/;
+  function label(el) {
+    var p = el.previousElementSibling, t = p && p.textContent.trim();
+    return t && t.length < 140 && CODE_FILE.test(t) ? t : '';
+  }
+  function wrap(el) {
+    if (el.dataset.codefold || el.closest('details.codefold')) return;
+    if (el.tagName === 'PRE' && el.parentElement && el.parentElement.closest('.code')) return;  // the outer .code is wrapped
+    el.dataset.codefold = '1';
+    var lines = (el.textContent.replace(/\n+$/, '').match(/\n/g) || []).length + 1;
+    var kind = el.classList.contains('out') ? '显示输出' : '显示代码';
+    var lb = label(el);
+    var d = document.createElement('details'), s = document.createElement('summary');
+    d.className = 'codefold';
+    s.textContent = '▸ ' + kind + (lb ? ' · ' + lb : '') + '（' + lines + ' 行）';
+    el.parentNode.insertBefore(d, el);
+    d.appendChild(s); d.appendChild(el);
+  }
+  function scan(root) {
+    if (root.nodeType !== 1) return;
+    if (root.matches('pre, .code')) wrap(root);
+    root.querySelectorAll('pre, .code').forEach(wrap);
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) { m.addedNodes.forEach(scan); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+</body></html>

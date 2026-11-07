@@ -1,0 +1,10 @@
+{"Version":"2012-10-17","Statement":[
+ {"Sid":"ReadIdcGroupsOnly","Effect":"Allow",
+  "Action":["identitystore:GetUserId","identitystore:ListGroupMembershipsForMember","identitystore:DescribeGroup"],
+  "Resource":["arn:aws:identitystore::__IDC_ACCOUNT__:identitystore/__STORE__","arn:aws:identitystore:::user/*",
+              "arn:aws:identitystore:::group/*","arn:aws:identitystore:::membership/*"]},
+ {"Sid":"ReadCognitoGroupDescriptions","Effect":"Allow","Action":"cognito-idp:GetGroup",
+  "Resource":"arn:aws:cognito-idp:__REGION__:__ACCOUNT__:userpool/__POOL__"},
+ {"Sid":"Logs","Effect":"Allow","Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],
+  "Resource":"arn:aws:logs:__REGION__:__ACCOUNT__:log-group:/aws/lambda/rsidc-pretoken-roles*"}
+]}

@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shared foundation (Cognito + IAM Identity Center track)</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+nav{overflow:auto}nav .meta{position:static;margin:16px 18px 0;line-height:1.9}nav .meta a{display:inline;padding:0;border:0;color:var(--acc)}
+.start{border:2px solid var(--acc);background:#f0f6fc}.start h3{margin-top:0}
+.arch2 img{width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff}
+details.faq summary .res{margin-left:auto;font-weight:400;font-size:12px;color:var(--mut)}
+details.faq .bd p{margin:8px 0}details.faq .bd ul{margin:6px 0;padding-left:20px}details.faq .bd pre{margin:8px 0}
+.dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}@media(max-width:1000px){.dgrid{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div class="banner"><b>Static demo</b> — simulated UI, real recorded data. Nothing here calls AWS.<a href="foundation.zh-CN.html" hreflang="zh-CN" lang="zh-CN" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">中文</a></div>
+<div class="wrap">
+<nav>
+  <h1>Shared foundation</h1>
+  <div class="sub">Cognito + IAM Identity Center track. Start here: the VPC, the Cognito pool, the web GUIs, the Agent Registry and teardown shared by all parts.</div>
+  <a data-s="overview" class="on">0 · Overview</a>
+  <a data-s="setup">1 · Setup</a>
+  <a data-s="webgui">2 · Web GUIs</a>
+  <a data-s="registry">3 · Agent Registry</a>
+  <a data-s="teardown">4 · Teardown &amp; cost</a>
+  <div class="meta">
+    <a href="part1-quick.html">Part 1 · Quick</a><br>
+    <a href="part2-3lo.html">Part 2 · 3LO</a><br>
+    <a href="part3-2lo.html">Part 3 · 2LO</a><br>
+    <a href="part4-obo.html">Part 4 · OBO</a><br>
+    <a href="gateway-rbac.html">Gateway RBAC</a><br>
+    <a href="foundation.html">Foundation</a><br>
+    <a href="../../README.md">Repo README</a>
+  </div>
+</nav>
+<main>
+<section id="overview" class="on"></section>
+<section id="setup"></section>
+<section id="webgui"></section>
+<section id="registry"></section>
+<section id="teardown"></section>
+</main></div>
+<script id="data" type="application/json">{"screens": {"01-vpc-nat-gateway.png": {"caption": "VPC → NAT gateways → rsidc-rt-nat: public NAT, EIP {nat-eip} (the runtime's only egress IP)", "url": "https://ap-southeast-1.console.aws.amazon.com/vpcconsole/home?region=ap-southeast-1#NatGatewayDetails:natGatewayId={nat-gateway-id}", "alt": "VPC console showing the public NAT gateway and its Elastic IP used as the runtime's egress address", "at": "2026-10-05 15:53:06 HKT"}, "02-cognito-users.png": {"caption": "Cognito → rsidc-users → Users: 4 admin-created users, emails verified (they mirror IdC users)", "url": "https://ap-southeast-1.console.aws.amazon.com/cognito/v2/idp/user-pools/{user-pool-id}/user-management/users?region=ap-southeast-1", "alt": "Cognito user pool Users list showing four admin-created users with verified emails", "at": "2026-10-05 15:53:14 HKT"}, "02b-cognito-sign-up.png": {"caption": "Cognito → rsidc-users → Sign-up: Self-registration = Disabled (admin-only user creation)", "url": "https://ap-southeast-1.console.aws.amazon.com/cognito/v2/idp/user-pools/{user-pool-id}/authentication/sign-up?region=ap-southeast-1", "alt": "Cognito user pool Sign-up settings with self-registration disabled for admin-only user creation", "at": "2026-10-05 15:53:22 HKT"}}, "diagrams": [["Amazon Quick → Gateway (3LO by Quick)", "architecture-quick-mall.svg", "Architecture diagram: Amazon Quick signs the user in to Cognito, then calls AgentCore Gateway with the user's access token; Cedar policy checks the roles claim before the Lambda tools run", "part1-quick.html", "Part 1 · Quick"], ["3LO (user consent + Token Vault)", "architecture-3lo.svg", "Architecture diagram: the user consents at Cognito, AgentCore Identity stores the token in the Token Vault, and the agent calls Cognito userInfo as the user", "part2-3lo.html", "Part 2 · 3LO"], ["2LO (client credentials)", "architecture-2lo.svg", "Architecture diagram: the agent gets its own client-credentials token and calls AgentCore Gateway, which invokes a Lambda that queries Redshift as svc_reporting", "part3-2lo.html", "Part 3 · 2LO"], ["OBO (identity propagation to Redshift)", "architecture.svg", "Architecture diagram: a Cognito JWT passes through AgentCore Runtime to an IAM Identity Center token exchange, then to Redshift as the signed-in user", "part4-obo.html", "Part 4 · OBO"]], "order": [["1", "Foundation: prerequisites, Steps 1-2 (this page)", "infra/cognito-idc/01, 02", "Runtime VPC with one egress IP; Cognito pool + 4 users", "foundation.html#setup"], ["2", "Part 4 · OBO: Steps 3-10", "infra/cognito-idc/03 to 08", "IdC trusted token issuer, Redshift cluster, seed data, runtime role, IdC agent app, runtime", "part4-obo.html"], ["3", "Part 3 · 2LO: Steps 9-13", "infra/cognito-idc/09 to 13", "OAuth clients, credential provider, 2LO Gateway, OAuth runtime (shared with 3LO)", "part3-2lo.html"], ["4", "Part 2 · 3LO", "infra/cognito-idc/09, 10, 12, 13", "3LO client and credential provider, return URLs on the shared OAuth runtime", "part2-3lo.html"], ["5", "Foundation: Step 14 web GUIs (this page)", "infra/cognito-idc/14", "OBO and 2LO/3LO GUIs on API Gateway + Lambda", "foundation.html#webgui"], ["6", "Gateway RBAC: Step 15 and the mall (customer) version", "infra/cognito-idc/15, 16", "Per-user tool authorization with Cedar on the Gateway", "gateway-rbac.html"], ["7", "Part 1 · Quick", "Quick console + Step 16", "Amazon Quick as the 3LO client of the mall Gateway", "part1-quick.html"], ["8", "Agent Registry and teardown (this page)", "infra/common/agent-registry.py, 99-teardown.sh", "Catalogue the runtimes and gateways; remove everything", "foundation.html#registry"]], "steps": {"prereq": {"title": "Prerequisites", "result": "ready", "blocks": [{"t": "list", "x": ["AWS CLI v2, `uv`, Python 3.12 (via uv), `nc`, `zip`; AWS profile `default` with admin rights in 123456789012.", "Existing IdC instance `{idc-instance-id}` (ap-east-1), with users wei/zhang/chen/ds1 in the groups risk-team, marketing-team, platform-team and data-scientists.", "Tooling venv in the project root: `uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt` (boto3, requests; the agents' runtime dependencies are packaged by `08` / `12`)", "**Always run steps through `infra/common/run.sh`.** It loads `infra/common/00-config.sh` and `infra/state.env` (a local, gitignored file created at run time, where resource IDs are saved). Every step is idempotent and safe to re-run."]}, {"t": "code", "x": "uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt"}]}, "step1": {"title": "Step 1 · Runtime VPC with a fixed egress IP", "result": "NAT EIP {nat-eip}", "blocks": [{"t": "code", "x": "infra/common/run.sh ./infra/cognito-idc/01-runtime-network.sh"}, {"t": "p", "x": "Creates VPC 10.50.0.0/16, a public subnet with an IGW and NAT GW plus EIP, two private subnets (apse1-az1/az2), and an egress-only SG."}, {"t": "res", "x": "Runtime NAT EIP: {nat-eip}\nRT_VPC_ID={vpc-id}  RT_NAT_ID={nat-gateway-id}  RT_SG_ID={runtime-sg-id}\nRT_PRIV_SUBNET_1={private-subnet-1-id}  RT_PRIV_SUBNET_2={private-subnet-2-id}"}, {"t": "p", "x": "**Verify:** the NAT gateway is `available` and owns the fixed egress IP."}, {"t": "code", "x": "aws ec2 describe-nat-gateways --region ap-southeast-1 --nat-gateway-ids {nat-gateway-id} --query 'NatGateways[0].[State,NatGatewayAddresses[0].PublicIp]'\n# expected: available {nat-eip}"}, {"t": "shots", "f": ["01-vpc-nat-gateway.png"]}]}, "step2": {"title": "Step 2 · Cognito user pool (end-user IdP)", "result": "pool {user-pool-id}, client {obo-client-id}", "blocks": [{"t": "code", "x": "infra/common/run.sh ./infra/cognito-idc/02-cognito.sh"}, {"t": "p", "x": "Admin-create-only pool, plus a public app client (USER_PASSWORD_AUTH) and four users whose emails match IdC users. The script generates the users' passwords and stores them in a local, gitignored file (chmod 600); they are never printed here."}, {"t": "res", "x": "| ds1   | ds1@techfinance.example.com           | CONFIRMED |\n| zhang | zhang@techfinance.example.com | CONFIRMED |\n| chen  | chen@techfinance.example.com  | CONFIRMED |\n| wei   | wei@techfinance.example.com   | CONFIRMED |\nCOGNITO_POOL_ID={user-pool-id}  COGNITO_CLIENT_ID={obo-client-id}"}, {"t": "p", "x": "**Verify:** self sign-up is off."}, {"t": "code", "x": "aws cognito-idp describe-user-pool --region ap-southeast-1 --user-pool-id {user-pool-id} --query UserPool.AdminCreateUserConfig\n# expected: AllowAdminCreateUserOnly: true"}, {"t": "shots", "f": ["02-cognito-users.png", "02b-cognito-sign-up.png"]}]}, "ops": {"title": "Ops · admin-only user creation on Cognito pools", "result": "dry run by default; --apply to change", "blocks": [{"t": "code", "x": ".venv/bin/python infra/cognito-idc/ops/cognito-disable-self-signup.py            # dry run: lists what would change\n.venv/bin/python infra/cognito-idc/ops/cognito-disable-self-signup.py --apply    # change the project pools"}, {"t": "p", "x": "By default the script only reports. It looks at pools named `rsidc-*` in `$RT_REGION` and, with `--apply`, sets `AllowAdminCreateUserOnly=true` on those that still allow self sign-up. Widening the scope is explicit (`--regions`, `--all-regions`, `--all-pools`). `UpdateUserPool` resets any omitted setting to its default, so the script copies each pool's full config back and prints a before/after diff."}, {"t": "res", "x": "Result (2026-10-02): 41 pools scanned. 6 still allowed self sign-up, all in us-east-1 with 0 users:\n{other-pool-suffix-1}, {other-pool-suffix-2}, {other-pool-suffix-3}, {other-pool-suffix-4}, {other-pool-suffix-5}, {other-pool-suffix-6}\nEach diff showed a single change:\n{\"AdminCreateUserConfig.AllowAdminCreateUserOnly\": [false, true]}"}, {"t": "p", "x": "**Verify:**"}, {"t": "list", "x": ["`--dry-run` reports 0 pools remaining.", "A `SignUp` call against `us-east-1_{other-pool-suffix-1}` (with a valid SECRET_HASH) and against `rsidc-users` both fail with `NotAuthorizedException: SignUp is not permitted for this user pool`."]}]}}, "webgui": [{"t": "p", "x": "**Purpose:** use the OBO GUI and the 2LO/3LO GUI without running anything locally. API Gateway provides HTTPS, which Cognito requires for any callback that isn't localhost. There's no Function URL, no public Lambda policy, no EC2 and no S3."}, {"t": "code", "x": "infra/common/run.sh bash infra/cognito-idc/14-deploy-webchat.sh"}, {"t": "p", "x": "**What it creates or changes:**"}, {"t": "list", "x": ["IAM role `rsidc-webchat-role`. It grants logs, `CompleteResourceTokenAuth`, and `GetSecretValue` on the 3LO provider secret only.", "Lambda functions `rsidc-webchat-obo` and `rsidc-webchat-oauth` (python3.12, arm64, reserved concurrency 1). Each resource policy allows only `apigateway.amazonaws.com`, with `SourceArn` set to its own API.", "HTTP APIs `rsidc-webchat-obo` and `rsidc-webchat-oauth` (quick create: `$default` route and auto-deployed stage, payload 2.0, 30 s integration timeout).", "The API callback and logout URLs, added to the OBO Cognito client (through step 13).", "`<oauth-api>/3lo/callback`, added to the OAuth workload identity return URLs.", "**IP allowlist: none.** There is no source-IP restriction inside the Lambda. Access is gated only by Cognito sign-in, and the pool's users are admin-created only. To limit by IP, enforce it in front of the API (for example a REST API resource policy or WAF)."]}, {"t": "p", "x": "**Actual result (2026-10-06):**"}, {"t": "res", "x": "OBO GUI:     https://{web-obo-api-id}.execute-api.ap-southeast-1.amazonaws.com\n2LO/3LO GUI: https://{web-2lo-api-id}.execute-api.ap-southeast-1.amazonaws.com\nLambda policy: {'Service': 'apigateway.amazonaws.com'} lambda:InvokeFunction  ArnLike AWS:SourceArn arn:aws:execute-api:...:{web-obo-api-id}/*"}, {"t": "p", "x": "**End-to-end browser test (signed in as wei):**"}, {"t": "list", "x": ["OBO `SQL: SELECT * FROM sales.orders`: 5 rows.", "OBO natural-language question: answered, Lambda duration about 6.2 s (well under the 30 s limit).", "2LO: outbound token `client_id={2lo-client-id}`, scope `rsidc-reports/read`, rows returned as `svc_reporting`.", "3LO with forced re-consent: `CompleteResourceTokenAuth → OK`, and the identity guard confirmed the token belongs to the caller."]}, {"t": "p", "x": "**Lessons learned:**"}, {"t": "list", "x": ["Lambda Function URLs with `AuthType NONE` and a public `Principal: *` permission are removed by account security automation (`lambda_function_policy_block_public_access`). API Gateway in front of Lambda avoids the public policy entirely.", "3LO `CompleteResourceTokenAuth` reads the provider's client secret using the caller's own credentials, so the Lambda role needs `GetSecretValue` on that one secret; without it the call fails with `AccessDenied when retrieving secret`."]}, {"t": "p", "x": "**How you can verify:**"}, {"t": "code", "x": "source infra/state.env\ncurl -s -o /dev/null -w \"%{http_code}\\n\" $WEB_OBO_URL/      # 200\naws lambda get-policy --function-name rsidc-webchat-obo --region ap-southeast-1 --query Policy --output text   # only apigateway.amazonaws.com\naws lambda get-function-url-config --function-name rsidc-webchat-obo --region ap-southeast-1   # ResourceNotFoundException (no URL)"}, {"t": "p", "x": "Then open the OBO URL and sign in as wei/zhang/chen/ds1 (the passwords set in Step 2)."}, {"t": "p", "x": "**Teardown:**"}, {"t": "code", "x": "for f in obo oauth; do\n  aws apigatewayv2 delete-api --region ap-southeast-1 --api-id $(aws apigatewayv2 get-apis --region ap-southeast-1 --query \"Items[?Name=='rsidc-webchat-$f'].ApiId|[0]\" --output text)\n  aws lambda delete-function --region ap-southeast-1 --function-name rsidc-webchat-$f\ndone"}, {"t": "p", "x": "Also delete the role `rsidc-webchat-role`."}, {"t": "p", "x": "**Cost:** billed per request (HTTP API and Lambda); no idle cost."}], "registry": {"title": "Agent Registry (Tokyo registry)", "result": "registry {registry-id}, records APPROVED", "blocks": [{"t": "p", "x": "The registry also lists the Entra ID resources; see the [Entra ID interactive pages](../entra-id/part1-quick.html) (part1-quick.html to part4-obo.html)."}, {"t": "p", "x": "**Purpose:** a governed, searchable catalogue of this PoC's agents and MCP servers. Teams, or MCP clients such as Kiro, Claude Code and Quick, can discover them there instead of rebuilding."}, {"t": "p", "x": "**Region note:** Agent Registry is available in us-east-1, us-west-2, ap-northeast-1, ap-southeast-2 and eu-west-1, but **not ap-southeast-1**. The registry is therefore in **ap-northeast-1 (Tokyo)**, and its records are metadata pointing at the Singapore endpoints."}, {"t": "list", "x": ["**No auto-detect:** auto-detection of AgentCore runtimes and gateways wasn't used, because the resources are in another Region.", "**No URL sync:** every endpoint requires a Cognito JWT, so records are created manually. The gateway tool lists are read from the deployed targets."]}, {"t": "code", "x": "infra/common/run.sh .venv/bin/python infra/common/agent-registry.py"}, {"t": "p", "x": "It creates the registry `rsidc-registry` (IAM auth, **manual approval**, no auto-approve). Each record is created, submitted for approval, then approved. The script is idempotent: existing records are skipped."}, {"t": "p", "x": "**Actual result (2026-10-06):**"}, {"t": "res", "x": "registry arn:aws:agent-registry:ap-northeast-1:123456789012:registry/{registry-id}\nrsidc-data-agent     CUSTOM {registry-record-id-data-agent-b} APPROVED\nrsidc-oauth-agent    CUSTOM {registry-record-id-oauth-agent-b} APPROVED\nrsidc-2lo-gateway    MCP    {registry-record-id-2lo-gateway-b} APPROVED\nrsidc-rbac-gateway   MCP    {registry-record-id-rbac-gateway-b} APPROVED\nrsidc-mall-gateway   MCP    {registry-record-id-mall-gateway-b} APPROVED"}, {"t": "p", "x": "Semantic search (`agent-registry` SearchDiscoverableRegistryRecords) returned:"}, {"t": "table", "h": ["query", "top results"], "r": [["\"which tool can restrict MCP tools per user with Cedar\"", "rsidc-rbac-gateway, rsidc-mall-gateway"], ["\"query Redshift as the signed-in user via IAM Identity Center\"", "rsidc-data-agent"], ["\"mall footfall traffic\"", "rsidc-mall-gateway"]]}, {"t": "p", "x": "The re-run printed `skip … (exists: APPROVED)` for all 5 records."}, {"t": "p", "x": "**How you can verify:**"}, {"t": "code", "x": "aws agent-registry-control list-registry-records --registry-id {registry-id} --region ap-northeast-1 \\\n  --query 'registryRecords[].[name,recordType,status]' --output table\naws agent-registry-control get-registry-record --registry-id {registry-id} --record-id {registry-record-id-mall-gateway-b} --region ap-northeast-1"}, {"t": "p", "x": "Console: AWS Agent Registry in **Asia Pacific (Tokyo)** → Registries → `rsidc-registry`."}, {"t": "p", "x": "**Teardown:**"}, {"t": "code", "x": "for r in $(aws agent-registry-control list-registry-records --registry-id {registry-id} --region ap-northeast-1 --query 'registryRecords[].recordId' --output text); do\n  aws agent-registry-control delete-registry-record --registry-id {registry-id} --record-id $r --region ap-northeast-1; done\naws agent-registry-control delete-registry --registry-id {registry-id} --region ap-northeast-1"}, {"t": "p", "x": "**Cost:** negligible at PoC scale. Registry pricing is per record and per search request; check the AgentCore pricing page."}, {"t": "p", "x": "**Gotcha:** `aws <service> <cmd> help` opens an interactive pager and can hang automation. Use `--generate-cli-skeleton` or the docs instead."}]}, "registryUs": {"title": "Agent Registry · second registry in us-east-1, for Amazon Quick", "result": "registry {registry-us-id}", "blocks": [{"t": "p", "x": "Quick only links a registry in the **same AWS account and Region** as the Quick account, it needs `AWS_IAM` auth, and it surfaces only `MCP` records that have `remotes[].url`. So create this registry in the AWS account and Region of your Quick subscription (us-east-1 here). The MCP connector itself has no such restriction: it only needs the Gateway URL."}, {"t": "code", "x": "REGISTRY_REGION=us-east-1 infra/common/run.sh .venv/bin/python infra/common/agent-registry.py"}, {"t": "p", "x": "**Actual result (2026-10-08):** registry `{registry-us-id}` (us-east-1). All records are APPROVED:"}, {"t": "table", "h": ["Record", "Type", "Record ID"], "r": [["rsidc-data-agent", "CUSTOM", "{registry-record-id-data-agent-a}"], ["rsidc-oauth-agent", "CUSTOM", "{registry-record-id-oauth-agent-a}"], ["rsidc-2lo-gateway", "MCP", "{registry-record-id-2lo-gateway-a}"], ["rsidc-rbac-gateway", "MCP", "{registry-record-id-rbac-gateway-a}"], ["rsidc-mall-gateway", "MCP", "{registry-record-id-mall-gateway-a}"], ["rsidc-mall-entra-gateway", "MCP", "{registry-record-id-entra-gateway-a}"]]}, {"t": "p", "x": "The Tokyo registry also gained `rsidc-mall-entra-gateway` (`{registry-record-id-entra-gateway-b}`)."}, {"t": "p", "x": "**What Quick will show:** only the 4 gateways (MCP records); the 2 runtimes are CUSTOM and are not shown. Of those, only `rsidc-mall-gateway` is ready for Quick sign-in today: its Cognito client `rsidc-quick-mcp` allows the Quick callback URLs."}]}, "teardown": [{"t": "code", "x": "infra/common/run.sh ./infra/common/99-teardown.sh        # Agent Registry (both Regions)\ninfra/common/run.sh ./infra/entra-id/99-teardown.sh      # Entra ID track (skip if never deployed)\ninfra/common/run.sh ./infra/cognito-idc/99-teardown.sh   # steps 01-16"}, {"t": "p", "x": "Run the three scripts in this order: common, then entra-id, then cognito-idc. Each prints the plan (what it will delete) and asks you to type `yes`; pass `--yes` to skip the prompt and `--dry-run` to print the plan only. `cognito-idc/99-teardown.sh` covers steps 01–16 in reverse dependency order, including the Redshift cluster **without a final snapshot**. The pre-existing IdC instance, users and groups are never touched. It also removes the OAuth runtime, Gateway and target, Lambda, credential providers, the three IAM roles added for the OAuth parts and the Cognito domain."}, {"t": "p", "x": "The scripts cover the items below. The manual commands for each are documented here in case you want to remove a single part:"}, {"t": "list", "x": ["Step 14 web GUIs: the teardown commands in [2 · Web GUIs](#webgui).", "Gateway RBAC teardown: see [gateway-rbac.html](gateway-rbac.html).", "Customer (mall) version teardown: see [part1-quick.html](part1-quick.html).", "Agent Registry: the teardown commands in [3 · Agent Registry](#registry)."]}, {"t": "p", "x": "Entra ID resources: see the [Entra ID interactive pages](../entra-id/part1-quick.html) (part1-quick.html to part4-obo.html)."}], "cost": {"rows": [["Redshift ra3.large ×1 (ap-east-1)", "per node-hour while the cluster exists (the largest cost)"], ["NAT Gateway + EIP (ap-southeast-1)", "per hour, plus per GB processed"], ["AgentCore Runtime", "consumption only"], ["Bedrock (Claude)", "per token (N4 tests only)"], ["2LO/3LO: Gateway, Lambda, 2nd runtime, credential providers", "consumption only"], ["Cognito, IdC, S3, Secrets Manager", "per user / request / GB / secret; small at test volume"], ["Web GUIs (HTTP API + Lambda)", "per request; no idle cost"], ["Agent Registry", "per record and per search request; negligible at PoC scale"]], "note": "Redshift and the NAT gateway are billed for every hour they exist, even when idle. For current prices see [Amazon Redshift pricing](https://aws.amazon.com/redshift/pricing/) and [Amazon VPC pricing](https://aws.amazon.com/vpc/pricing/), or estimate with the [AWS Pricing Calculator](https://calculator.aws/). **Tear down when you're done.**"}}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+// tiny markdown: `code`, **bold**, [text](url) for relative or https links only
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+  .replace(/\[([^\]]+)\]\(((?:https:\/\/|\.\.?\/|#|[a-z0-9-]+\.html)[^)]*)\)/g, '<a href="$2">$1</a>');
+
+function go(sec, anchor) {
+  document.querySelectorAll("nav a[data-s]").forEach(x => x.classList.toggle("on", x.dataset.s === sec));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === sec));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav a[data-s]").forEach(a => a.onclick = () => { go(a.dataset.s); history.replaceState(null, "", "#" + a.dataset.s); });
+// in-page links like #webgui switch sections
+document.addEventListener("click", e => {
+  const a = e.target.closest("main a[href^='#']"); if (!a) return;
+  const id = a.getAttribute("href").slice(1); if ($("section#" + id)) { e.preventDefault(); go(id); }
+});
+
+/* generic block renderer */
+function screenCard(file) {
+  const x = D.screens[file], f = "img/console/" + file;
+  return `<details class="sc"><summary>Screenshot: ${esc(x.caption)}</summary><div class="b">
+    <a href="${f}" target="_blank" rel="noopener"><img src="${f}" alt="${esc(x.alt)}" loading="lazy"></a>
+    <div class="ref"><a href="${f}" target="_blank" rel="noopener">Open full size</a> · Console: <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a> (captured ${esc(x.at)})</div></div></details>`;
+}
+function block(b) {
+  switch (b.t) {
+    case "p": return `<p>${md(b.x)}</p>`;
+    case "code": return `<pre class="out">${esc(b.x)}</pre>`;
+    case "res": return `<div class="ref"><b>Recorded result</b></div><pre class="out">${esc(b.x)}</pre>`;
+    case "list": return `<ul>${b.x.map(i => `<li>${md(i)}</li>`).join("")}</ul>`;
+    case "table": return `<table><tr>${b.h.map(h => `<th>${esc(h)}</th>`).join("")}</tr>${b.r.map(r => `<tr>${r.map(c => `<td>${md(c)}</td>`).join("")}</tr>`).join("")}</table>`;
+    case "shots": return b.f.map(screenCard).join("");
+  }
+  return "";
+}
+const blocks = bs => bs.map(block).join("");
+const stepCard = (s, open) => `<details class="faq" ${open ? "open" : ""}><summary>${esc(s.title)}<span class="res">result: ${esc(s.result)}</span></summary><div class="bd">${blocks(s.blocks)}</div></details>`;
+
+/* 0 · Overview */
+function renderOverview() {
+  const rows = D.order.map(r => `<tr><td>${r[0]}</td><td><a href="${esc(r[4])}">${esc(r[1])}</a></td><td><code>${esc(r[2])}</code></td><td>${esc(r[3])}</td></tr>`).join("");
+  const dia = D.diagrams.map(d => `<div class="card arch2"><h3>${esc(d[0])}</h3>
+    <a href="img/${d[1]}" target="_blank" rel="noopener"><img src="img/${d[1]}" alt="${esc(d[2])}" loading="lazy"></a>
+    <div class="ref"><a href="${d[3]}">${esc(d[4])}</a> · <a href="img/${d[1]}" target="_blank" rel="noopener">Open full size</a></div></div>`).join("");
+  safeRender($("#overview"), `
+  <h2>Shared foundation: Cognito + IAM Identity Center</h2>
+  <p class="lead">Goal: prove that an AgentCore Runtime agent querying/updating Redshift <b>acts as the calling IdC user</b>, so Redshift permissions defined for IdC groups (schema/table/column grants, RLS) are enforced, and that Redshift is reachable <b>only</b> from the operator workstation and the AgentCore runtime. All results on these pages are sample outputs.</p>
+  <div class="card start"><h3>Start here: the order of steps across pages</h3>
+    <p>This page holds the setup used by all four scenarios (one runtime VPC, one Cognito user pool, shared web GUIs). Build it first, then follow the parts in this order. Every step runs through <code>infra/common/run.sh</code> and is idempotent.</p>
+    <table><tr><th>#</th><th>Page</th><th>Scripts</th><th>What you get</th></tr>${rows}</table>
+    <p class="ref">Only want one scenario? Do Steps 1-2 here, then jump to that part. The OBO part is the one that needs the Redshift cluster and the IdC applications; 2LO and 3LO share the OAuth runtime (Step 12).</p></div>
+  <h3>The four scenarios on one Cognito pool + IdC</h3>
+  <p class="lead">The runbook covers the <b>Cognito + IAM Identity Center</b> implementation of four scenarios. All four share the runtime VPC, the Cognito user pool and the web GUIs below.</p>
+  <div class="dgrid">${dia}</div>
+  <table style="margin-top:14px"><tr><th>Pattern</th><th>Part</th></tr>${D.diagrams.map(d => `<tr><td>${esc(d[0])}</td><td><a href="${d[3]}">${esc(d[4])}</a></td></tr>`).join("")}
+    <tr><td>Per-user Gateway tool RBAC (Cedar)</td><td><a href="gateway-rbac.html">Gateway RBAC</a></td></tr></table>
+  <h3>Animated walkthroughs</h3>
+  <div class="card"><p>Open <a href="flow.html">flow.html</a> for the OBO / 2LO / 3LO tabs that step through every login, token hop and check described in these pages (verified in headless Chrome: all three tabs run with no JS errors). The Gateway RBAC walkthrough is <a href="flow-rbac.html">flow-rbac.html</a>.</p></div>
+  <h3>On this page</h3>
+  <ul><li><a href="#setup">1 · Setup</a>: prerequisites, Step 1 VPC, Step 2 Cognito pool, ops script for admin-only sign-up</li>
+  <li><a href="#webgui">2 · Web GUIs</a>: Step 14, API Gateway HTTP API in front of Lambda</li>
+  <li><a href="#registry">3 · Agent Registry</a>: Tokyo registry and a second registry in us-east-1 for Quick</li>
+  <li><a href="#teardown">4 · Teardown &amp; cost</a>: full teardown order and what is billed</li></ul>`);
+}
+/* 1 · Setup */
+function renderSetup() {
+  safeRender($("#setup"), `<h2>Setup</h2><p class="lead">Prerequisites, then Steps 1-2 and the admin-only sign-up check. Expand a step for its command, the recorded result and how to verify it.</p>`
+    + ["prereq", "step1", "step2", "ops"].map(k => stepCard(D.steps[k], true)).join(""));
+}
+/* 2 · Web GUIs */
+function renderWebgui() {
+  safeRender($("#webgui"), `<h2>Step 14 · Web GUIs on AWS (API Gateway HTTP API → Lambda)</h2>
+    <p class="lead">Result: OBO GUI <code>{web-obo-api-id}</code> · 2LO/3LO GUI <code>{web-2lo-api-id}</code></p>
+    <div class="card">${blocks(D.webgui)}</div>`);
+}
+/* 3 · Agent Registry */
+function renderRegistry() {
+  safeRender($("#registry"), `<h2>Agent Registry</h2><p class="lead">A catalogue of the runtimes and gateways, in the home Region of the registry service (Tokyo) and in Quick's home Region (us-east-1).</p>`
+    + stepCard(D.registry, true) + stepCard(D.registryUs, true));
+}
+/* 4 · Teardown & cost */
+function renderTeardown() {
+  const c = D.cost;
+  safeRender($("#teardown"), `<h2>Full teardown order</h2><p class="lead">Result: <code>99-teardown.sh</code> plus the per-part steps.</p>
+    <div class="card">${blocks(D.teardown)}</div>
+    <h2 style="margin-top:22px">Cost (what is billed while running)</h2>
+    <div class="card"><table><tr><th>Resource</th><th>How it's billed</th></tr>${c.rows.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("")}</table>
+    <p>${md(c.note)}</p></div>`);
+}
+renderOverview(); renderSetup(); renderWebgui(); renderRegistry(); renderTeardown();
+const h = location.hash.slice(1); if (h && $("section#" + h)) go(h);
+</script>
+</body></html>

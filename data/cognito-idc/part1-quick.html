@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 1 · Amazon Quick → Cognito → rsidc-mall-gateway (per-user tool RBAC from Cognito groups)</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+</style>
+<body>
+<div class="banner"><b>Static demo</b> — simulated UI, real recorded data. Nothing here calls AWS.<a href="part1-quick.zh-CN.html" hreflang="zh-CN" lang="zh-CN" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">中文</a></div>
+<div class="wrap">
+<nav>
+  <h1>Part 1 · Quick → Cognito Gateway</h1>
+  <div class="sub">Amazon Quick → Amazon Cognito → AgentCore Gateway with per-user tool authorization from Cognito groups (Cedar on the <code>roles</code> claim).</div>
+  <a data-s="arch" class="on">0 · Architecture</a>
+  <a data-s="replay">1 · Replay (fake sign-in)</a>
+  <a data-s="hood">2 · Under the hood</a>
+  <a data-s="setup">3 · Setup</a>
+  <a data-s="faq">4 · FAQ · Findings</a>
+  <div class="meta" id="navmeta" style="position:static;margin:14px 18px 0"></div>
+  <div class="meta" style="bottom:auto;position:static;margin:14px 18px 0;line-height:1.7">
+    <b>Other parts</b><br>
+    <a href="part1-quick.html" style="display:inline;padding:0;border:0;color:var(--acc)">Part 1 · Quick</a> ·
+    <a href="part2-3lo.html" style="display:inline;padding:0;border:0;color:var(--acc)">Part 2 · 3LO</a><br>
+    <a href="part3-2lo.html" style="display:inline;padding:0;border:0;color:var(--acc)">Part 3 · 2LO</a> ·
+    <a href="part4-obo.html" style="display:inline;padding:0;border:0;color:var(--acc)">Part 4 · OBO</a><br>
+    <a href="gateway-rbac.html" style="display:inline;padding:0;border:0;color:var(--acc)">Gateway RBAC</a> ·
+    <a href="foundation.html" style="display:inline;padding:0;border:0;color:var(--acc)">Foundation</a><br>
+    <a href="../../README.md" style="display:inline;padding:0;border:0;color:var(--acc)">Repo README</a>
+  </div>
+</nav>
+<main>
+<section id="arch" class="on">
+  <h2>Architecture: Quick → Cognito → Gateway → Cedar → Lambda</h2>
+  <p class="lead">Amazon Quick is the OAuth client. It signs the user in to Amazon Cognito (authorization code + PKCE, with the RFC 8707 <code>resource</code> parameter) and stores
+  <b>that user's own</b> access token. A Pre Token Generation trigger writes a <code>roles</code> claim from the user's Cognito groups. Quick then calls the AgentCore Gateway
+  <code>rsidc-mall-gateway</code> directly as an MCP client; the Gateway validates the JWT and Policy in AgentCore (Cedar) decides per tool from <code>roles</code>.
+  There is <b>no AgentCore Runtime, no AgentCore Identity and no token exchange</b> in this path. Quick can run in the same or a different AWS account (us-east-1); the connector only needs the Gateway URL.</p>
+  <div class="card arch"><a href="img/architecture-quick-mall.svg" target="_blank" rel="noopener">
+    <img src="img/architecture-quick-mall.svg" alt="Architecture diagram: Amazon Quick signs the user in to Cognito, then calls AgentCore Gateway with the user's access token; Cedar policy checks the roles claim before the Lambda tools run"></a>
+    <div class="ref"><a href="img/architecture-quick-mall.svg" target="_blank" rel="noopener">Open full size</a> · Numbered steps: 1 the connector in Quick (per-user connection) → 2 authorize (code + PKCE + <code>resource</code>) → 3 sign-in → 4 Pre Token trigger adds <code>roles</code> → 5 token (aud = gateway URL) → 6 Bearer user token to the Gateway → 7 Cedar per user → Lambda.</div></div>
+  <div id="archx"></div>
+</section>
+<section id="replay"></section>
+<section id="hood"></section>
+<section id="setup"></section>
+<section id="faq"></section>
+</main></div>
+<script id="data" type="application/json">{"built": "2026-11-05", "ids": {"pool": "{user-pool-id}", "gwId": "{mall-gateway-id}", "gwUrl": "https://{mall-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp", "quickClient": "{quick-client-id}", "oboClient": "{obo-client-id}", "peId": "{mall-policy-engine-id}", "domain": "techfinance.example.com", "cognitoDomain": "https://rsidc-123456789012.auth.ap-southeast-1.amazoncognito.com"}, "tools": ["mall___get_mall_list", "mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_zone_comparison"], "toolDesc": {"mall___get_footfall_summary": "Daily footfall total for one mall", "mall___get_hourly_traffic": "Hourly visitor counts (10:00-21:00) for one mall", "mall___get_mall_list": "List all malls (id, name, city)", "mall___get_zone_comparison": "Visitors per zone for one mall, to compare zones"}, "roleOf": {"mall___get_mall_list": "Tools.Mall.List", "mall___get_footfall_summary": "Tools.Mall.Footfall", "mall___get_hourly_traffic": "Tools.Mall.Hourly", "mall___get_zone_comparison": "Tools.Mall.Zone"}, "questions": [["List the malls", "mall___get_mall_list"], ["Footfall for HK01 on 2026-10-01", "mall___get_footfall_summary"], ["Hourly traffic for HK01 on 2026-10-01", "mall___get_hourly_traffic"], ["Compare zones in HK01 on 2026-10-01", "mall___get_zone_comparison"]], "users": {"wei": {"group": "mall-analyst", "desc": "[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall,Tools.Mall.Hourly,Tools.Mall.Zone"}, "ds1": {"group": "mall-viewer", "desc": "[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall"}, "chen": {"group": null, "desc": null}}, "enforce": {"wei": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "roles": ["Tools.CRM.Read", "Tools.Mall.Footfall", "Tools.Mall.Hourly", "Tools.Mall.List", "Tools.Mall.Zone", "Tools.Sales.Read"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "ds1": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_mall_list"], "http": 200, "roles": ["Tools.Mall.Footfall", "Tools.Mall.List", "Tools.Sales.Read"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_zone_comparison": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}}}, "chen": {"list": {"tools": [], "http": 200, "roles": [], "pass": true}, "calls": {"mall___get_mall_list": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_footfall_summary": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_hourly_traffic": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_zone_comparison": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}}}}, "log_only": {"wei": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "roles": ["Tools.CRM.Read", "Tools.Mall.Footfall", "Tools.Mall.Hourly", "Tools.Mall.List", "Tools.Mall.Zone", "Tools.Sales.Read"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "ds1": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "roles": ["Tools.Mall.Footfall", "Tools.Mall.List", "Tools.Sales.Read"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "chen": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "roles": [], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}}, "negatives": [{"case": "tampered ds1 token (roles forged to all 4)", "expect": 403, "actual": 403, "ev": "signature check", "pass": true}, {"case": "2LO M2M token (client not allowed)", "expect": 403, "actual": 403, "ev": "allowedClients", "pass": true}, {"case": "ID token instead of access token", "expect": 403, "actual": 403, "ev": "token_use", "pass": true}, {"case": "garbage bearer", "expect": 401, "actual": 401, "ev": "", "pass": true}, {"case": "bypass: Lambda policy", "expect": "none", "actual": "none", "ev": "no public path around the Gateway", "pass": true}, {"case": "bypass: Lambda function_url_config", "expect": "none", "actual": "none", "ev": "no public path around the Gateway", "pass": true}, {"case": "bypass: rsidc-mall-gateway-role -> lambda:InvokeFunction", "expect": "allowed", "actual": "allowed", "ev": "IAM policy simulation", "pass": true}, {"case": "bypass: rsidc-webchat-role -> lambda:InvokeFunction", "expect": "implicitDeny", "actual": "implicitDeny", "ev": "IAM policy simulation", "pass": true}, {"case": "bypass: rsidc-oauth-runtime-role -> lambda:InvokeFunction", "expect": "implicitDeny", "actual": "implicitDeny", "ev": "IAM policy simulation", "pass": true}], "change": [{"case": "before: ds1 hourly", "actual": false, "ev": "roles=['Tools.Mall.Footfall', 'Tools.Mall.List', 'Tools.Sales.Read']", "pass": true}, {"case": "after edit, new sign-in: ds1 hourly", "actual": true, "ev": "roles=['Tools.Mall.Footfall', 'Tools.Mall.Hourly', 'Tools.Mall.List', 'Tools.Sales.Read'] 0.9s after edit", "pass": true}, {"case": "after edit, OLD token: ds1 hourly", "actual": false, "ev": "claims frozen in the old token until it expires", "pass": true}, {"case": "after edit, REFRESH token (what Quick does): ds1 hourly", "actual": true, "ev": "roles=['Tools.Mall.Footfall', 'Tools.Mall.Hourly', 'Tools.Mall.List', 'Tools.Sales.Read']", "pass": true}, {"case": "restored: ds1 hourly", "actual": false, "ev": "roles=['Tools.Mall.Footfall', 'Tools.Mall.List', 'Tools.Sales.Read']", "pass": true}], "recheck": {"date": "2026-10-26", "persona": "ds1", "listed": ["mall___get_footfall_summary", "mall___get_mall_list"], "denied": ["mall___get_hourly_traffic", "mall___get_zone_comparison"], "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deny…", "source": "manual re-check in Amazon Quick (reported by the operator; no results file)"}, "runs": {"enforce": {"date": "2026-10-20", "pass": 25, "total": 25}, "log_only": {"date": "2026-10-06", "pass": 15, "total": 15}, "change": {"date": "2026-10-06", "pass": 5, "total": 5}}, "excerpts": {"groups": {"ref": "infra/cognito-idc/16-mall-cognito.py:14-15", "parts": [[[14, "GROUPS = {\"mall-analyst\": (\"[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall,Tools.Mall.Hourly,Tools.Mall.Zone\", [\"wei\"]),"], [15, "          \"mall-viewer\": (\"[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall\", [\"ds1\"])}"]]]}, "resource": {"ref": "infra/cognito-idc/16-mall-cognito.py:36-50", "parts": [[[36, "# Amazon Quick (MCP auth spec) sends RFC 8707 `resource=<gateway MCP URL>` on /authorize and /token. Cognito only honours a"], [37, "# resource that is a REGISTERED resource server (URL identifier); otherwise /token fails with invalid_grant and Quick shows"], [38, "# \"No access token was found for an OAuth authorization code connection\"."], [39, "# The gateway (16-mall-gateway.sh) needs QUICK_CLIENT_ID from this script, so on a fresh install MALL_GW_URL doesn't exist"], [40, "# yet: create the client without the gateway scope, then re-run this script after 16-mall-gateway.sh to add it."], [41, "GW_RES = os.environ.get(\"MALL_GW_URL\")"], [42, "SCOPES = [\"openid\", \"email\", \"profile\"]"], [43, "if GW_RES:"], [44, "    try:"], [45, "        idp.describe_resource_server(UserPoolId=POOL, Identifier=GW_RES)"], [46, "    except idp.exceptions.ResourceNotFoundException:"], [47, "        idp.create_resource_server(UserPoolId=POOL, Identifier=GW_RES, Name=\"rsidc-mall-gateway\","], [48, "                                   Scopes=[{\"ScopeName\": \"invoke\", \"ScopeDescription\": \"Call the mall MCP tools\"}])"], [49, "        print(\"resource server created:\", GW_RES)"], [50, "    SCOPES.append(f\"{GW_RES}/invoke\")"]]]}, "client": {"ref": "infra/cognito-idc/16-mall-cognito.py:56-65", "parts": [[[56, "    c = idp.create_user_pool_client("], [57, "        UserPoolId=POOL, ClientName=\"rsidc-quick-mcp\", GenerateSecret=True, AllowedOAuthFlows=[\"code\"],"], [58, "        AllowedOAuthScopes=SCOPES, AllowedOAuthFlowsUserPoolClient=True,"], [59, "        SupportedIdentityProviders=[\"COGNITO\"], CallbackURLs=CALLBACKS,"], [60, "        ExplicitAuthFlows=[\"ALLOW_REFRESH_TOKEN_AUTH\", \"ALLOW_ADMIN_USER_PASSWORD_AUTH\"],"], [61, "        AccessTokenValidity=60, IdTokenValidity=60, RefreshTokenValidity=30,"], [62, "        TokenValidityUnits={\"AccessToken\": \"minutes\", \"IdToken\": \"minutes\", \"RefreshToken\": \"days\"},"], [63, "        ReadAttributes=[\"email\", \"email_verified\", \"name\", \"given_name\", \"family_name\"],"], [64, "        WriteAttributes=[\"name\", \"given_name\", \"family_name\"],  # F-01: email is not user-writable"], [65, "        PreventUserExistenceErrors=\"ENABLED\", EnableTokenRevocation=True)[\"UserPoolClient\"]"]]]}, "pretoken": {"ref": "infra/cognito-idc/lambda/pretoken/handler.py:15-27,43-59", "parts": [[[15, "MAPPING = re.compile(r\"\\[rsidc-rbac\\]\\s*tools=([\\w.,]+)\")"], [16, ""], [17, ""], [18, "def parse(desc):"], [19, "    hit = MAPPING.search(desc or \"\")"], [20, "    return {t for t in hit.group(1).split(\",\") if t} if hit else set()"], [21, ""], [22, ""], [23, "def cognito_roles(pool_id, groups):"], [24, "    roles = set()"], [25, "    for g in groups:"], [26, "        roles |= parse(idp.get_group(UserPoolId=pool_id, GroupName=g)[\"Group\"].get(\"Description\"))"], [27, "    return roles"]], [[43, "def handler(event, _context):"], [44, "    roles = set()"], [45, "    if \"cognito\" in SOURCES:"], [46, "        groups = (event[\"request\"].get(\"groupConfiguration\") or {}).get(\"groupsToOverride\") or []"], [47, "        roles |= cognito_roles(event[\"userPoolId\"], groups)"], [48, "    attrs = event[\"request\"][\"userAttributes\"]"], [49, "    email = attrs.get(\"email\", \"\")"], [50, "    # Fail closed: an unverified email must never select an IdC identity (F-01). Log the reason, never the address."], [51, "    verified = str(attrs.get(\"email_verified\", \"\")).lower() == \"true\""], [52, "    if \"idc\" in SOURCES and email and not verified:"], [53, "        print(f\"user={event.get('userName')} idc roles skipped: email_verified is not true\")"], [54, "    elif \"idc\" in SOURCES and email:"], [55, "        roles |= roles_for(email)"], [56, "    roles = sorted(roles)"], [57, "    print(f\"user={event.get('userName')} trigger={event.get('triggerSource')} roles={roles}\")"], [58, "    event[\"response\"][\"claimsAndScopeOverrideDetails\"] = {"], [59, "        \"accessTokenGeneration\": {\"claimsToAddOrOverride\": {\"roles\": roles}}}"]]]}, "gwAuth": {"ref": "infra/cognito-idc/16-mall-gateway.sh:30-35", "parts": [[[30, "if [ -z \"${MALL_GW_ID:-}\" ]; then"], [31, "  save MALL_GW_ID $(aws bedrock-agentcore-control create-gateway --region $R --name ${PROJECT}-mall-gateway --role-arn arn:aws:iam::${ACCOUNT_ID}:role/$GR \\"], [32, "    --protocol-type MCP --authorizer-type CUSTOM_JWT --description \"rsidc Part 4: customer version (Amazon Quick -> Gateway MCP -> Lambda tools)\" \\"], [33, "    --authorizer-configuration \"{\\\"customJWTAuthorizer\\\":{\\\"discoveryUrl\\\":\\\"$COGNITO_DISCOVERY_URL\\\",\\\"allowedClients\\\":[\\\"$QUICK_CLIENT_ID\\\",\\\"$COGNITO_CLIENT_ID\\\"]}}\" \\"], [34, "    --query gatewayId --output text)"], [35, "fi"]]]}, "cedar": {"ref": "infra/cognito-idc/16-mall-policy.sh:13-22", "parts": [[[13, "policy() {  # $1 policy name, $2 action (target___tool), $3 required role value"], [14, "  aws bedrock-agentcore-control list-policies --region $R --policy-engine-id $MALL_PE_ID --query \"policies[?name=='$1'].policyId\" --output text | grep -q . && return"], [15, "  local stmt=\"permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\\\"$2\\\", resource == AgentCore::Gateway::\\\"$MALL_GW_ARN\\\") when { principal.hasTag(\\\"roles\\\") && principal.getTag(\\\"roles\\\") like \\\"*\\\\\\\"$3\\\\\\\"*\\\" };\""], [16, "  aws bedrock-agentcore-control create-policy --region $R --policy-engine-id $MALL_PE_ID --name $1 \\"], [17, "    --description \"$2 requires role $3\" --definition \"$(jq -cn --arg s \"$stmt\" '{cedar:{statement:$s}}')\" >/dev/null"], [18, "}"], [19, "policy mall_list     mall___get_mall_list        Tools.Mall.List"], [20, "policy mall_footfall mall___get_footfall_summary Tools.Mall.Footfall"], [21, "policy mall_hourly   mall___get_hourly_traffic   Tools.Mall.Hourly"], [22, "policy mall_zone     mall___get_zone_comparison  Tools.Mall.Zone"]]]}, "attach": {"ref": "infra/cognito-idc/16-mall-policy.sh:24-30", "parts": [[[24, "# Attach (or switch mode). UpdateGateway needs the full gateway definition, so the current one is copied back."], [25, "G=$(aws bedrock-agentcore-control get-gateway --region $R --gateway-identifier $MALL_GW_ID --output json)"], [26, "aws bedrock-agentcore-control update-gateway --region $R --gateway-identifier $MALL_GW_ID \\"], [27, "  --name \"$(jq -r .name <<<\"$G\")\" --role-arn \"$(jq -r .roleArn <<<\"$G\")\" --protocol-type MCP --description \"$(jq -r .description <<<\"$G\")\" \\"], [28, "  --authorizer-type CUSTOM_JWT --authorizer-configuration \"$(jq -c .authorizerConfiguration <<<\"$G\")\" \\"], [29, "  --policy-engine-configuration \"{\\\"arn\\\":\\\"$MALL_PE_ARN\\\",\\\"mode\\\":\\\"$MODE\\\"}\" >/dev/null"], [30, "for i in $(seq 30); do s=$(aws bedrock-agentcore-control get-gateway --region $R --gateway-identifier $MALL_GW_ID --query status --output text); [ \"$s\" = READY ] && break; sleep 5; done"]]]}, "lambda": {"ref": "infra/common/lambda/mall_tools/handler.py:39-44", "parts": [[[39, "def handler(event, context):"], [40, "    name = (context.client_context.custom or {}).get(\"bedrockAgentCoreToolName\", \"\") if context.client_context else \"\""], [41, "    tool = name.split(\"___\")[-1]  # the Gateway sends \"<target>___<tool>\""], [42, "    if tool not in TOOLS:"], [43, "        return {\"error\": f\"unknown tool {name!r}\"}"], [44, "    return {\"tool\": tool, \"result\": TOOLS[tool](event or {})}"]]]}}}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+// tiny markdown: `code`, **bold**
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+const short = t => t.replace("mall___", "");
+const email = u => `${u}@${D.ids.domain}`;
+const foot = date => `<div class="foot">Recorded test results (${esc(date)})</div>`;
+const pill = (ok, yes = "ALLOWED", no = "DENIED") => `<span class="pill ${ok ? "ok" : "no"}">${ok ? yes : no}</span>`;
+const USERS = ["wei", "ds1", "chen"];
+const link = (u, t) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`;
+const docs = l => `<div class="docs"><b>Official docs</b><ul>${l.map(([t, u]) => `<li>${link(u, t)}</li>`).join("")}</ul></div>`;
+
+function codeBlock(key, note) {
+  const e = D.excerpts[key];
+  const body = e.parts.map(p => p.map(([n, t]) => `<div class="row"><span class="ln">${n}</span>${esc(t)}</div>`).join(""))
+    .join(`<div class="gap">…</div>`);
+  return `<div class="ref"><b>${esc(e.ref)}</b>${note ? " · " + note : ""}</div><pre>${body}</pre>`;
+}
+const cmd = text => `<pre class="out">${esc(text)}</pre>`;
+const kv = rows => `<table class="kv">${rows.map(([k, v]) => `<tr><td>${md(k)}</td><td>${md(v)}</td></tr>`).join("")}</table>`;
+
+/* ---------------- nav ---------------- */
+function go(sec) {
+  document.querySelectorAll("nav a[data-s]").forEach(x => x.classList.toggle("on", x.dataset.s === sec));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === sec));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav a[data-s]").forEach(a => a.onclick = () => go(a.dataset.s));
+safeRender($("#navmeta"), `Page built ${esc(D.built)}<br>Tests: enforce ${D.runs.enforce.pass}/${D.runs.enforce.total} · log_only ${D.runs.log_only.pass}/${D.runs.log_only.total} · change ${D.runs.change.pass}/${D.runs.change.total}`);
+
+/* ---------------- 0 · Architecture (extra cards) ---------------- */
+function renderArch() {
+  safeRender($("#archx"), `<h3>Classification: 3LO with Quick as the OAuth client, not OBO</h3>
+  <div class="card"><table><tr><th>Question</th><th>Part 1 (Quick → Gateway)</th><th>Part 2 · AgentCore 3LO</th><th>Part 4 · OBO</th></tr>
+   <tr><td>Who is the OAuth client?</td><td><b>Amazon Quick</b> (connector <code>rsidc-quick-mcp</code>)</td><td>AgentCore Identity (<code>rsidc-3lo-cognito</code>) for the agent</td><td>the agent / Credential Provider (token exchange)</td></tr>
+   <tr><td>Grant</td><td><b>authorization code + PKCE</b> (+ RFC 8707 <code>resource</code>)</td><td>authorization code (consent)</td><td>jwt-bearer (RFC 7523) / token exchange (RFC 8693)</td></tr>
+   <tr><td>Token exchange?</td><td><b>No</b>: Quick passes the user's own token</td><td>No</td><td><b>Yes</b>: the inbound user token is exchanged for a downstream token</td></tr>
+   <tr><td>Where is the user token stored?</td><td><b>In Quick, per user</b>: the connector page shows <i>"Signed in as wei@techfinance.example.com"</i></td><td>AgentCore Token Vault (agent, user)</td><td>not stored: exchanged per call</td></tr>
+   <tr><td>Who enforces per user?</td><td>Gateway Cedar on the <code>roles</code> claim</td><td>the resource itself (Cognito <code>userInfo</code>)</td><td>Redshift (IdC) / Gateway Cedar</td></tr></table>
+   <p><b>Why 3LO:</b> the user signs in and Quick receives an authorization code, then an access token for that user (user, client = Quick, authorization server = Cognito). Each Quick user has their own connection and token: the connector page shows "Signed in as wei@…".</p>
+   <p><b>Why not OBO:</b> nothing exchanges one token for another (no RFC 8693 / 7523). The token Quick sends to the Gateway is exactly the one Cognito issued to the user for this resource (<code>aud</code> = gateway URL).</p></div>
+  <h3>Design decisions (customer version)</h3>
+  <div class="card"><p>The customer's design is: End User → Amazon Quick (MCP client) → MCP server with 4 mall-footfall tools → MySQL. This page reproduces it with per-user tool RBAC added.</p>
+  <ol class="checks">
+   <li><b>The Gateway is the MCP server.</b> Quick connects to the AgentCore Gateway URL, and the 4 tools become <b>one Lambda target</b> (<code>mall</code>). The tools have no per-user code.</li>
+   <li><b>Group → tool mapping lives in Cognito group Descriptions.</b> The Gateway RBAC trigger also reads Cognito groups (<code>ROLE_SOURCES=cognito,idc</code>). It is Entra App Role-shaped: claim <code>roles</code>, values <code>Tools.Mall.*</code>.</li>
+   <li><b>One fixed Cedar permit per tool.</b> No group names appear in Cedar.</li>
+   <li><b>Anti-bypass.</b> The Lambda has no Function URL and no resource policy. Only the Gateway role can invoke it.</li></ol>
+  <pre class="out">User → Amazon Quick (MCP connector, user OAuth: Cognito client rsidc-quick-mcp)
+        → AgentCore Gateway rsidc-mall-gateway (inbound Cognito JWT; Policy rsidc_mall_pe ENFORCE)
+            → Lambda rsidc-mall-tools (target "mall": get_mall_list / get_footfall_summary / get_hourly_traffic / get_zone_comparison)
+Cognito sign-in → Pre Token Gen V2 (alias live) → Cognito group Description → access token roles=[Tools.Mall.*]</pre></div>`);
+}
+
+/* ---------------- 1 · Replay ---------------- */
+const R = {user: null, mode: "enforce", stage: 0, chat: []};
+function renderReplay() {
+  const stages = ["Sign in (Cognito managed login)", "Decoded access token", "Quick chat + MCP connector"];
+  safeRender($("#replay"), `<h2>Replay: one user, one token, four questions</h2>
+  <p class="lead">Pick a user, sign in with any password (simulated), inspect the access token's claims, then ask the 4 mall questions in a mock Quick chat.
+  Every tool list and every allow/deny below is the <b>real</b> result recorded against <code>rsidc-mall-gateway</code> with tokens minted for Quick's own app client
+  <code>rsidc-quick-mcp</code>. Quick's own natural-language wording around the tool results was not recorded, so it is not shown.</p>
+  <div class="steps">${stages.map((s, i) => `<span class="${i <= R.stage ? "on" : ""}">${i + 1} · ${s}</span>`).join("")}</div>
+  <div id="rp"></div>`);
+  [signIn, tokenView, quickView][R.stage]($("#rp"));
+}
+function signIn(el) {
+  const u = R.user || "wei";
+  safeRender(el, `<div class="ms">
+    <div class="logo" style="width:auto;font-weight:700;color:#232f3e;font-size:15px;margin-bottom:10px">Amazon Cognito · managed login</div>
+    <h4>Sign in</h4>
+    <div class="who">${USERS.map(x => `<button class="btn ${x === u ? "on" : ""}" data-u="${x}">${x}</button>`).join("")}</div>
+    <input value="${esc(email(u))}" readonly>
+    <input type="password" placeholder="Password (any value, simulated)">
+    <button class="go" id="go" style="background:var(--acc)">Sign in</button>
+    <small>Simulated sign-in page. The password is not sent anywhere. In Quick this happens once per user when the connector is created; Quick then shows "Signed in as ${esc(email(u))}".</small>
+  </div>
+  <div class="card"><b>Users, Cognito groups and the tools they map to</b>
+    <table><tr><th>User</th><th>Cognito group</th><th>Group Description (the mapping)</th><th>Expected tools</th></tr>
+    ${USERS.map(x => { const g = D.users[x]; return `<tr><td><code>${esc(email(x))}</code></td><td>${g.group ? `<code>${g.group}</code>` : "<i>none</i>"}</td><td>${g.desc ? `<code>${esc(g.desc)}</code>` : "<i>no mapping</i>"}</td><td>${D.enforce[x].list.tools.length}</td></tr>`; }).join("")}</table>
+    ${codeBlock("groups", "the groups the setup script creates")}
+  </div>${foot("2026-10-20")}`);
+  R.user = u;
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { R.user = b.dataset.u; signIn(el); });
+  $("#go", el).onclick = () => { R.stage = 1; renderReplay(); };
+}
+function tokenView(el) {
+  const u = R.user, L = D.enforce[u].list;
+  const rows = [
+    ["client_id", D.ids.quickClient + "  (rsidc-quick-mcp)", "recorded", "the Gateway checks this against allowedClients"],
+    ["aud", "<gateway MCP URL>", "by design", "set because Quick sends resource=<gateway MCP URL> and that URL is a registered resource server"],
+    ["roles", JSON.stringify(L.roles), "recorded", "written by the Pre Token trigger from the user's Cognito groups" + (u === "chen" ? " · no group → empty list" : " · Sales.Read / CRM.Read come from the IAM Identity Center source of the same trigger and are not used by the mall policies")],
+    ["email", email(u), "by design", "identifies the user (shown as \"Signed in as\"); not used for authorization here"],
+  ];
+  safeRender(el, `<div class="grid g2">
+  <div class="card"><b>Decoded payload: Cognito access token for ${esc(u)} (Quick's app client)</b>
+    <p class="lead" style="margin:6px 0">The token itself is never embedded in this page (only claims). Signature and header are not shown.</p>
+    <table class="claims"><tr><th>Claim</th><th>Value</th><th>Provenance</th></tr>
+    ${rows.map(([k, v, p, s]) => `<tr><td>${k}</td><td><code>${esc(v)}</code><div class="ref">${esc(s)}</div></td><td><span class="pill ${p === "recorded" ? "ok" : "mut"}">${p}</span></td></tr>`).join("")}</table>
+  </div>
+  <div class="card"><b>What each claim is used for</b>
+    <ul class="checks">
+      <li><code>client_id</code>: the Gateway's <code>allowedClients</code> = [Quick client, OBO client]. A token from any other app client (for example the 2LO machine-to-machine client) is rejected with 403.</li>
+      <li><code>aud</code>: the gateway URL, because the <code>resource</code> parameter named it.</li>
+      <li><code>roles</code>: the only thing Cedar looks at. One rule per tool: <code>principal.getTag("roles") like "*\\"Tools.Mall.X\\"*"</code>.</li>
+      <li>The token is an <b>access</b> token; an ID token is rejected with 403 (recorded).</li>
+    </ul>
+    <div class="row-btns"><button class="btn" id="back">← Sign in as someone else</button><button class="btn pri" id="next">Open Quick →</button></div>
+  </div></div>${foot("2026-10-20")}`);
+  $("#back", el).onclick = () => { R.stage = 0; renderReplay(); };
+  $("#next", el).onclick = () => { R.stage = 2; R.chat = []; renderReplay(); };
+}
+function quickView(el) {
+  const u = R.user, run = D[R.mode][u], meta = D.runs[R.mode];
+  const listed = new Set(run.list.tools), rc = D.recheck;
+  safeRender(el, `<div class="quick">
+   <div class="chat"><div class="hd"><span>Amazon Quick · chat (simulated)</span>
+     <span class="row-btns"><button class="btn ${R.mode === "enforce" ? "on" : ""}" data-m="enforce">ENFORCE (${D.runs.enforce.date})</button><button class="btn ${R.mode === "log_only" ? "on" : ""}" data-m="log_only">LOG_ONLY (${D.runs.log_only.date})</button></span></div>
+     <div class="bd" id="bd"></div>
+     <div class="ft">${D.questions.map(([q], i) => `<button class="btn" data-q="${i}">${esc(q)}</button>`).join("")}<button class="btn" id="clr">Clear</button></div></div>
+   <div><div class="conn"><b>MCP connector: rsidc-quick-mcp</b>
+     <div class="ref">Authentication: <b>Custom user based OAuth</b> (Amazon Cognito, confidential client <code>rsidc-quick-mcp</code>)</div>
+     <div style="margin:8px 0"><span class="dot" style="background:var(--ok)"></span>Status Ready · Signed in as <b>${esc(email(u))}</b></div>
+     <div class="ref">Base URL <code>${esc(D.ids.gwUrl)}</code></div>
+     <div class="ref"><b>Enabled tools</b> = Gateway tools/list → HTTP ${run.list.http} · ${run.list.tools.length} tool(s) (policy ${R.mode.toUpperCase()})</div>
+     ${D.tools.map(t => `<div class="t ${listed.has(t) ? "" : "off"}"><span>${t}</span>${listed.has(t) ? '<span class="pill ok">Read</span>' : '<span class="pill mut">not listed</span>'}</div>`).join("")}
+     <div class="row-btns" style="margin-top:12px"><button class="btn" id="out">Sign out / switch user</button></div></div>
+     ${R.mode === "log_only" ? `<div class="ref" style="margin-top:8px"><b>LOG_ONLY:</b> Cedar evaluates and logs every decision but does not block. Every user listed and called all 4 tools; the Gateway log recorded 6 <code>decision: DENY</code> entries (ds1 hourly and zone, chen all 4).</div>` : ""}
+     ${u === "ds1" && R.mode === "enforce" ? `<div class="ref" style="margin-top:8px"><b>Re-check ${esc(rc.date)} (ds1):</b> tools/list = ${rc.listed.map(short).join(", ")}; ${rc.denied.map(short).join(" and ")} denied.</div>` : ""}
+     ${u === "ds1" ? changeCard() : ""}
+   </div></div>${matrixCard()}${foot(meta.date + " · " + meta.pass + "/" + meta.total + " PASS")}`);
+  const bd = $("#bd", el);
+  const paint = () => {
+    safeRender(bd, R.chat.length ? R.chat.join("") : `<div class="msg a">Connected as ${esc(email(u))}. Ask about the malls. (Tool results shown.)</div>`);
+    bd.scrollTop = bd.scrollHeight;
+  };
+  paint();
+  el.querySelectorAll("[data-q]").forEach(b => b.onclick = () => {
+    const [q, t] = D.questions[+b.dataset.q], c = run.calls[t];
+    R.chat.push(`<div class="msg u">${esc(q)}</div>`);
+    R.chat.push(`<div class="msg a"><div class="tc">tools/call <code>${t}</code> {"mall_id":"HK01","date":"2026-10-01"} → HTTP ${c.http} ${pill(c.ok)}</div>
+      ${listed.has(t) ? "" : `<div class="ref">This tool is not in ${esc(u)}'s tools/list, so a Quick agent would normally not offer it. Replaying the <b>direct</b> tools/call the test made anyway: Cedar decides each call, not just the list.</div>`}
+      <pre class="out">${esc(c.text)}</pre><div class="ref">recorded evidence (first 110 characters of the result)</div></div>`);
+    paint();
+  });
+  el.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { R.mode = b.dataset.m; R.chat = []; quickView(el); });
+  $("#clr", el).onclick = () => { R.chat = []; paint(); };
+  $("#out", el).onclick = () => { R.stage = 0; R.chat = []; renderReplay(); };
+}
+function changeCard() {
+  return `<div class="conn" style="margin-top:12px"><b>Bonus: group Description change for ds1 (recorded ${D.runs.change.date})</b>
+   <div class="ref">Added <code>Tools.Mall.Hourly</code> to the <code>mall-viewer</code> Description only.</div>
+   <table>${D.change.map(c => `<tr><td>${esc(c.case)}</td><td>${c.pass ? '<span class="pill ok">PASS</span>' : '<span class="pill no">FAIL</span>'}<div class="ref">${esc(c.ev)}</div></td></tr>`).join("")}</table>
+   <div class="ref">Only the Cognito group Description changed; Cedar, Lambda and the Gateway were untouched. ds1's new sign-in 0.9 s later can call hourly, and the <b>refresh-token</b> path (what Quick uses) picks it up too. The old token is still denied because claims are frozen until it expires. The Description was restored and verified.</div></div>`;
+}
+function matrixCard() {
+  return `<h3>Recorded test matrix</h3><div class="card"><table><tr><th>Phase</th><th>Result</th><th>Key evidence</th></tr>
+   <tr><td>LOG_ONLY</td><td>${D.runs.log_only.pass}/${D.runs.log_only.total}</td><td>Every user listed and called all 4 tools (HTTP 200, data returned). The Gateway log recorded 6 <code>decision: DENY</code>: ds1 hourly and zone, chen all 4.</td></tr>
+   <tr><td rowspan="5">ENFORCE</td><td rowspan="5">${D.runs.enforce.pass}/${D.runs.enforce.total}</td><td><b>wei:</b> list shows 4 tools, all 4 calls succeed. The OBO-client token gives the same result.</td></tr>
+   <tr><td><b>ds1:</b> list shows 2 tools (<code>mall___get_footfall_summary</code>, <code>mall___get_mall_list</code>). Hand-crafted hourly and zone calls return HTTP 200, <code>isError</code>, <code>Tool Execution Denied: Tool call not allowed due to policy enforcement</code>.</td></tr>
+   <tr><td><b>chen:</b> list is <code>[]</code>, and all calls are denied.</td></tr>
+   <tr><td><b>Rejected tokens:</b> ${D.negatives.slice(0, 4).map(n => `${esc(n.case)} → ${esc(n.actual)}`).join(" · ")}.</td></tr>
+   <tr><td><b>Bypass:</b> Lambda has no resource policy and no URL. IAM simulation: <code>rsidc-mall-gateway-role</code> allowed, <code>rsidc-webchat-role</code> and <code>rsidc-oauth-runtime-role</code> implicitDeny.</td></tr>
+   <tr><td>change</td><td>${D.runs.change.pass}/${D.runs.change.total}</td><td>Group Description edit reaches new sign-ins and the refresh-token path; old tokens stay frozen until expiry (see ds1 above).</td></tr>
+   <tr><td>Regression</td><td>PASS</td><td>Gateway RBAC demo 12/12; OBO 16/16; 2LO/3LO 18/18; both webchat URLs 200</td></tr></table></div>`;
+}
+
+/* ---------------- 2 · Under the hood ---------------- */
+const H = {i: 0, user: "ds1", tool: "mall___get_hourly_traffic"};
+function renderHood() {
+  const el = $("#hood");
+  const u = H.user, L = D.enforce[u].list, c = D.enforce[u].calls[H.tool], need = D.roleOf[H.tool];
+  const hasRole = (L.roles || []).includes(need);
+  const gw = D.ids.gwUrl;
+  const hops = [
+    {t: "Quick → Cognito authorize", who: "Amazon Cognito (resource server)",
+     body: () => `<pre class="out">GET ${esc(D.ids.cognitoDomain)}/oauth2/authorize
+  ?response_type=code&amp;client_id=${esc(D.ids.quickClient)}&amp;code_challenge=…
+  &amp;redirect_uri=https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback
+  &amp;scope=openid email profile ${esc(gw)}/invoke
+  &amp;resource=${esc(gw)}     ← RFC 8707, sent by Quick</pre>
+      <p>Quick follows the MCP authorization spec and names the MCP server it wants a token for. Cognito honours a <code>resource</code> only if it is a <b>registered resource server</b> identifier; otherwise <code>/oauth2/token</code> returns <code>invalid_grant</code> and Quick shows "No access token was found for an OAuth authorization code connection".</p>
+      <ul class="checks"><li>resource server identifier = the gateway MCP URL, scope <code>invoke</code> <span class="pill ok">registered by setup</span></li>
+      <li>${esc(u)} signs in on the managed login page; Quick then shows "Signed in as ${esc(email(u))}"</li></ul>
+      ${codeBlock("resource", "resource server = gateway URL")}`},
+    {t: "Cognito → Pre Token trigger", who: "Lambda rsidc-pretoken-roles (alias live)",
+     body: () => `<p>Cognito invokes the Pre Token Generation V2 Lambda (alias <code>live</code>) for <code>TokenGeneration_*</code> events with the user's Cognito groups in <code>groupConfiguration.groupsToOverride</code>. The trigger reads each group's <b>Description</b> (<code>[rsidc-rbac] tools=Tools.Mall.List,…</code>) and writes the union as <code>roles</code> into the <b>access token</b>. It fails closed: an error fails the sign-in instead of issuing a token without <code>roles</code>. The optional IdC source is used only when <code>email_verified</code> is <code>true</code>.</p>
+      <table class="kv"><tr><td>${esc(u)}'s group</td><td>${D.users[u].group ? `<code>${D.users[u].group}</code> → <code>${esc(D.users[u].desc)}</code>` : "<i>none</i> → no mapping → <code>roles</code> contains no Tools.Mall.*"}</td></tr>
+      <tr><td>recorded <code>roles</code></td><td><code>${esc(JSON.stringify(L.roles))}</code> <span class="pill ok">recorded</span></td></tr></table>
+      ${codeBlock("pretoken", "roles from Cognito groups (and optionally IdC)")}`},
+    {t: "Cognito → Quick: access token", who: "Amazon Cognito (issuer)",
+     body: () => `<pre class="out">POST ${esc(D.ids.cognitoDomain)}/oauth2/token
+grant_type=authorization_code&amp;code=…&amp;code_verifier=…
+&amp;resource=${esc(gw)}     (client secret in a Basic header, then in the body)</pre>
+      <table class="claims"><tr><th>Claim</th><th>Value for ${esc(u)}</th></tr>
+      <tr><td>client_id</td><td><code>${esc(D.ids.quickClient)}</code> <span class="pill ok">recorded</span></td></tr>
+      <tr><td>aud</td><td><code>${esc(gw)}</code> (the registered resource server)</td></tr>
+      <tr><td>roles</td><td><code>${esc(JSON.stringify(L.roles))}</code> <span class="pill ok">recorded</span></td></tr></table>
+      <p class="ref">Quick stores this token <b>per user</b> (3LO, not OBO) and refreshes it with the refresh token; the access token is valid for 60 minutes. The token is not shown anywhere in this page.</p>
+      ${codeBlock("client", "confidential client, code flow, 60-minute access token")}`},
+    {t: "Quick → Gateway: CUSTOM_JWT", who: "AgentCore Gateway",
+     body: () => `<pre class="out">POST ${esc(gw)}
+Authorization: Bearer &lt;user access token&gt;
+Content-Type: application/json
+
+{"jsonrpc":"2.0","id":1,"method":"tools/call",
+ "params":{"name":"${H.tool}","arguments":{"mall_id":"HK01","date":"2026-10-01"}}}</pre>
+      <table class="kv" style="margin-top:10px"><tr><td>discoveryUrl</td><td>the user pool's OIDC discovery document (Cognito)</td></tr>
+      <tr><td>allowedClients</td><td><code>["${esc(D.ids.quickClient)}", "${esc(D.ids.oboClient)}"]</code> (Quick client, OBO client used by scripted tests)</td></tr></table>
+      <b>Checks for ${esc(u)}</b><ul class="checks"><li>signature against the pool's JWKS <span class="pill ok">pass</span></li><li><code>client_id</code> ∈ allowedClients <span class="pill ok">pass</span></li><li>result: tools/list HTTP ${L.http} <span class="pill ok">recorded</span></li></ul>
+      <b>Negative tokens (recorded ${D.runs.enforce.date})</b>
+      <table><tr><th>Case</th><th>Expect</th><th>Actual</th><th></th></tr>${D.negatives.slice(0, 4).map(n => `<tr><td>${esc(n.case)}</td><td>${esc(n.expect)}</td><td>${esc(n.actual)} <span class="ref">${esc(n.ev)}</span></td><td>${n.pass ? '<span class="pill ok">PASS</span>' : '<span class="pill no">FAIL</span>'}</td></tr>`).join("")}</table>
+      ${codeBlock("gwAuth", "Gateway with allowedClients")}`},
+    {t: "Policy in AgentCore (Cedar) on roles", who: "Policy engine rsidc_mall_pe (ENFORCE)",
+     body: () => `<p>Needed for <code>${H.tool}</code>: <code>${need}</code> in <code>roles</code>. ${esc(u)} ${L.roles && L.roles.length ? (hasRole ? "has it" : "does not have it") : "has an empty <code>roles</code> claim"} → ${pill(c.ok, "PERMIT", "DENY (no policy applies)")}</p>
+      <ul class="checks"><li>Principal is <code>AgentCore::OAuthUser</code> with the JWT claims as tags. Array claims arrive as <b>one string</b>, hence <code>like "*\\"Tools.Mall.X\\"*"</code>. No permit means deny.</li>
+      <li><b>tools/list</b> is filtered by the same rules: ${esc(u)} sees ${L.tools.length} tool(s): ${L.tools.map(t => `<code>${short(t)}</code>`).join(" ") || "<i>none</i>"}</li>
+      <li><b>tools/call</b> denied → <b>HTTP 200</b> with <code>isError</code>: <i>Tool Execution Denied</i> (not 403), so Quick shows the deny text as the tool result.</li>
+      <li>The Gateway role needs <code>bedrock-agentcore:AuthorizeAction</code> on this engine, else attaching the engine fails.</li></ul>
+      ${codeBlock("cedar", "one fixed permit per tool")}${codeBlock("attach", "policy engine attached in LOG_ONLY / ENFORCE")}`},
+    {t: "Gateway → Lambda rsidc-mall-tools", who: "Gateway IAM role",
+     body: () => `<p>Reached only if Cedar permits. Target <code>mall</code> → Lambda with the Gateway IAM role; the Lambda receives the tool name in <code>context.client_context.custom["bedrockAgentCoreToolName"]</code> and has <b>no per-user logic</b>. The Lambda has no resource policy and no Function URL, so there is no path around the Gateway.</p>
+      <b>Recorded result for ${esc(u)} · ${short(H.tool)}</b> ${pill(c.ok)}<pre class="out">HTTP ${c.http} ${esc(c.text)}</pre>
+      ${codeBlock("lambda", "tool Lambda")}`},
+  ];
+  safeRender(el, `<h2>Under the hood: one tool call, hop by hop</h2>
+  <p class="lead">Choose a user and a tool; each hop shows the call, the claims, who checks what, and the real code/config (file:line).</p>
+  <div class="row-btns">${USERS.map(x => `<button class="btn ${x === u ? "on" : ""}" data-u="${x}">${x}</button>`).join("")}
+   <span style="width:16px"></span>${D.tools.map(t => `<button class="btn ${t === H.tool ? "on" : ""}" data-t="${t}">${short(t)}</button>`).join("")}</div>
+  <div class="flow" style="margin-top:12px">${hops.map((h, i) => `${i ? '<div class="arrow">→</div>' : ""}<div class="node ${i === H.i ? "on" : ""} ${i === 4 ? (c.ok ? "good" : "bad") : ""}" data-i="${i}"><div class="n">hop ${i + 1}</div><div class="t">${esc(h.t)}</div><div class="s">${esc(h.who)}</div></div>`).join("")}</div>
+  <div class="card"><div class="hop-hd"><h3 style="margin:0">Hop ${H.i + 1} · ${esc(hops[H.i].t)}</h3><span class="pill mut who-chk">checked by: ${esc(hops[H.i].who)}</span>
+   <span style="flex:1"></span><button class="btn" id="hp" ${H.i ? "" : "disabled"}>← Prev</button><button class="btn pri" id="hn" ${H.i < hops.length - 1 ? "" : "disabled"}>Next →</button></div>
+   ${hops[H.i].body()}</div>
+  ${foot(D.runs.enforce.date)}`);
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { H.user = b.dataset.u; renderHood(); });
+  el.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { H.tool = b.dataset.t; renderHood(); });
+  el.querySelectorAll(".node").forEach(n => n.onclick = () => { H.i = +n.dataset.i; renderHood(); });
+  $("#hp", el).onclick = () => { H.i--; renderHood(); };
+  $("#hn", el).onclick = () => { H.i++; renderHood(); };
+}
+
+/* ---------------- 3 · Setup ---------------- */
+const RES161 = `16.1  group mall-analyst  members=['wei'] description='[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall,Tools.Mall.Hourly,Tools.Mall.Zone'
+      group mall-viewer   members=['ds1'] description='[rsidc-rbac] tools=Tools.Mall.List,Tools.Mall.Footfall'
+      client rsidc-quick-mcp id={quick-client-id} flows=['code'] scopes=['email','openid','profile'] secret=<kept in a local gitignored file>
+      AllowAdminCreateUserOnly: True
+16.2  pre-flight ds1 roles=['Tools.Mall.Footfall','Tools.Mall.List','Tools.Sales.Read']   wei roles=[...all 4 Tools.Mall.*, Tools.CRM.Read, Tools.Sales.Read]   chen/zhang roles=[]
+      promoted version 1 -> alias live
+      UpdateUserPool diff: only LambdaConfig.PreTokenGeneration(Config).LambdaArn  ...:function:rsidc-pretoken-roles -> ...:rsidc-pretoken-roles:live
+16.3  gateway {mall-gateway-id} READY  url=https://{mall-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp
+      allowedClients=[{quick-client-id} (Quick), {obo-client-id} (OBO, scripted tests)]   target mall READY
+      Lambda resource policy: ResourceNotFoundException; Function URL: ResourceNotFoundException
+16.5  policies mall_list / mall_footfall / mall_hourly / mall_zone ACTIVE; engine {mall-policy-engine-id} mode ENFORCE`;
+const DENY_CMD = `aws logs filter-log-events --region ap-southeast-1 \\
+  --log-group-name /aws/vendedlogs/bedrock-agentcore/gateway/rsidc-mall-gateway \\
+  --start-time $(( ($(date +%s)-1800)*1000 )) --filter-pattern DENY \\
+  --query 'events[].message' --output text | grep -o '"decision":"DENY","reason":"[^"]*"' | sort | uniq -c`;
+const TEARDOWN = `source infra/state.env; R=ap-southeast-1
+aws logs delete-delivery --region $R --id $(aws logs describe-deliveries --region $R --query "deliveries[?deliverySourceName=='rsidc-mall-gw-logs'].id" --output text)
+aws logs delete-delivery-source --region $R --name rsidc-mall-gw-logs; aws logs delete-delivery-destination --region $R --name rsidc-mall-gw-cwl
+aws logs delete-log-group --region $R --log-group-name /aws/vendedlogs/bedrock-agentcore/gateway/rsidc-mall-gateway
+for t in $(aws bedrock-agentcore-control list-gateway-targets --region $R --gateway-identifier $MALL_GW_ID --query 'items[].targetId' --output text); do
+  aws bedrock-agentcore-control delete-gateway-target --region $R --gateway-identifier $MALL_GW_ID --target-id $t; done
+aws bedrock-agentcore-control delete-gateway --region $R --gateway-identifier $MALL_GW_ID
+for p in $(aws bedrock-agentcore-control list-policies --region $R --policy-engine-id $MALL_PE_ID --query 'policies[].policyId' --output text); do
+  aws bedrock-agentcore-control delete-policy --region $R --policy-engine-id $MALL_PE_ID --policy-id $p; done
+aws bedrock-agentcore-control delete-policy-engine --region $R --policy-engine-id $MALL_PE_ID
+aws lambda delete-function --region $R --function-name rsidc-mall-tools
+aws cognito-idp delete-user-pool-client --region $R --user-pool-id $COGNITO_POOL_ID --client-id $QUICK_CLIENT_ID
+for g in mall-analyst mall-viewer; do aws cognito-idp delete-group --region $R --user-pool-id $COGNITO_POOL_ID --group-name $g; done
+rm -f tests/.quick-client.env`;
+
+function renderSetup() {
+  const I = D.ids;
+  safeRender($("#setup"), `<h2>Detailed setup</h2>
+  <p class="lead">In build order: Cognito and Gateway on the AWS side, then the Quick connector, then the checks. All scripts run through <code>infra/common/run.sh</code>, which loads <code>infra/common/00-config.sh</code> and the saved state. Quick itself is configured by hand in the Quick UI; nothing in Quick is created by automation.</p>
+
+  <h3>(a) Cognito and Gateway (AWS side)</h3>
+  <div class="card"><table><tr><th>Step</th><th>Command</th><th>Purpose</th></tr>
+   <tr><td>16.1</td><td><code>infra/common/run.sh .venv/bin/python infra/cognito-idc/16-mall-cognito.py</code></td><td>Groups <code>mall-analyst</code> (wei) and <code>mall-viewer</code> (ds1) with mapping Descriptions; Quick app client <code>rsidc-quick-mcp</code>; resource server = gateway URL (scope <code>invoke</code>); Quick callbacks. The client secret goes only to a local gitignored file, <code>tests/.quick-client.env</code>, and is never printed.</td></tr>
+   <tr><td>16.2</td><td><code>infra/common/run.sh .venv/bin/python infra/cognito-idc/15-rbac-pretoken.py</code></td><td>Re-run: the trigger now reads Cognito groups plus IdC. Cognito calls alias <b><code>live</code></b>, which moves only after the pre-flight passes.</td></tr>
+   <tr><td>16.3</td><td><code>infra/common/run.sh bash infra/cognito-idc/16-mall-gateway.sh</code></td><td>Lambda <code>rsidc-mall-tools</code>, roles, Gateway <code>rsidc-mall-gateway</code> with <code>allowedClients = [Quick client, OBO client]</code>, target <code>mall</code>.</td></tr>
+   <tr><td>16.4</td><td><code>infra/common/run.sh bash infra/cognito-idc/16-mall-logs.sh</code></td><td>Policy decision logs → <code>/aws/vendedlogs/bedrock-agentcore/gateway/rsidc-mall-gateway</code> (7 days); used to confirm DENY decisions.</td></tr>
+   <tr><td>16.5</td><td><code>infra/common/run.sh bash infra/cognito-idc/16-mall-policy.sh LOG_ONLY</code>, then <code>ENFORCE</code></td><td>Policy engine <code>rsidc_mall_pe</code>, 4 fixed Cedar permits on <code>roles</code>, attach.</td></tr>
+   <tr><td>16.6</td><td>Quick connector, see (b)</td><td><b>Manual:</b> connect your Quick to the Gateway as wei, then as ds1.</td></tr></table>
+   <div class="ref">The gateway needs <code>QUICK_CLIENT_ID</code> from 16.1, and the resource server needs the gateway URL from 16.3. On a fresh install, 16.1 creates the client without the gateway scope; re-run 16.1 after 16.3 to add the resource server and the <code>invoke</code> scope.</div></div>
+  <div class="grid g2"><div class="card"><b>What the scripts configure</b><ul class="checks">
+   <li><b>Cognito resource server:</b> identifier = <code>${esc(I.gwUrl)}</code>, scope <code>invoke</code>. Required because Quick sends <code>resource=&lt;that URL&gt;</code> (see FAQ 1).</li>
+   <li><b>App client <code>rsidc-quick-mcp</code>:</b> confidential; <code>code</code> flow; scopes <code>openid email profile &lt;gateway URL&gt;/invoke</code>; callbacks <code>https://{us-east-1,us-west-2,ap-southeast-2,eu-west-1}.quicksight.aws.amazon.com/sn/oauthcallback</code>; access token valid for 60 minutes.</li>
+   <li><b>Gateway inbound:</b> <code>customJWTAuthorizer</code>, Cognito discovery, <code>allowedClients = ["${I.quickClient}", "${I.oboClient}"]</code>.</li>
+   <li><b>No cross-account IAM is needed:</b> Quick reaches the Gateway's public HTTPS endpoint with an OAuth bearer token.</li>
+   <li><b>Cognito sign-up is closed:</b> the script prints <code>AllowAdminCreateUserOnly: True</code>; only admins create users.</li></ul></div>
+   <div class="card">${codeBlock("groups")}${codeBlock("client")}</div></div>
+  <div class="grid g2"><div class="card">${codeBlock("gwAuth")}</div><div class="card">${codeBlock("cedar")}</div></div>
+  <div class="card"><b>Recorded results (2026-10-06)</b><pre class="out">${esc(RES161)}</pre>
+   <div class="ref">The client secret value is not shown anywhere on this page.</div></div>
+
+  <h3>(b) Quick connector (Quick UI)</h3>
+  <p class="ref" style="margin-top:0">Goal: in <b>your</b> Amazon Quick account, connect the Gateway as an MCP server with <b>user-level OAuth</b>. Why not service authentication (client credentials)? Every Quick user would share one token with no <code>roles</code>, so per-user RBAC is impossible. Select <b>user authentication (Custom user based OAuth)</b>.</p>
+  <div class="grid g2"><div class="card"><b>Integrations → Actions → Model Context Protocol → +</b> <span class="pill ok">Ready (10/20/2026)</span>
+    ${kv([["Connector", "Model Context Protocol"], ["Name / Description", "`rsidc-quick-mcp`"], ["Connection purpose", "On-demand actions"], ["Authentication type", "Custom user based OAuth (**not** service authentication; leave *Public OAuth client* unchecked)"],
+      ["MCP server endpoint / Base URL", "`" + I.gwUrl + "`. Use your own Gateway URL: it is shown on the Gateway page in the AgentCore console and printed by `infra/cognito-idc/16-mall-gateway.sh`."],
+      ["Authorization URL", "`" + I.cognitoDomain + "/oauth2/authorize`"], ["Token URL", "`" + I.cognitoDomain + "/oauth2/token`"],
+      ["Client ID", "`" + I.quickClient + "` (Cognito app client `rsidc-quick-mcp`, printed by 16.1)"],
+      ["Client secret", "from the local file written by 16.1 (`QUICK_CLIENT_SECRET`); keep it in a secret store and never paste it anywhere else. **Rotate it after a demo** if it was ever visible."],
+      ["Scopes (if asked)", "`openid email profile`"], ["Redirect URL", "`https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback` (auto-filled by Quick; must be in the client's callback list)"]])}
+    <div class="ref">"Signed in as wei@techfinance.example.com" on the connector page is the evidence that the connection is <b>per user</b>: Quick holds wei's own token.</div></div>
+   <div class="card"><b>Notes</b><ul class="checks">
+    <li><b>Callback list:</b> the client allows the Quick callbacks for us-east-1, us-west-2, ap-southeast-2 and eu-west-1. If the Redirect URL that Quick shows is different, add it and re-run:
+      <pre class="out">QUICK_REDIRECTS="https://&lt;region&gt;.quicksight.aws.amazon.com/sn/oauthcallback" infra/common/run.sh .venv/bin/python infra/cognito-idc/16-mall-cognito.py</pre></li>
+    <li><b>Login method:</b> Cognito doesn't support Dynamic Client Registration, so Quick falls back to the manual fields above. Sign in with the test users' passwords (set when the users were created).</li>
+    <li><b>Troubleshooting "No access token was found for an OAuth authorization code connection":</b> Quick sends the RFC 8707 <code>resource=&lt;gateway MCP URL&gt;</code>. Cognito accepts it only if a resource server with exactly that URL identifier exists (created by 16.1 once the gateway URL is known). Cancel the connector and create it again.</li></ul></div></div>
+
+  <h3>(c) Create the integration and test (wei → ds1)</h3>
+  <div class="card"><ol class="checks">
+   <li><b>Connect:</b> paste the endpoint and name the integration (here <code>rsidc-quick-mcp</code>).</li>
+   <li><b>Authenticate:</b> enter the values from (b).</li>
+   <li><b>Authorize:</b> the Cognito managed login opens. Sign in as <b>wei</b>.</li>
+   <li><b>Review:</b> Quick lists the tools it discovered. Expected: 4 tools, because wei's token has all 4 roles. Names may show as <code>mall___get_mall_list</code> and so on.</li>
+   <li><b>Publish:</b> if your Quick account is shared, restrict the access scope to <b>yourself only</b>; don't publish to the whole organization.</li></ol>
+   <p><b>Enabled tools as wei</b> (recorded):</p>
+   <table><tr><th>Tool</th><th>Type</th><th>Description</th></tr>${["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"].map(t => `<tr><td><code>${t}</code></td><td>Read</td><td>${esc(D.toolDesc[t])}</td></tr>`).join("")}</table>
+   <div class="ref">This matches wei's roles: the <code>mall-analyst</code> group gives Tools.Mall.List, Footfall, Hourly and Zone. The Gateway's <code>tools/list</code> is filtered by Cedar on the token Quick holds for wei.</div>
+   <p><b>Test as wei.</b> In a Quick chat or agent with the integration enabled, ask each prompt; all should succeed.</p>
+   <table><tr><th>Prompt</th><th>Tool</th></tr>${D.questions.map(([q, t]) => `<tr><td>"${esc(q)}"</td><td><code>${short(t)}</code></td></tr>`).join("")}</table>
+   <p><b>Switch the connection to ds1.</b></p>
+   <ol class="checks"><li>On Quick's integration or connection page, <b>sign out</b> or <b>disconnect</b> the OAuth connection.</li>
+    <li>Clear the Cognito session so you aren't silently signed back in as wei: use a private browser window for Quick, or delete cookies for <code>rsidc-123456789012.auth.ap-southeast-1.amazoncognito.com</code>.</li>
+    <li><b>Reconnect</b> and sign in as <b>ds1</b>. Check that the connector page now shows "Signed in as ds1's email" before testing. If it still shows wei, you are testing wei's token.</li></ol>
+   <p><b>Test as ds1 (the key observations)</b></p>
+   <table><tr><th>Check</th><th>Expected (enforced by the Gateway)</th><th>What to look at</th></tr>
+    <tr><td>A. Tool list shown in Quick</td><td>The Gateway returns <b>only 2 tools</b> to ds1 (<code>get_mall_list</code>, <code>get_footfall_summary</code>).</td><td>Does Quick's UI show 2 tools, or still 4? If 4, Quick cached the tool list at creation (with wei's token).</td></tr>
+    <tr><td>B. "List the malls" / "Footfall for HK01"</td><td>Succeeds</td><td>-</td></tr>
+    <tr><td>C. "Hourly traffic for HK01"</td><td><b>Must fail.</b> <code>Tool Execution Denied: Tool call not allowed due to policy enforcement</code> (HTTP 200, <code>isError=true</code>).</td><td>Quick shows an error, or the model says it can't access the tool. It must <b>not</b> show hourly numbers.</td></tr>
+    <tr><td>D. "Compare zones in HK01"</td><td>Must fail, same as C</td><td>Same as C</td></tr></table>
+   <div class="ref">If Quick cached 4 tools (check A), the model may still <i>try</i> hourly or zone. That is fine for security, because every call is decided by Cedar at the Gateway; it only affects user experience. Optionally test chen the same way: zero tools, every call denied.</div>
+   <div class="ev"><span class="pill ok">Recorded</span> At the Gateway, with tokens from Quick's own app client: ds1 lists 2 tools, and hourly + zone are denied (2026-10-20 matrix; re-checked 2026-10-26).</div></div>
+
+  <h3>(d) Confirm on the AWS side</h3>
+  <div class="card"><p>The Gateway logs every Policy decision. Expect <code>decision":"DENY"</code> entries for ds1's hourly and zone calls, and a <code>Tool invocation</code> with no DENY for every permitted call.</p>${cmd(DENY_CMD)}
+   <p><b>How you can verify</b> (AWS CLI and the Gateway itself):</p>
+   ${cmd(`# policy engine attached in ENFORCE
+aws bedrock-agentcore-control get-gateway --region ap-southeast-1 --gateway-identifier {mall-gateway-id} --query policyEngineConfiguration   # mode ENFORCE
+# the group Description is the mapping
+aws cognito-idp get-group --region ap-southeast-1 --user-pool-id {user-pool-id} --group-name mall-viewer --query Group.Description
+# Cognito calls the versioned alias, not $LATEST
+aws lambda get-alias --region ap-southeast-1 --function-name rsidc-pretoken-roles --name live --query FunctionVersion
+# the resource server Quick's resource= parameter needs
+aws cognito-idp describe-resource-server --region ap-southeast-1 --user-pool-id {user-pool-id} --identifier ${D.ids.gwUrl} --query ResourceServer.Scopes
+# anti-bypass: both calls must fail with ResourceNotFoundException
+aws lambda get-policy --region ap-southeast-1 --function-name rsidc-mall-tools
+aws lambda get-function-url-config --region ap-southeast-1 --function-name rsidc-mall-tools
+# tools/list with a user's access token (for example the one Quick holds): ds1 should get 2 tools
+curl -s -X POST ${D.ids.gwUrl} -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \\
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`)}
+   <div class="ref">Expected: wei sees and uses 4 tools; ds1 is denied hourly and zone. Recorded checks: ENFORCE 25/25, change 5/5.</div></div>
+
+  <h3>(e) When permissions change</h3>
+  <div class="card"><ul class="checks">
+   <li>Change <b>only the Cognito group Description</b> (for example <code>mall-viewer</code>). The next token picks it up, either at a new sign-in or at the refresh token that Quick uses automatically.</li>
+   <li>Tokens already issued keep their old <code>roles</code> until they expire, at most 60 minutes (the client's access-token validity).</li>
+   <li>No changes are needed elsewhere: the MCP tools (Lambda), the Gateway and Cedar never change when people or groups change.</li></ul></div>
+
+  <h3>(f) Teardown and cost</h3>
+  <div class="card"><b>Quick:</b> delete the <code>rsidc-quick-mcp</code> connector in your Quick account. It is an independent Quick resource.
+   <p><b>AWS (customer version), in order:</b></p>${cmd(TEARDOWN)}
+   <ul class="checks"><li><b>Cognito resource server:</b> <code>aws cognito-idp delete-resource-server --region ap-southeast-1 --user-pool-id {user-pool-id} --identifier ${esc(D.ids.gwUrl)}</code></li>
+    <li><b>IAM:</b> delete the roles <code>rsidc-mall-gateway-role</code> and <code>rsidc-mall-tools-role</code> (remove their inline policies first).</li>
+    <li><b>Trigger:</b> it is shared with the Gateway RBAC demo. Remove it with that demo's teardown (<code>infra/cognito-idc/15-rbac-pretoken.py --detach</code>).</li>
+    <li><b>Client secret:</b> rotate or delete the client secret of <code>rsidc-quick-mcp</code> after a demo (deleting the app client does this).</li>
+    <li><b>Cost:</b> Gateway, Policy and Lambda bill per request; there is no idle cost.</li></ul></div>
+  <div class="card chk"><b>Setup checklist</b>${[
+    "Resource server identifier = the gateway MCP URL (exactly), scope `invoke`",
+    "App client `rsidc-quick-mcp` is confidential, `code` flow, with the Quick region's callback URL",
+    "Pre Token trigger invoked through alias `live`; group Descriptions hold `[rsidc-rbac] tools=…`",
+    "Gateway `allowedClients` includes the Quick client ID",
+    "Policy engine `rsidc_mall_pe` in ENFORCE; 4 Cedar permits ACTIVE",
+    "Lambda `rsidc-mall-tools` has no resource policy and no Function URL",
+    "Quick connector is *Custom user based OAuth*, not service authentication; \"Signed in as\" shows the user you intend to test",
+    "Client secret kept in a secret store; rotated after the demo"].map(p => `<label><input type="checkbox">${md(p)}</label>`).join("")}
+   <div class="ref">Ticks are local to this page and not saved.</div></div>
+  ${foot("2026-10-06 (setup) · 2026-10-20 (matrix)")}`);
+}
+
+/* ---------------- 4 · FAQ · Findings ---------------- */
+function resourceDetail() {
+  return `<h3>What the recorded attempt looked like</h3>
+  <ol class="checks"><li><b>Symptom:</b> after "Create and continue" and signing in as wei, Quick showed <i>"No access token was found for an OAuth authorization code connection"</i>.</li>
+   <li><b>CloudTrail (Cognito, ap-southeast-1):</b> <code>OAuth2_Authorize_GET</code> 302 → <code>login_POST</code> 204 → <code>Token_POST</code> <b>400</b>, twice per attempt (client secret in a Basic header, then in the body). Both requests carried <code>resource=https://rsidc-mall-gateway-…/mcp</code>.</li>
+   <li><b>Reproduction with the OBO client:</b></li></ol>
+  <table><tr><th>Request</th><th>Result</th></tr><tr><td>no <code>resource</code></td><td>200</td></tr><tr><td>any <code>resource</code> (even <code>https://example.com</code>), not registered</td><td><code>invalid_grant</code></td></tr>
+   <tr><td><code>resource</code> = registered resource server (the gateway URL)</td><td>access token with <code>aud</code> = gateway URL and <code>roles</code> intact</td></tr></table>
+  <div class="ref">The Pre Token trigger was never invoked for the failed attempts: the request is rejected before token generation.</div>
+  ${codeBlock("resource")}`;
+}
+function renderFaq() {
+  const el = $("#faq");
+  const row = (cls, label, v) => v ? `<dt class="${cls}">${label}</dt><dd>${md(v)}</dd>` : "";
+  const DOC = {
+    rfc8707: ["RFC 8707 · Resource Indicators for OAuth 2.0", "https://datatracker.ietf.org/doc/html/rfc8707"],
+    mcp: ["MCP specification · Authorization", "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"],
+    quick: ["Amazon Quick · MCP integration", "https://docs.aws.amazon.com/quick/latest/userguide/mcp-integration.html"],
+    res: ["Amazon Cognito · resource servers", "https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-define-resource-servers.html"],
+    pre: ["Amazon Cognito · Pre token generation Lambda trigger", "https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-pre-token-generation.html"],
+    inb: ["AgentCore Gateway · inbound authorization", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"],
+    pol: ["Policy in Amazon Bedrock AgentCore (Cedar)", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html"]};
+  const F = [
+   {q: "Quick shows \"No access token was found for an OAuth authorization code connection\": why?", extra: "res",
+    wrong: "After signing in, Quick reports no access token. Cognito's `/oauth2/token` answered HTTP 400 (`invalid_grant`).",
+    why: "Quick follows the MCP authorization spec and sends RFC 8707 `resource=<gateway MCP URL>` on `/authorize` and `/token`. Cognito binds a resource only if it is a **registered resource server** identifier; otherwise the token request fails.",
+    fix: "Register a Cognito resource server whose identifier is exactly the gateway MCP URL (scope `invoke`) and allow that scope on `rsidc-quick-mcp`. `16-mall-cognito.py` does this idempotently once the gateway URL is known.",
+    verified: "Recorded 2026-10-20: with `resource`, Cognito issues an access token with `aud` = gateway URL and `roles` intact; wei gets 4 tools; ds1 gets 2 and a direct call to hourly is denied; ENFORCE matrix 25/25; the Quick connector reaches **Ready**.",
+    docs: [DOC.rfc8707, DOC.mcp, DOC.quick, DOC.res]},
+   {q: "Why is this 3LO and not OBO?",
+    why: "Quick is the OAuth client. The user signs in (authorization code + PKCE) and Quick stores that user's own access token. Nothing exchanges one token for another (no RFC 8693 / 7523): the token Quick sends to the Gateway is exactly the one Cognito issued for this resource. There is no AgentCore Runtime, AgentCore Identity or Token Vault in the path.",
+    docs: [DOC.mcp, DOC.quick]},
+   {q: "Why must the connector use user-level OAuth?",
+    why: "With *service* authentication (client credentials) every Quick user shares one token that has no `roles` claim, so per-user RBAC is impossible, and the 2LO machine-to-machine client is not in `allowedClients` (403, recorded). User authentication gives each person their own token, whose `roles` come from their Cognito groups.",
+    fix: "Select *Custom user based OAuth*; leave *Public OAuth client* unchecked (the Cognito client is confidential).",
+    docs: [DOC.quick, DOC.inb]},
+   {q: "How do Cognito groups become tool permissions without group names in Cedar?",
+    why: "A Pre Token Generation V2 trigger reads the **Description** of each Cognito group (`[rsidc-rbac] tools=Tools.Mall.List,…`) and writes the union as an Entra App Role-shaped `roles` claim in the access token. Cedar has one fixed permit per tool that matches `roles`; array claims arrive as one string, so the rule uses `like \"*\\\"Tools.Mall.X\\\"*\"`. A user with no mapped group gets `roles=[]`: no permit applies, so every call is denied.",
+    fix: "Change the mapping by editing the group Description only. Lambda, Gateway and Cedar stay untouched.",
+    docs: [DOC.pre, DOC.pol]},
+   {q: "Why does a denied call return HTTP 200 instead of 403?",
+    why: "Authentication and authorization are separate layers. A bad or foreign token is rejected by the Gateway's JWT check with 401/403 (tampered `roles`, 2LO token, ID token, garbage bearer: recorded). A valid token that lacks the role passes the JWT check and is then denied by Cedar, which returns **HTTP 200** with `result.isError` and `Tool Execution Denied`. Quick therefore shows the deny text as the tool result.",
+    docs: [DOC.inb, DOC.pol]},
+   {q: "When does a group change reach Quick?",
+    why: "The trigger also runs on `TokenGeneration_RefreshTokens`, so a group Description change takes effect at Quick's next token refresh, without the user signing in again. The latency is at most the access-token lifetime (60 minutes). Tokens already issued keep their `roles`: claims are frozen until expiry.",
+    verified: "Recorded 2026-10-06: after adding `Tools.Mall.Hourly` to `mall-viewer`, a new sign-in 0.9 s later and the refresh-token path could call hourly; ds1's old token was still denied; the Description was restored and verified.",
+    docs: [DOC.pre]},
+   {q: "How do I update the Pre Token trigger without locking users out?",
+    why: "Updating a live `$LATEST` trigger whose new IAM permission hasn't propagated yet makes the trigger fail closed for users in Cognito groups for about a minute.",
+    fix: "Cognito calls a versioned alias (`live`) that is promoted only after a pre-flight (computing roles for known users) passes. The `UpdateUserPool` change is limited to the trigger ARN (`…:rsidc-pretoken-roles` → `…:rsidc-pretoken-roles:live`), and omitted pool settings are copied back so they aren't reset.",
+    docs: [DOC.pre]},
+   {q: "Does Quick cache the tool list?",
+    why: "Quick may keep the tool list it discovered when the connector was created (with the first user's token). This is not observable from AWS, so it is a manual check (check A in Setup). Security doesn't depend on it: every `tools/call` is decided by Cedar, so a cached tool the user may not use is denied.",
+    docs: [DOC.quick, DOC.pol]},
+   {q: "Do we need our own MCP server?",
+    why: "No. The Gateway as MCP server is enough: tool names become `mall___<tool>`, the 4 tools share one Lambda target with an inline schema, and the Lambda receives the tool name in `context.client_context.custom[\"bedrockAgentCoreToolName\"]`. The tools have no per-user code.",
+    docs: [DOC.inb, DOC.pol]},
+   {q: "Can a caller bypass the Gateway and invoke the Lambda directly?",
+    why: "No. The Lambda has no resource policy and no Function URL. IAM policy simulation (recorded): `rsidc-mall-gateway-role` is allowed to invoke it; `rsidc-webchat-role` and `rsidc-oauth-runtime-role` get implicitDeny.",
+    docs: [DOC.inb]}];
+  safeRender(el, `<h2>FAQ · Findings</h2>
+  <p class="lead">Why each piece of the Quick + Cognito setup exists, and what we learned. Click a question to open it.</p>
+  <div class="row-btns" style="margin-bottom:12px"><button class="btn" id="fopen">Expand all</button><button class="btn" id="fclose">Collapse all</button></div>
+  ${F.map((f, i) => `<details class="faq"><summary>${i + 1}. ${md(f.q)}</summary><div class="bd"><dl class="qa">
+    ${row("w", "What goes wrong", f.wrong)}${row("y", "Why", f.why)}${row("f", "Fix", f.fix)}${row("v", "Evidence", f.verified)}</dl>
+    ${f.extra === "res" ? resourceDetail() : ""}${docs(f.docs)}</div></details>`).join("")}
+  ${foot("2026-10-06 · 2026-10-20")}`);
+  $("#fopen", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = true);
+  $("#fclose", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = false);
+}
+
+renderArch(); renderReplay(); renderHood(); renderSetup(); renderFaq();
+</script>
+<style>
+details.codefold{margin:6px 0}
+details.codefold>summary{cursor:pointer;display:inline-block;padding:3px 10px;border:1px solid #8884;border-radius:6px;
+  font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:inherit;opacity:.85;user-select:none}
+details.codefold>summary:hover{opacity:1}
+details.codefold[open]>summary{margin-bottom:6px}
+</style>
+<script>
+(function () {
+  var CODE_FILE = /[\w./-]+\.(py|sh|js|mjs|ts|tsx|json|sql|html|md|txt|yaml|yml)(:\d+(-\d+)?)?/;
+  function label(el) {
+    var p = el.previousElementSibling, t = p && p.textContent.trim();
+    return t && t.length < 140 && CODE_FILE.test(t) ? t : '';
+  }
+  function wrap(el) {
+    if (el.dataset.codefold || el.closest('details.codefold')) return;
+    if (el.tagName === 'PRE' && el.parentElement && el.parentElement.closest('.code')) return;  // the outer .code is wrapped
+    el.dataset.codefold = '1';
+    var lines = (el.textContent.replace(/\n+$/, '').match(/\n/g) || []).length + 1;
+    var kind = el.classList.contains('out') ? 'Show output' : 'Show code';
+    var lb = label(el);
+    var d = document.createElement('details'), s = document.createElement('summary');
+    d.className = 'codefold';
+    s.textContent = '▸ ' + kind + (lb ? ' · ' + lb : '') + ' (' + lines + (lines === 1 ? ' line)' : ' lines)');
+    el.parentNode.insertBefore(d, el);
+    d.appendChild(s); d.appendChild(el);
+  }
+  function scan(root) {
+    if (root.nodeType !== 1) return;
+    if (root.matches('pre, .code')) wrap(root);
+    root.querySelectorAll('pre, .code').forEach(wrap);
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) { m.addedNodes.forEach(scan); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+</body></html>

@@ -1,0 +1,442 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Part 3 · 2LO — Entra ID + client credentials through AgentCore Identity</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+/* part 3 specifics, in the part 1 theme */
+:root{--bl:var(--acc);--or:#ec7211;--gr:var(--ok);--rd:var(--no)}
+nav .sub code{word-break:normal;overflow-wrap:anywhere}#v-arch>h2{margin-bottom:14px}
+.card h2{font-size:17px;margin:0 0 8px}.card h3{font-size:14px;margin:14px 0 6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid2>*,.grid3>*{min-width:0}@media(max-width:1000px){.grid2,.grid3{grid-template-columns:1fr}}
+.note{color:var(--mut);font-size:12.5px}.src{font-size:12px;color:var(--mut);margin:10px 0 4px}.src b{color:var(--ink)}
+.users{display:flex;gap:10px;flex-wrap:wrap}.user{border:2px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;min-width:200px;background:#fff;transition:.15s}
+.user.on{border-color:var(--acc);background:#f0f6fc;box-shadow:0 0 0 3px #d6e8fa}.user b{font-size:15px}
+.chip{display:inline-block;border-radius:999px;padding:1px 8px;margin:2px 3px 2px 0;font-size:12px;font-weight:600;background:#e8f1fb;color:var(--acc)}
+.chip.app{background:var(--warnb);color:var(--warn)}.chip.none{background:var(--nob);color:var(--no)}.chip.g{background:#eef1f4;color:var(--mut)}
+button.act{border:1px solid var(--acc);background:var(--acc);color:#fff;border-radius:8px;padding:7px 14px;cursor:pointer;font:inherit;font-weight:600}
+button.act:disabled{opacity:.5;cursor:default}
+button.sec{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}button.sec:hover{border-color:var(--acc)}button.sec:disabled{opacity:.5;cursor:default}
+td.ok{background:none;color:var(--ok);font-weight:600}td.no{background:none;color:var(--no);font-weight:600}td.diff{background:var(--warnb)}
+pre.code{margin:6px 0 12px}pre.code .ln{display:block;width:auto;text-align:left;padding:0 14px 0 0;color:inherit;user-select:auto;white-space:pre}
+pre.code .ln i{display:inline-block;width:42px;color:#6b7c8f;text-align:right;margin-right:12px;font-style:normal;user-select:none}
+pre.code .ln.h{background:#1f3a2a}pre.code.wrap .ln{white-space:pre-wrap;padding-left:12px}
+.tag{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+.tag.rec{background:var(--okb);color:var(--ok)}.tag.der{background:#f0f6fc;color:var(--acc)}
+.fake{border:1px solid var(--line);border-radius:6px;max-width:420px;padding:24px 30px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.fake .ms{display:flex;gap:3px;margin:0 0 10px;max-width:none;border:0;padding:0;background:none;box-shadow:none}.fake .ms span{width:10px;height:10px;display:inline-block}
+.fake input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin:6px 0 12px;outline:none;background:#fff}
+.flow{flex-wrap:wrap;gap:6px;margin:10px 0;overflow:visible}.flow span{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;background:#fff;transition:all .25s}
+.flow span.lit{background:var(--acc);color:#fff;border-color:var(--acc)}
+.big{font-size:28px;font-weight:700;color:var(--acc)}.kpi{text-align:center;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+.steps{flex-wrap:wrap}.steps button{border:0;background:#eef1f4;color:var(--mut);border-radius:6px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer}
+.steps button:hover{color:var(--acc)}.steps button.on{background:var(--acc);color:#fff}
+.who{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:#f0f6fc;color:var(--acc)}
+.cmp td.u{font-weight:600}.cmp tr.sel td{background:#f0f6fc}
+.bar{height:14px;border-radius:3px;display:inline-block;vertical-align:middle}
+div.warn{background:var(--nob);color:var(--ink);border:1px solid #f3c2c4;border-radius:8px;padding:8px 12px;margin:8px 0}
+.info{background:#f0f6fc;border:1px solid #c9dff3;border-radius:8px;padding:8px 12px;margin:8px 0}
+</style></head><body>
+<div class="banner"><b>Static demo</b> — simulated UI, real recorded data. Nothing here calls AWS or Entra.<a href="part3-2lo.zh-CN.html" hreflang="zh-CN" lang="zh-CN" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">中文</a></div>
+<div class="wrap">
+<nav id="nav">
+  <h1>Part 3 · 2LO — Entra ID + client credentials through AgentCore Identity</h1>
+  <div class="sub">Runtime <code>rsidc_entra_agent</code> → credential provider <code>rsidc-entra</code> (MicrosoftOauth2, oauth2Flow = M2M) → app-only token → Gateway <code>rsidc-mall-entra-gateway</code> → Cedar on <code>roles</code> → mall Lambda. The outbound identity is the <b>agent</b>, not the user.</div>
+</nav>
+<main>
+<section class="view on" id="v-arch">
+  <h2>Architecture: user → AgentCore Runtime → AgentCore Identity (M2M) → Entra ID → AgentCore Gateway → Lambda</h2>
+  <div class="card arch">
+    <a href="img/architecture-entra-2lo.svg" target="_blank" rel="noopener"><img src="img/architecture-entra-2lo.svg" alt="Entra ID 2LO architecture: the agent gets its own app-only token from Entra through AgentCore Identity and calls AgentCore Gateway"></a>
+    <div class="src" style="margin-top:8px"><a href="img/architecture-entra-2lo.svg" target="_blank" rel="noopener">Open full size</a> · The user's token only reaches the Runtime; the Gateway and Cedar see an app-only token whose <code>roles</code> are the agent app's App Roles, so every user gets the same tools.</div></div>
+</section>
+<section class="view" id="v-replay"></section>
+<section class="view" id="v-hood"></section>
+<section class="view" id="v-rights"></section>
+<section class="view" id="v-setup"></section>
+<section class="view" id="v-faq"></section>
+</main></div>
+<script type="application/json" id="data">{"ids": {"tenant": "{entra-tenant-id}", "agent": "{entra-agent-app-id}", "api": "{mall-api-app-id}", "client": "{test-client-app-id}", "domain": "techfinance.onmicrosoft.com"}, "results": {"phase": "2lo", "time": "2026-10-20T11:07:02+0800", "runtime": "arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:runtime/{entra-runtime-id}", "cases": [{"case": "wei: 2LO token is app-only (no user, no scp)", "expect": [null, null, "{entra-agent-app-id}"], "actual": [null, null, "{entra-agent-app-id}"], "pass": true, "evidence": "http=200 roles=['Tools.Mall.List', 'Tools.Mall.Footfall'] err=None", "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"], "http": 200}, {"case": "wei: 2LO tools/list = the app's roles", "expect": ["mall___get_footfall_summary", "mall___get_mall_list"], "actual": ["mall___get_footfall_summary", "mall___get_mall_list"], "pass": true, "evidence": "allowed={'mall___get_mall_list': True, 'mall___get_footfall_summary': True, 'mall___get_hourly_traffic': False, 'mall___get_zone_comparison': False}", "allowed": {"mall___get_mall_list": true, "mall___get_footfall_summary": true, "mall___get_hourly_traffic": false, "mall___get_zone_comparison": false}}, {"case": "ds1: 2LO token is app-only (no user, no scp)", "expect": [null, null, "{entra-agent-app-id}"], "actual": [null, null, "{entra-agent-app-id}"], "pass": true, "evidence": "http=200 roles=['Tools.Mall.List', 'Tools.Mall.Footfall'] err=None", "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"], "http": 200}, {"case": "ds1: 2LO tools/list = the app's roles", "expect": ["mall___get_footfall_summary", "mall___get_mall_list"], "actual": ["mall___get_footfall_summary", "mall___get_mall_list"], "pass": true, "evidence": "allowed={'mall___get_mall_list': True, 'mall___get_footfall_summary': True, 'mall___get_hourly_traffic': False, 'mall___get_zone_comparison': False}", "allowed": {"mall___get_mall_list": true, "mall___get_footfall_summary": true, "mall___get_hourly_traffic": false, "mall___get_zone_comparison": false}}, {"case": "chen: 2LO token is app-only (no user, no scp)", "expect": [null, null, "{entra-agent-app-id}"], "actual": [null, null, "{entra-agent-app-id}"], "pass": true, "evidence": "http=200 roles=['Tools.Mall.List', 'Tools.Mall.Footfall'] err=None", "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"], "http": 200}, {"case": "chen: 2LO tools/list = the app's roles", "expect": ["mall___get_footfall_summary", "mall___get_mall_list"], "actual": ["mall___get_footfall_summary", "mall___get_mall_list"], "pass": true, "evidence": "allowed={'mall___get_mall_list': True, 'mall___get_footfall_summary': True, 'mall___get_hourly_traffic': False, 'mall___get_zone_comparison': False}", "allowed": {"mall___get_mall_list": true, "mall___get_footfall_summary": true, "mall___get_hourly_traffic": false, "mall___get_zone_comparison": false}}, {"case": "no bearer -> runtime rejects", "expect": true, "actual": true, "pass": true, "evidence": "http=401", "http": 401}]}, "recorded": "2026-10-20", "x": {"signin_test": {"title": "Scripted sign-in: the user's Entra token FOR THE AGENT", "file": "Entra identity test script (excerpt)", "start": 20, "end": 25, "code": "def user_token(u):  # the user's Entra token FOR THE AGENT (aud = rsidc-entra-agent)\n    r = requests.post(f\"https://login.microsoftonline.com/{T}/oauth2/v2.0/token\", timeout=30, data=dict(\n        grant_type=\"password\", client_id=CLI, username=f\"{u}@{D}\", password=<password: redacted>,\n        scope=f\"api://{AGENT}/access_as_user\")).json()\n    if \"access_token\" not in r: raise RuntimeError(f\"{u}: {r.get('error')} {r.get('error_description', '')[:120]}\")\n    return r[\"access_token\"]", "hl": ["scope=", "grant_type"]}, "signin_gui": {"title": "GUI sign-in scope (code + PKCE)", "file": "webchat/entra-id/entra_app.py", "start": 20, "end": 20, "code": "SCOPE = f\"openid profile offline_access api://{AGENT}/access_as_user\"", "hl": []}, "signin_gui2": {"title": "GUI: authorization code + PKCE redirect", "file": "webchat/entra-id/entra_app.py", "start": 60, "end": 65, "code": "        if u.path == \"/entra/login\":\n            verifier, state = secrets.token_urlsafe(48), secrets.token_urlsafe(16); PENDING[state] = verifier\n            ch = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip(\"=\")\n            p = dict(response_type=\"code\", client_id=CLIENT, redirect_uri=REDIRECT, scope=SCOPE, state=state, prompt=\"login\",\n                     code_challenge=ch, code_challenge_method=\"S256\")\n            return self.send(302, headers=[(\"Location\", f\"{AUTHORITY}/authorize?{urllib.parse.urlencode(p)}\")])", "hl": ["code_challenge", "scope=SCOPE"]}, "gui_server_side": {"title": "GUI: the user's token stays server-side", "file": "webchat/entra-id/entra_app.py", "start": 75, "end": 78, "code": "            inbound = claims(r[\"access_token\"]); sid = secrets.token_urlsafe(24)\n            SESSIONS[sid] = {\"token\": r[\"access_token\"], \"login_hint\": idc.get(\"login_hint\"), \"inbound\": inbound,\n                             \"user\": inbound.get(\"preferred_username\", \"?\")}\n            return self.send(302, headers=[(\"Location\", \"/\"), (\"Set-Cookie\", cookie(\"esid\", sid, BASE))])", "hl": ["cookie("]}, "rt_auth": {"title": "Runtime inbound auth (customJWTAuthorizer)", "file": "infra/entra-id/04-entra-agentcore.sh", "start": 42, "end": 44, "code": "  \"authorizerConfiguration\": {\"customJWTAuthorizer\": {\"discoveryUrl\": f\"https://login.microsoftonline.com/{e['ENTRA_TENANT_ID']}/v2.0/.well-known/openid-configuration\",\n                                                      \"allowedAudience\": [e[\"ENTRA_AGENT_APP_ID\"]]}},\n  \"requestHeaderConfiguration\": {\"requestHeaderAllowlist\": [\"Authorization\"]},", "hl": ["discoveryUrl", "allowedAudience", "requestHeaderAllowlist"]}, "rt_env": {"title": "Runtime env: which provider / API / gateway the agent uses", "file": "infra/entra-id/04-entra-agentcore.sh", "start": 46, "end": 46, "code": "  \"environmentVariables\": {\"CP_ENTRA\": \"rsidc-entra\", \"MALL_API_APP_ID\": e[\"ENTRA_API_APP_ID\"], \"ENTRA_GW_URL\": e[\"ENTRA_GW_URL\"]},", "hl": []}, "wat": {"title": "Agent entrypoint: WAT from the runtime context; mode=2lo", "file": "agents/entra-id/main.py", "start": 94, "end": 103, "code": "@app.entrypoint\ndef invoke(payload, context):\n    wat = BedrockAgentCoreContext.get_workload_access_token()\n    if not wat:\n        return {\"error\": \"no workload access token (inbound JWT required)\"}\n    auth = {k.lower(): v for k, v in (context.request_headers or {}).items()}.get(\"authorization\", \"\")\n    inbound = claims(auth.split(\" \", 1)[1]) if auth.lower().startswith(\"bearer \") else {}\n    mode = payload.get(\"mode\")\n    try:\n        if mode == \"whoami\": return {\"flow\": \"inbound\", \"inbound_token_claims\": inbound}", "hl": ["get_workload_access_token", "two_lo(wat)"]}, "keep": {"title": "Claims the agent reports back (never the token itself)", "file": "agents/entra-id/main.py", "start": 23, "end": 23, "code": "KEEP = (\"ver\", \"iss\", \"aud\", \"azp\", \"appid\", \"idtyp\", \"scp\", \"roles\", \"preferred_username\", \"upn\", \"name\", \"oid\", \"sub\")", "hl": []}, "m2m": {"title": "GetResourceOauth2Token(oauth2Flow=M2M) and the 2LO call", "file": "agents/entra-id/main.py", "start": 59, "end": 66, "code": "def token(wat: str, flow: str, scopes: list[str], **extra) -> dict:\n    return identity.get_resource_oauth2_token(workloadIdentityToken=wat, resourceCredentialProviderName=CP,\n                                              scopes=scopes, oauth2Flow=flow, **extra)\n\n\ndef two_lo(wat):\n    t = token(wat, \"M2M\", [f\"api://{MALL_API}/.default\"])[\"accessToken\"]\n    return {\"flow\": \"2LO\", \"outbound_token_claims\": claims(t), \"gateway\": gateway_check(t)}", "hl": ["\"M2M\"", ".default", "resourceCredentialProviderName"]}, "gw_check": {"title": "Gateway probe: tools/list, then tools/call on every tool", "file": "agents/entra-id/main.py", "start": 47, "end": 56, "code": "def gateway_check(token: str) -> dict:\n    \"\"\"tools/list, then tools/call on every tool. A Cedar deny is HTTP 200 + result.isError.\"\"\"\n    s, j = http_json(GW, token, {\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/list\"})\n    listed = sorted(t[\"name\"] for t in j.get(\"result\", {}).get(\"tools\", []))\n    calls = {}\n    for t in TOOLS:\n        cs, cj = http_json(GW, token, {\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\",\n                                       \"params\": {\"name\": t, \"arguments\": {\"mall_id\": \"HK01\", \"date\": \"2026-10-01\"}}})\n        calls[t] = cs == 200 and \"error\" not in cj and not cj.get(\"result\", {}).get(\"isError\")\n    return {\"list_http\": s, \"listed\": listed, \"allowed\": calls}", "hl": ["tools/list", "isError"]}, "cp": {"title": "Credential provider rsidc-entra (MicrosoftOauth2)", "file": "infra/entra-id/04-entra-agentcore.sh", "start": 6, "end": 21, "code": "# 1) credential provider (client secret read from the gitignored file, never echoed)\nif ! aws bedrock-agentcore-control get-oauth2-credential-provider --region $R --name $CP >/dev/null 2>&1; then\n  ROOT=\"$ROOT\" \"$ROOT/.venv/bin/python\" - \"$CP\" <<'PY'\nimport json, os, subprocess, sys, tempfile\nsec = dict(l.strip().split(\"=\", 1) for l in open(os.path.join(os.environ[\"ROOT\"], \"<secret store>\")) if \"=\" in l)[\"ENTRA_AGENT_CLIENT_SECRET\"]\nspec = {\"name\": sys.argv[1], \"credentialProviderVendor\": \"MicrosoftOauth2\", \"oauth2ProviderConfigInput\": {\"microsoftOauth2ProviderConfig\": {\n        \"clientId\": os.environ[\"ENTRA_AGENT_APP_ID\"], \"clientSecret\": sec, \"tenantId\": os.environ[\"ENTRA_TENANT_ID\"]}}}\nfd, spec_path = tempfile.mkstemp(suffix=\".json\")  # mkstemp creates the file 0600; the secret never goes on argv\ntry:\n    with os.fdopen(fd, \"w\", encoding=\"utf-8\") as f:\n        json.dump(spec, f)\n    subprocess.run([\"aws\", \"bedrock-agentcore-control\", \"create-oauth2-credential-provider\", \"--region\", os.environ[\"RT_REGION\"],\n                    \"--cli-input-json\", \"file://\" + spec_path], check=True, stdout=subprocess.DEVNULL)\nfinally:\n    os.unlink(spec_path)\nPY", "hl": ["MicrosoftOauth2", "clientSecret", "tenantId"]}, "cp_secret": {"title": "The secret lives in AgentCore Identity (clientSecretArn)", "file": "infra/entra-id/04-entra-agentcore.sh", "start": 24, "end": 24, "code": "save CP_ENTRA_SECRET_ARN $(aws bedrock-agentcore-control get-oauth2-credential-provider --region $R --name $CP --query clientSecretArn.secretArn --output text)", "hl": []}, "roles_const": {"title": "The App Roles the AGENT itself holds", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 19, "end": 19, "code": "APP_ROLES_FOR_AGENT = [\"Tools.Mall.List\", \"Tools.Mall.Footfall\"]   # 2LO: what the AGENT itself may call", "hl": []}, "app_member": {"title": "rsidc-mall-api App Roles: allowedMemberTypes += Application", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 59, "end": 65, "code": "# --- rsidc-mall-api: let applications hold the Tools.Mall.* roles (2LO) ---\napi = one(\"/applications\", \"displayName eq 'rsidc-mall-api'\")\nroles = api[\"appRoles\"]\nif any(\"Application\" not in r[\"allowedMemberTypes\"] for r in roles):\n    for r in roles: r[\"allowedMemberTypes\"] = sorted(set(r[\"allowedMemberTypes\"]) | {\"Application\"})\n    g(\"PATCH\", f\"/applications/{api['id']}\", {\"appRoles\": roles}); print(\"rsidc-mall-api: App Roles now allow Application\")\nrole_ids = {r[\"value\"]: r[\"id\"] for r in roles}", "hl": ["Application"]}, "rra": {"title": "Agent app manifest: App Roles requested as application permissions (type Role)", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 84, "end": 86, "code": "    \"requiredResourceAccess\": merge_rra(agent, {\n        GRAPH_APP: {(graph_scope[s], \"Scope\") for s in (\"User.Read\", \"openid\", \"profile\", \"offline_access\")},\n        api[\"appId\"]: {(mcp_scope, \"Scope\")} | {(role_ids[r], \"Role\") for r in APP_ROLES_FOR_AGENT}})})", "hl": ["\"Role\""]}, "assign": {"title": "Admin consent for application permissions = appRoleAssignedTo", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 91, "end": 94, "code": "have = {(a[\"principalId\"], a[\"appRoleId\"]) for a in g(\"GET\", f\"/servicePrincipals/{api_sp['id']}/appRoleAssignedTo\")[\"value\"]}\nfor r in APP_ROLES_FOR_AGENT:                                                      # 2LO: application permissions\n    if (agent_sp[\"id\"], role_ids[r]) not in have:\n        g(\"POST\", f\"/servicePrincipals/{api_sp['id']}/appRoleAssignedTo\", {\"principalId\": agent_sp[\"id\"], \"resourceId\": api_sp[\"id\"], \"appRoleId\": role_ids[r]})", "hl": ["appRoleAssignedTo"]}, "secret": {"title": "Client secret: 90 days, stored only in a secret store", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 96, "end": 102, "code": "# --- client secret (only when there is none on disk) ---\nif not os.path.exists(SECRET_FILE):\n    end = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=90)).strftime(\"%Y-%m-%dT%H:%M:%SZ\")\n    pw = g(\"POST\", f\"/applications/{agent['id']}/addPassword\", {\"passwordCredential\": {\"displayName\": \"agentcore-credential-provider\", \"endDateTime\": end}})\n    os.makedirs(os.path.dirname(SECRET_FILE), exist_ok=True)\n    with os.fdopen(os.open(SECRET_FILE, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600), \"w\", encoding=\"utf-8\") as f: f.write(f\"ENTRA_AGENT_CLIENT_SECRET={pw['secretText']}\\n\")\n    os.chmod(SECRET_FILE, 0o600); print(\"client secret created (90 days) -> <secret store>\")", "hl": ["addPassword", "0o600"]}, "agent_app": {"title": "Agent app rsidc-entra-agent (its own API = the runtime's audience)", "file": "infra/entra-id/03-entra-agent-setup.py", "start": 73, "end": 78, "code": "    agent = g(\"POST\", \"/applications\", {\n        \"displayName\": \"rsidc-entra-agent\", \"signInAudience\": \"AzureADMyOrg\",\n        \"api\": {\"requestedAccessTokenVersion\": 2, \"oauth2PermissionScopes\": [{\n            \"id\": str(uuid.uuid4()), \"value\": \"access_as_user\", \"type\": \"User\", \"isEnabled\": True,\n            \"adminConsentDisplayName\": \"Call the rsidc Entra agent\", \"adminConsentDescription\": \"Call the rsidc Entra agent on AgentCore Runtime\",\n            \"userConsentDisplayName\": \"Call the rsidc Entra agent\", \"userConsentDescription\": \"Call the rsidc Entra agent on AgentCore Runtime\"}]}})", "hl": ["access_as_user", "requestedAccessTokenVersion"]}, "gw_auth": {"title": "Gateway inbound auth (CUSTOM_JWT, audience = rsidc-mall-api)", "file": "infra/entra-id/02-entra-gateway.sh", "start": 11, "end": 13, "code": "DISC=\"https://login.microsoftonline.com/$ENTRA_TENANT_ID/v2.0/.well-known/openid-configuration\"\nGR=${PROJECT}-mall-gateway-role; MALL_FN=arn:aws:lambda:$R:${ACCOUNT_ID}:function:${PROJECT}-mall-tools\nAUTH=\"{\\\"customJWTAuthorizer\\\":{\\\"discoveryUrl\\\":\\\"$DISC\\\",\\\"allowedAudience\\\":[\\\"$ENTRA_API_APP_ID\\\"]}}\"", "hl": ["allowedAudience"]}, "gw_target": {"title": "Gateway target: the mall Lambda via the gateway IAM role", "file": "infra/entra-id/02-entra-gateway.sh", "start": 25, "end": 27, "code": "  aws bedrock-agentcore-control create-gateway-target --region $R --gateway-identifier $ENTRA_GW_ID --name mall \\\n    --description \"Customer mall-footfall tools (4)\" --target-configuration \"$CFG\" \\\n    --credential-provider-configurations '[{\"credentialProviderType\":\"GATEWAY_IAM_ROLE\"}]' >/dev/null", "hl": ["GATEWAY_IAM_ROLE"]}, "cedar": {"title": "Cedar: one permit per tool, matched on the Entra `roles` claim", "file": "infra/entra-id/02-entra-gateway.sh", "start": 37, "end": 46, "code": "policy() {  # identical rule shape to the Cognito customer version; only the gateway ARN differs\n  aws bedrock-agentcore-control list-policies --region $R --policy-engine-id $ENTRA_PE_ID --query \"policies[?name=='$1'].policyId\" --output text | grep -q . && return\n  local stmt=\"permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\\\"$2\\\", resource == AgentCore::Gateway::\\\"$ENTRA_GW_ARN\\\") when { principal.hasTag(\\\"roles\\\") && principal.getTag(\\\"roles\\\") like \\\"*\\\\\\\"$3\\\\\\\"*\\\" };\"\n  aws bedrock-agentcore-control create-policy --region $R --policy-engine-id $ENTRA_PE_ID --name $1 \\\n    --description \"$2 requires Entra App Role $3\" --definition \"$(jq -cn --arg s \"$stmt\" '{cedar:{statement:$s}}')\" >/dev/null\n}\npolicy entra_mall_list     mall___get_mall_list        Tools.Mall.List\npolicy entra_mall_footfall mall___get_footfall_summary Tools.Mall.Footfall\npolicy entra_mall_hourly   mall___get_hourly_traffic   Tools.Mall.Hourly\npolicy entra_mall_zone     mall___get_zone_comparison  Tools.Mall.Zone", "hl": ["getTag(\\\"roles\\\")", "policy entra_"]}, "pe_attach": {"title": "Policy engine attached in LOG_ONLY or ENFORCE", "file": "infra/entra-id/02-entra-gateway.sh", "start": 55, "end": 55, "code": "  --policy-engine-configuration \"{\\\"arn\\\":\\\"$ENTRA_PE_ARN\\\",\\\"mode\\\":\\\"$MODE\\\"}\" >/dev/null && break; sleep 10; done  # IAM propagation", "hl": []}, "test_expect": {"title": "Test expectations: the users' own roles vs the APP's roles", "file": "Entra identity test script (excerpt)", "start": 15, "end": 16, "code": "USER_EXPECT = {\"wei\": set(TOOLS), \"ds1\": {\"mall___get_mall_list\", \"mall___get_footfall_summary\"}, \"chen\": set()}\nAPP_EXPECT = {\"mall___get_mall_list\", \"mall___get_footfall_summary\"}   # the AGENT app's own App Roles (2LO)", "hl": ["APP_EXPECT"]}, "test_2lo": {"title": "2LO test phase: same call for wei / ds1 / chen, then no bearer", "file": "Entra identity test script (excerpt)", "start": 45, "end": 50, "code": "    if phase == \"2lo\":\n        for u in (\"wei\", \"ds1\", \"chen\"):   # same answer whoever calls: the token is the AGENT's\n            s, b = call(user_token(u), {\"mode\": \"2lo\"}); c = b.get(\"outbound_token_claims\", {}); gw = b.get(\"gateway\", {})\n            rec(f\"{u}: 2LO token is app-only (no user, no scp)\", (None, None, AGENT), (c.get(\"preferred_username\"), c.get(\"scp\"), c.get(\"azp\")), f\"http={s} roles={c.get('roles')} err={b.get('error')}\")\n            rec(f\"{u}: 2LO tools/list = the app's roles\", sorted(APP_EXPECT), gw.get(\"listed\"), f\"allowed={gw.get('allowed')}\")\n        s, b = invoke(None, {\"mode\": \"2lo\"}, runtime_arn=RT); rec(\"no bearer -> runtime rejects\", True, s in (401, 403), f\"http={s}\")", "hl": ["AGENT", "None"]}}, "arch": "img/architecture-entra-2lo.svg", "oboPage": "part4-obo.html", "screens": [{"file": "img/entra-08-agent-app-api-permissions.png", "caption": "rsidc-entra-agent · API permissions: APPLICATION permissions Tools.Mall.List + Tools.Mall.Footfall on rsidc-mall-api (admin consent granted) — these become the app-only token's roles", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/CallAnAPI/appId/{entra-agent-app-id}", "look": "under rsidc-mall-api, Tools.Mall.Footfall and Tools.Mall.List have Type = Application, Admin consent required = Yes, Status = Granted (the delegated rows serve the other flows)."}, {"file": "img/entra-02-mall-api-app-roles.png", "caption": "rsidc-mall-api · App roles: allowed member types include Applications", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/AppRoles/appId/{mall-api-app-id}", "look": "the Tools.Mall.* roles list Applications among the allowed member types, so an app (not only users) can be assigned them."}, {"file": "img/entra-11-mall-api-users-and-groups.png", "caption": "rsidc-mall-api · Enterprise application · Users and groups: the rsidc-entra-agent service principal has App Role assignments (plus the users)", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Users/objectId/{entra-sp-object-id}/appId/{mall-api-app-id}", "look": "rsidc-entra-agent appears twice with object type Service principal (one row per App Role: List, Footfall); the user rows are the users' own assignments."}, {"file": "img/entra-10-agent-app-certificates-secrets.png", "caption": "rsidc-entra-agent · Certificates & secrets: client secret held only by the AgentCore Identity credential provider (values redacted)", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Credentials/appId/{entra-agent-app-id}", "look": "one client secret (description agentcore-credential-provider, with its expiry); value and secret ID are blacked out."}], "faq": [{"q": "Why does the 2LO token carry the APP's roles, not the user's?", "why": "2LO is the OAuth 2.0 **client credentials** grant: the agent app authenticates with its own client ID + secret and no user takes part. Entra puts into `roles` the App Roles assigned to the **client's service principal** (its admin-consented application permissions). The user's inbound token only authenticates the call to AgentCore Runtime and binds the workload access token; it is never sent to Entra in this flow.", "fix": "Expected behaviour. Grant the agent app only the App Roles it needs: every caller of the agent inherits them.", "verified": "Recorded for wei, ds1 and chen: `azp` = rsidc-entra-agent, no `preferred_username`, no `scp`, `roles` = [Tools.Mall.List, Tools.Mall.Footfall].", "docs": [["Microsoft Entra · OAuth 2.0 client credentials flow", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow"], ["Microsoft Entra · access tokens (aud, azp, roles, scp)", "https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens"], ["RFC 6749 · OAuth 2.0 (section 4.4 client credentials grant)", "https://datatracker.ietf.org/doc/html/rfc6749"], ["AgentCore Identity · obtain an OAuth 2.0 access token (M2M and user flows)", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-authentication.html"], ["AgentCore API · GetResourceOauth2Token", "https://docs.aws.amazon.com/bedrock-agentcore/latest/APIReference/API_GetResourceOauth2Token.html"]]}, {"q": "Why must the App Roles allow member type Application?", "wrong": "If a role allows only Users/Groups, it is not offered as an **application permission** under *API permissions → Add a permission*, and it cannot be assigned to a service principal.", "why": "`allowedMemberTypes` decides who can hold a role: `User` (users and groups, delegated scenarios) and/or `Application` (apps, app-only tokens). Only roles with `Application` can appear in a client credentials token.", "fix": "Set `allowedMemberTypes` to `[\"Application\", \"User\"]` on the Tools.Mall.* roles. The change is additive: the users' existing assignments keep working.", "verified": "From configuration and the App roles screenshot (Setup): the Tools.Mall.* roles list Applications.", "docs": [["Microsoft Entra · add app roles and receive them in the token", "https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-app-roles-in-apps"], ["Microsoft Entra · app manifest (appRoles, allowedMemberTypes)", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-app-manifest"], ["Microsoft Entra · OAuth 2.0 client credentials flow", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow"]]}, {"q": "Why is admin consent required for application permissions?", "wrong": "Without consent, the app-only token has no `roles` claim for rsidc-mall-api, so Cedar permits no tool.", "why": "With client credentials there is no signed-in user who could consent, and application permissions apply tenant-wide. Only an administrator can grant them. Granting consent creates an **appRoleAssignment** on the resource's service principal (rsidc-mall-api) with the agent's service principal as principal; that assignment is what Entra reads when it fills `roles`.", "fix": "Grant admin consent in *API permissions*, or create the assignment with Microsoft Graph `POST /servicePrincipals/{resource-sp}/appRoleAssignedTo`.", "verified": "API permissions screenshot: both application permissions show Granted. Users and groups screenshot: the rsidc-entra-agent service principal holds two App Role assignments.", "docs": [["Microsoft Entra · grant tenant-wide admin consent to an application", "https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/grant-admin-consent"], ["Microsoft Entra · permissions and consent overview (delegated vs application)", "https://learn.microsoft.com/en-us/entra/identity-platform/permissions-consent-overview"], ["Microsoft Graph · grant an appRoleAssignment for a service principal (appRoleAssignedTo)", "https://learn.microsoft.com/en-us/graph/api/serviceprincipal-post-approleassignedto"], ["Microsoft Entra · OAuth 2.0 client credentials flow", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow"]]}, {"q": "Why does every user get the same tools?", "why": "The Gateway and Cedar only see the token they are given. In 2LO that token describes the **agent app**, so the Cedar rules (`roles` contains `Tools.Mall.X`) evaluate the app's roles for every call. The human behind the request is invisible to the resource.", "fix": "If rights must differ per user, either check the user's rights inside the agent before calling, or use OBO so the downstream token carries the user (Part 4).", "verified": "Recorded: wei (4 own roles), ds1 (2) and chen (0) all got the same 2 tools; hourly and zone were denied for all three.", "docs": [["Policy in Amazon Bedrock AgentCore (Cedar)", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html"], ["AgentCore Gateway · inbound authorization", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"], ["AgentCore API · CustomJWTAuthorizerConfiguration", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html"], ["Microsoft Entra · access tokens (aud, azp, roles, scp)", "https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens"]]}, {"q": "When should I use 2LO, and when OBO?", "why": "**2LO** fits agent-owned, non-personal access: shared reference data, scheduled or batch jobs, calls with no user present. Authorization and audit at the resource are per app. **OBO** exchanges the user's token for a downstream token that keeps the user (`preferred_username`, the user's `roles`), so the resource can enforce and log per-user rights.", "fix": "Same credential provider, different `oauth2Flow`: `M2M` for 2LO, `ON_BEHALF_OF_TOKEN_EXCHANGE` for OBO. With 2LO, log the inbound user in the agent for audit.", "docs": [["Microsoft Entra · OAuth 2.0 client credentials flow", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow"], ["Microsoft Entra · On-Behalf-Of flow", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-on-behalf-of-flow"], ["AgentCore Identity · overview", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-overview.html"], ["AgentCore Identity · obtain an OAuth 2.0 access token (M2M and user flows)", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-authentication.html"], ["AgentCore Runtime · inbound and outbound auth", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-oauth.html"]]}, {"q": "Why does the client credentials request use `api://<rsidc-mall-api>/.default`?", "why": "The client credentials grant cannot request individual delegated scopes such as `mcp.access`. The `.default` scope asks Entra for **all** application permissions already granted to the app on that resource; the result is listed in `roles`.", "fix": "Pass `scopes = [\"api://<rsidc-mall-api appId>/.default\"]` to `GetResourceOauth2Token` with `oauth2Flow = M2M`.", "verified": "Recorded: the M2M call with `.default` returned a token with `aud` = rsidc-mall-api and the two granted roles.", "docs": [["Microsoft Entra · OAuth 2.0 client credentials flow", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow"], ["Microsoft Entra · scopes, permissions and consent (.default)", "https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc"], ["AgentCore API · GetResourceOauth2Token", "https://docs.aws.amazon.com/bedrock-agentcore/latest/APIReference/API_GetResourceOauth2Token.html"]]}, {"q": "Where is the client secret, and does the agent code ever see it?", "why": "The secret is stored by the AgentCore Identity **credential provider** `rsidc-entra` (vendor MicrosoftOauth2), which keeps it in AWS Secrets Manager (`clientSecretArn`). The agent only presents its workload access token; AgentCore Identity runs the client credentials request and returns the access token.", "fix": "Rotate the secret before it expires by updating the credential provider, or use a certificate credential for higher assurance. Never place the secret in agent code, environment variables or screenshots.", "verified": "Certificates & secrets screenshot: one client secret (agentcore-credential-provider), values redacted.", "docs": [["AgentCore Identity · manage credential providers", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-outbound-credential-provider.html"], ["AgentCore API · CreateOauth2CredentialProvider", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html"], ["AgentCore Identity · Microsoft (Entra ID) provider", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-idp-microsoft.html"], ["Microsoft Entra · add credentials to an app (secrets, certificates)", "https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-credentials"], ["Microsoft Entra · certificate credentials", "https://learn.microsoft.com/en-us/entra/identity-platform/certificate-credentials"]]}, {"q": "What does the Gateway check on the app-only token?", "why": "Gateway inbound auth is CUSTOM_JWT: the signature against the tenant JWKS (from the Entra v2 discovery document), issuer, expiry, and `aud` ∈ `allowedAudience` = the rsidc-mall-api app ID. Entra v2 access tokens use the resource's app ID as `aud` and carry the client in `azp`; no client allow-list is configured, so the audience is the check.", "fix": "None needed: 2LO reuses the same Gateway and Cedar policies as the user flows; only the token's `roles` differ.", "verified": "Recorded: `tools/list` with the app-only token returned HTTP 200 for all three users.", "docs": [["AgentCore Gateway · inbound authorization", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"], ["AgentCore API · CustomJWTAuthorizerConfiguration", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html"], ["Microsoft Entra · access tokens (aud, azp, roles, scp)", "https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens"]]}, {"q": "Troubleshooting: the Runtime returns 401 before the agent runs", "wrong": "`InvokeAgentRuntime` returns HTTP 401.", "why": "The Runtime's customJWTAuthorizer rejects the request when the bearer token is missing, expired, from another issuer, or has an `aud` other than the agent app (rsidc-entra-agent). The agent code never runs, so it cannot request a 2LO token.", "fix": "Send `Authorization: Bearer <user token>` where the token was requested with `scope = api://<rsidc-entra-agent>/access_as_user`, and allow-list the `Authorization` header on the runtime if the agent needs it.", "verified": "Recorded: a call with no bearer → HTTP 401.", "docs": [["AgentCore Runtime · inbound and outbound auth", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-oauth.html"], ["AgentCore API · CustomJWTAuthorizerConfiguration", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html"], ["Microsoft Entra · access tokens (aud, azp, roles, scp)", "https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens"]]}], "userRoles": {"wei": ["Tools.Mall.List", "Tools.Mall.Footfall", "Tools.Mall.Hourly", "Tools.Mall.Zone"], "ds1": ["Tools.Mall.List", "Tools.Mall.Footfall"], "chen": []}, "tools": {"mall___get_mall_list": "Tools.Mall.List", "mall___get_footfall_summary": "Tools.Mall.Footfall", "mall___get_hourly_traffic": "Tools.Mall.Hourly", "mall___get_zone_comparison": "Tools.Mall.Zone"}}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ID = D.ids, RES = D.results, TOOLS = Object.keys(D.tools);
+const USERS = ["wei", "ds1", "chen"];
+const caseOf = (u, kind) => RES.cases.find(c => c.case.startsWith(u + ":") && c.case.includes(kind));
+const chips = (r, cls = "") => r && r.length ? r.map(x => `<span class="chip ${cls}">${esc(x)}</span>`).join("") : `<span class="chip none">no roles</span>`;
+const tag = k => ({rec: '<span class="tag rec">RECORDED</span>', der: '<span class="tag der">FROM CONFIGURATION</span>'})[k];
+const foot = () => `<div class="foot">Recorded test results (${esc(D.recorded)})</div>`;
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+function code(x) {
+  if (!x) return "";
+  const rows = x.code.split("\n").map((l, i) => `<span class="ln${x.hl.some(h => l.includes(h)) ? " h" : ""}"><i>${x.start + i}</i>${esc(l)}</span>`).join("");
+  return `<div class="src"><b>${esc(x.title)}</b> · <code>${esc(x.file)}:${x.start}-${x.end}</code></div><pre class="code">${rows}</pre>`;
+}
+function claimsTable(rows) {
+  return `<table><tr><th>claim</th><th>value</th><th>status</th></tr>${rows.map(r =>
+    `<tr><td><code>${esc(r[0])}</code></td><td class="${r[3] || ""}">${r[1]}</td><td>${tag(r[2])}</td></tr>`).join("")}</table>`;
+}
+const absent = '<span class="note">absent</span>';
+
+// ---------- tabs ----------
+const TABS = [["arch", "0 · Architecture"], ["replay", "1 · Replay"], ["hood", "2 · Under the hood"], ["rights", "3 · 2LO vs user rights"], ["setup", "4 · Setup"], ["faq", "5 · FAQ"]];
+safeRender($("#nav"), TABS.map(([k, t]) => `<a data-s="${k}">${t}</a>`).join(""), true);
+function show(v) {
+  document.querySelectorAll("nav a").forEach(a => a.classList.toggle("on", a.dataset.s === v));
+  document.querySelectorAll(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  history.replaceState(null, "", "#" + v);
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav a").forEach(a => a.onclick = () => show(a.dataset.s));
+
+// ---------- Replay ----------
+const state = {user: "wei", signedIn: false, runs: {}};
+function inboundRows(u) {
+  return [["ver", "2.0", "der"], ["iss", `https://login.microsoftonline.com/${esc(ID.tenant)}/v2.0`, "der"],
+    ["aud", `<code>${esc(ID.agent)}</code> (rsidc-entra-agent)`, "der"], ["azp", `<code>${esc(ID.client)}</code> (rsidc-mall-test-client)`, "der"],
+    ["scp", "access_as_user", "der"], ["preferred_username", `${esc(u)}@${esc(ID.domain)}`, "der"],
+    ["roles", absent + ' <span class="note">(the users hold no App Roles on rsidc-entra-agent)</span>', "der"]];
+}
+function outboundRows(u) {
+  const c = caseOf(u, "app-only"), [pu, scp, azp] = c.actual;
+  return [["aud", `<code>${esc(ID.api)}</code> (rsidc-mall-api)`, "der"], ["azp", `<code>${esc(azp)}</code> (rsidc-entra-agent)`, "rec", "diff"],
+    ["scp", scp == null ? absent : esc(scp), "rec", "diff"], ["preferred_username", pu == null ? absent : esc(pu), "rec", "diff"],
+    ["roles", chips(c.roles, "app"), "rec", "diff"]];
+}
+function gwTable(u) {
+  const c = caseOf(u, "tools/list"), listed = c.actual || [];
+  return `<table><tr><th>tool</th><th>needs App Role</th><th>tools/list</th><th>direct tools/call (Cedar)</th></tr>${TOOLS.map(t => {
+    const l = listed.includes(t), ok = c.allowed[t];
+    return `<tr><td><code>${esc(t)}</code></td><td>${esc(D.tools[t])}</td><td class="${l ? "ok" : "no"}">${l ? "✓ listed" : "✗ hidden"}</td><td class="${ok ? "ok" : "no"}">${ok ? "✓ allowed" : "✗ denied"}</td></tr>`; }).join("")}</table>`;
+}
+function renderReplay() {
+  const u = state.user;
+  const userCards = USERS.map(x => `<div class="user ${x === u ? "on" : ""}" data-u="${x}"><b>${x}</b><div class="note">${esc(x)}@${esc(ID.domain)}</div>
+     <div class="note">own App Roles on rsidc-mall-api (${D.userRoles[x].length}):</div>${chips(D.userRoles[x].map(r => r.replace("Tools.Mall.", "")))}</div>`).join("");
+  const run = state.runs[u];
+  const runsDone = USERS.filter(x => state.runs[x]);
+  safeRender($("#v-replay"), `
+  <div class="card"><h2>1 · Pick a user and sign in with Entra ID <span class="note">(simulated)</span></h2>
+    <div class="users">${userCards}</div>
+    <div style="margin-top:12px">${state.signedIn ? `<span class="note">Signed in as <b>${esc(u)}@${esc(ID.domain)}</b> · scope <code>api://rsidc-entra-agent/access_as_user</code> · the token stays server-side, this page shows claims only.</span> <button class="sec" id="signout">Sign out</button>`
+      : `<div class="fake"><div class="ms"><span style="background:#f25022"></span><span style="background:#7fba00"></span><span style="background:#00a4ef"></span><span style="background:#ffb900"></span></div>
+         <b>Sign in</b><div class="note">rsidc-mall-test-client · public client, code + PKCE (fake dialog)</div>
+         <input value="${esc(u)}@${esc(ID.domain)}" readonly><input type="password" value="••••••••" readonly>
+         <button class="act" id="signin">Sign in (simulated)</button></div>`}</div>
+    <p class="note">Mirrors the Entra demo web GUI: "Sign in with Entra ID" → 2LO panel → "Run 2LO". The recorded run used scripted non-interactive sign-in (the Entra identity test script), so it covers wei / ds1 / chen without MFA.</p></div>
+  <div class="card" style="border-left:5px solid var(--or)"><h2>2 · 2LO · the agent acts as ITSELF (client credentials, M2M)</h2>
+    <div class="info">Expect: no user in the outbound token (no <code>preferred_username</code>, no <code>scp</code>); <code>azp</code> = the agent app; <code>roles</code> = the APP's App Roles (List + Footfall) → the same 2 tools for <b>every</b> user.</div>
+    <button class="act" id="run" ${state.signedIn ? "" : "disabled"}>Run 2LO</button> <button class="sec" id="nobearer">Call the runtime with no bearer</button>
+    <div class="flow" id="flow">${["user token → Runtime", "customJWTAuthorizer", "WAT", "GetResourceOauth2Token(M2M)", "Entra client_credentials", "app-only token", "Gateway CUSTOM_JWT", "Cedar on roles", "Lambda"].map(s => `<span>${s}</span>`).join("")}</div>
+    <div id="nb"></div>
+    ${run ? `<div class="grid2"><div><h3>Inbound token (user → AgentCore Runtime)</h3>${claimsTable(inboundRows(u))}
+        <p class="note">Validated by the runtime's customJWTAuthorizer (Entra v2 discovery, allowedAudience = rsidc-entra-agent). Values from configuration: the authorizer settings and the sign-in scope.</p></div>
+      <div><h3>Outbound token (agent → Gateway), app-only</h3>${claimsTable(outboundRows(u))}
+        <p class="note">Recorded: <code>${esc(caseOf(u, "app-only").case)}</code> → expect ${esc(JSON.stringify(caseOf(u, "app-only").expect))} · actual ${esc(JSON.stringify(caseOf(u, "app-only").actual))} · <b>${caseOf(u, "app-only").pass ? "PASS" : "FAIL"}</b> · ${esc(caseOf(u, "app-only").evidence)}.
+        <code>aud</code> from configuration (requested scope <code>api://&lt;rsidc-mall-api&gt;/.default</code>).</p></div></div>
+      <h3>Gateway rsidc-mall-entra-gateway · tools/list HTTP ${esc(caseOf(u, "app-only").http)} · ${caseOf(u, "tools/list").actual.length} tool(s) listed; every tool also called directly</h3>${gwTable(u)}
+      <p class="note">Recorded: <code>${esc(caseOf(u, "tools/list").case)}</code> · <b>${caseOf(u, "tools/list").pass ? "PASS" : "FAIL"}</b> · ${esc(caseOf(u, "tools/list").evidence)}</p>` : `<p class="note">${state.signedIn ? "Click Run 2LO." : "Sign in first."}</p>`}
+  </div>
+  <div class="card"><h2>3 · Switch users and compare</h2>
+    <p class="note">Run 2LO as each user. The user's own rights differ (wei 4 · ds1 2 · chen 0); the 2LO result does not.</p>
+    <table class="cmp"><tr><th>user</th><th>own App Roles</th><th>outbound azp</th><th>outbound roles</th><th>2LO tools allowed</th></tr>
+    ${USERS.map(x => { const r = state.runs[x], c = caseOf(x, "app-only"), g = caseOf(x, "tools/list");
+      return `<tr class="${x === u ? "sel" : ""}"><td class="u">${x}</td><td>${D.userRoles[x].length}</td>${r ? `<td><code>${esc(c.actual[2]).slice(0, 8)}…</code></td><td>${chips(c.roles, "app")}</td><td><b>${Object.values(g.allowed).filter(Boolean).length}</b> · ${esc(g.actual.join(", "))}</td>` : `<td colspan="3" class="note">not run yet</td>`}</tr>`; }).join("")}</table>
+    ${runsDone.length === 3 ? `<div class="warn" style="margin-top:10px"><b>All three identical.</b> chen holds no App Role at all, yet the agent reaches List + Footfall: in 2LO the resource authorizes the <b>agent</b>. If per-user limits matter, the agent must enforce them itself, or use OBO (<a href="${esc(D.oboPage)}">Part 4</a>).</div>` : ""}
+  </div><div class="foot">Recorded test results (${esc(D.recorded)}) · ${RES.cases.filter(c => c.pass).length}/${RES.cases.length} PASS</div>`);
+  document.querySelectorAll(".user").forEach(e => e.onclick = () => { state.user = e.dataset.u; state.signedIn = false; renderReplay(); });
+  const si = $("#signin"); if (si) si.onclick = () => { state.signedIn = true; renderReplay(); };
+  const so = $("#signout"); if (so) so.onclick = () => { state.signedIn = false; renderReplay(); };
+  $("#run").onclick = animateRun;
+  $("#nobearer").onclick = () => { const c = RES.cases.find(c => c.case.startsWith("no bearer"));
+    safeRender($("#nb"), `<div class="warn">Recorded: <code>${esc(c.case)}</code> · ${esc(c.evidence)} · <b>${c.pass ? "PASS" : "FAIL"}</b> — the runtime's authorizer rejects before the agent code runs.</div>`); };
+}
+function animateRun() {
+  const spans = [...document.querySelectorAll("#flow span")]; $("#run").disabled = true;
+  spans.forEach((s, i) => setTimeout(() => s.classList.add("lit"), i * 160));
+  setTimeout(() => { state.runs[state.user] = true; renderReplay(); }, spans.length * 160 + 150);
+}
+
+// ---------- Under the hood ----------
+const X = D.x;
+const HOPS = [
+  {t: "1 · User signs in", who: "Entra ID (tenant) · test client",
+   call: `POST https://login.microsoftonline.com/${ID.tenant}/oauth2/v2.0/token  (scripted: grant_type=password; GUI: authorization_code + PKCE)\nclient_id = ${ID.client} (rsidc-mall-test-client)\nscope     = api://${ID.agent}/access_as_user`,
+   out: [["aud", ID.agent + " (rsidc-entra-agent)"], ["azp", ID.client + " (test client)"], ["scp", "access_as_user"], ["preferred_username", "<user>@" + ID.domain]], outTag: "der",
+   check: "Entra authenticates the user (password / MFA) and checks that the test client holds the admin-consented delegated scope access_as_user on the agent API.",
+   code: [X.signin_test, X.signin_gui, X.signin_gui2, X.gui_server_side]},
+  {t: "2 · Runtime inbound auth", who: "AgentCore Runtime (customJWTAuthorizer)",
+   call: `InvokeAgentRuntime  agentRuntimeArn = ${RES.runtime}\nAuthorization: Bearer <user's Entra access token>\npayload = {"mode": "2lo"}`,
+   out: [["result", "accepted → agent code runs; no bearer → HTTP 401 (recorded)"]], outTag: "rec",
+   check: "Signature against the tenant JWKS (from the v2 discovery document), issuer, expiry, and aud ∈ allowedAudience = rsidc-entra-agent. The Authorization header is forwarded to the agent only because it is allow-listed.",
+   code: [X.rt_auth, X.rt_env]},
+  {t: "3 · Workload access token", who: "AgentCore Runtime → agent code",
+   call: "BedrockAgentCoreContext.get_workload_access_token()",
+   out: [["WAT", "opaque token for the workload identity of rsidc_entra_agent, bound to the inbound user (not shown)"]], outTag: "der",
+   check: "The runtime mints the WAT after inbound auth succeeded; the agent never handles the client secret. No WAT → the agent returns an error.",
+   code: [X.wat, X.keep]},
+  {t: "4 · GetResourceOauth2Token (M2M)", who: "AgentCore Identity (Token Vault)",
+   call: `bedrock-agentcore GetResourceOauth2Token\n  workloadIdentityToken          = <WAT>\n  resourceCredentialProviderName = rsidc-entra   (vendor MicrosoftOauth2)\n  oauth2Flow                     = M2M\n  scopes                         = ["api://${ID.api}/.default"]`,
+   out: [["accessToken", "app-only Entra token (claims in hop 6)"]], outTag: "rec",
+   check: "AgentCore Identity validates the WAT, checks the runtime role may use this provider, then runs client_credentials with the provider's stored secret. M2M tokens are cached for the agent; no per-user consent.",
+   code: [X.m2m, X.cp, X.cp_secret]},
+  {t: "5 · Entra client_credentials", who: "Entra ID token endpoint",
+   call: `POST https://login.microsoftonline.com/${ID.tenant}/oauth2/v2.0/token\ngrant_type    = client_credentials\nclient_id     = ${ID.agent} (rsidc-entra-agent)\nclient_secret = <held by the credential provider>\nscope         = api://${ID.api}/.default\n(standard OAuth 2.0 request sent by AgentCore Identity; shown from configuration)`,
+   out: [["roles", "every App Role of rsidc-mall-api assigned to the agent APP"]], outTag: "der",
+   check: "Entra authenticates the APP (client secret) and puts into roles exactly the application permissions that were admin-consented (appRoleAssignedTo). The App Roles must allow member type Application.",
+   code: [X.roles_const, X.app_member, X.rra, X.assign]},
+  {t: "6 · App-only token", who: "returned to the agent",
+   call: "token(wat, \"M2M\", [f\"api://{MALL_API}/.default\"])[\"accessToken\"]  → claims(t)",
+   out: [["aud", ID.api + " (rsidc-mall-api) — from configuration"], ["azp", RES.cases[0].actual[2] + " (rsidc-entra-agent) — recorded"], ["roles", (RES.cases[0].roles || []).join(", ") + " — recorded"], ["preferred_username", "absent — recorded"], ["scp", "absent — recorded"]], outTag: "rec",
+   check: "Nothing about the user survives: same token shape for wei, ds1 and chen (3 recorded PASS cases).",
+   code: [X.test_2lo]},
+  {t: "7 · Gateway inbound auth", who: "AgentCore Gateway rsidc-mall-entra-gateway (CUSTOM_JWT)",
+   call: "POST <gateway>/mcp  {\"jsonrpc\":\"2.0\",\"method\":\"tools/list\"}\nAuthorization: Bearer <app-only token>",
+   out: [["result", "accepted (tools/list HTTP 200, recorded)"]], outTag: "rec",
+   check: "Signature via the same tenant JWKS, issuer, expiry and aud ∈ allowedAudience = rsidc-mall-api. Entra v2 tokens carry the client in azp (not client_id), so the audience is the check.",
+   code: [X.gw_auth]},
+  {t: "8 · Cedar on roles", who: "Policy engine rsidc_mall_entra_pe (ENFORCE)",
+   call: "for each tool: permit when principal.getTag(\"roles\") like \"*\\\"Tools.Mall.X\\\"*\"",
+   out: [["listed", "mall___get_footfall_summary, mall___get_mall_list (recorded)"], ["denied", "hourly, zone: HTTP 200 + result.isError (recorded)"]], outTag: "rec",
+   check: `Cedar sees the token's roles only, so it authorizes the agent APP. tools/list is filtered; direct tools/call on a non-permitted tool is denied. Policy engine mode: ENFORCE.`,
+   code: [X.cedar, X.pe_attach, X.gw_check]},
+  {t: "9 · Lambda", who: "mall Lambda target (GATEWAY_IAM_ROLE)",
+   call: "Gateway → Lambda rsidc-mall-tools  arguments {\"mall_id\": \"HK01\", \"date\": \"2026-10-01\"}",
+   out: [["called", "only the 2 permitted tools reach the Lambda"]], outTag: "rec",
+   check: "The Lambda trusts the gateway's IAM role, not the end user. It never learns who the human was.",
+   code: [X.gw_target]},
+];
+let hop = 0;
+function renderHood() {
+  hop = Math.max(0, Math.min(HOPS.length - 1, hop | 0));
+  const h = HOPS[hop];
+  safeRender($("#v-hood"), `<div class="card"><h2>Under the hood · ${HOPS.length} hops, one 2LO call</h2>
+    <div class="steps">${HOPS.map((x, i) => `<button class="${i === hop ? "on" : ""}" data-h="${i}">${esc(x.t)}</button>`).join("")}</div>
+    <div class="grid2"><div><h3>${esc(h.t)} <span class="who">${esc(h.who)}</span></h3>
+      <div class="src"><b>Exact call / parameters</b></div><pre class="code wrap">${h.call.split("\n").map(l => `<span class="ln"><i></i>${esc(l)}</span>`).join("")}</pre>
+      <div class="src"><b>Token / result out</b> ${tag(h.outTag)}</div><table>${h.out.map(r => `<tr><td><code>${esc(r[0])}</code></td><td>${esc(r[1])}</td></tr>`).join("")}</table>
+      <h3>What is checked, and by whom</h3><p>${esc(h.check)}</p>
+      <p><button class="sec" id="prev" ${hop ? "" : "disabled"}>← previous</button> <button class="sec" id="next" ${hop < HOPS.length - 1 ? "" : "disabled"}>next →</button></p></div>
+      <div><h3>Real code / config</h3>${h.code.map(code).join("")}</div></div>
+    ${foot()}</div>`);
+  document.querySelectorAll("#v-hood .steps button[data-h]").forEach(b => b.onclick = () => { hop = +b.dataset.h; renderHood(); });
+  $("#prev").onclick = () => { hop--; renderHood(); }; $("#next").onclick = () => { hop++; renderHood(); };
+}
+
+// ---------- 2LO vs user rights ----------
+let sel = "chen";
+function renderRights() {
+  const appAllowed = u => Object.entries(caseOf(u, "tools/list").allowed).filter(([, v]) => v).map(([k]) => k);
+  const userTools = u => TOOLS.filter(t => D.userRoles[u].includes(D.tools[t]));
+  const row = u => { const a = appAllowed(u), o = userTools(u);
+    return `<tr class="${u === sel ? "sel" : ""}" data-u="${u}" style="cursor:pointer"><td class="u">${u}</td><td>${chips(D.userRoles[u].map(r => r.replace("Tools.Mall.", "")))}</td>
+      <td><span class="bar" style="width:${o.length * 22}px;background:var(--bl)"></span> ${o.length} <span class="note">expected</span></td>
+      <td><span class="bar" style="width:${a.length * 22}px;background:var(--or)"></span> <b>${a.length}</b> <span class="note">recorded</span></td>
+      <td>${o.length === a.length ? "same count" : (a.length > o.length ? `<b style="color:var(--rd)">+${a.length - o.length} beyond own rights</b>` : `<b style="color:var(--bl)">${a.length - o.length} below own rights</b>`)}</td></tr>`; };
+  const u = sel, a = appAllowed(u), o = userTools(u);
+  safeRender($("#v-rights"), `<div class="card"><h2>2LO vs the user's own rights</h2>
+    <p class="note">Click a user. "Own rights" = the user's App Role assignments on rsidc-mall-api (what a per-user flow would allow: <code>USER_EXPECT</code>, ${esc(X.test_expect.file)}:${X.test_expect.start}). "2LO" = what the agent actually reached in the recorded run.</p>
+    <table class="cmp"><tr><th>user</th><th>own App Roles</th><th>own rights (tools)</th><th>2LO tools</th><th>delta</th></tr>${USERS.map(row).join("")}</table>
+    <h3>Per tool · ${esc(u)}</h3>
+    <table><tr><th>tool</th><th>App Role</th><th>${esc(u)} holds it?</th><th>agent APP holds it?</th><th>2LO tools/call (recorded)</th></tr>
+    ${TOOLS.map(t => { const uh = o.includes(t), ah = (caseOf(u, "app-only").roles || []).includes(D.tools[t]), ok = a.includes(t);
+      return `<tr><td><code>${esc(t)}</code></td><td>${esc(D.tools[t])}</td><td class="${uh ? "ok" : "no"}">${uh ? "yes" : "no"}</td><td class="${ah ? "ok" : "no"}">${ah ? "yes" : "no"}</td><td class="${ok ? "ok" : "no"}${uh !== ok ? " diff" : ""}">${ok ? "✓ allowed" : "✗ denied"}</td></tr>`; }).join("")}</table>
+    <div class="grid3" style="margin-top:12px"><div class="kpi"><div class="note">users tested</div><div class="big">3</div></div>
+      <div class="kpi"><div class="note">distinct 2LO results</div><div class="big">${new Set(USERS.map(x => appAllowed(x).sort().join())).size}</div></div>
+      <div class="kpi"><div class="note">own-rights range</div><div class="big">${Math.min(...USERS.map(x => userTools(x).length))}–${Math.max(...USERS.map(x => userTools(x).length))}</div></div></div>
+    <div class="warn"><b>Architect's read.</b> 2LO decouples the resource decision from the human: chen (0 roles) gets 2 tools, wei (4 roles) is capped at 2. Use 2LO for agent-owned, non-personal data (shared reference data, batch jobs). When the data is personal or rights differ by user, either enforce per-user checks inside the agent before calling, or switch to OBO so the resource sees the user.</div>
+    <div class="info">The 2LO run does not exercise per-user rights. See <a href="${esc(D.oboPage)}">Part 4 · OBO</a> for the recorded run where the exchanged token carries the user (expected: wei 4 · ds1 2 · chen 0).</div>
+    ${foot()}</div>
+    <div class="card"><h3>Where the expectation is written down</h3>${code(X.test_expect)}${code(X.test_2lo)}</div>`);
+  document.querySelectorAll("#v-rights tr[data-u]").forEach(tr => tr.onclick = () => { sel = tr.dataset.u; renderRights(); });
+}
+
+// ---------- Setup ----------
+// Entra screenshots: collapsed cards, title = caption
+const screens = () => D.screens.map(x => `<details class="sc"><summary>Screenshot: ${esc(x.caption)}</summary><div class="b">
+    <a href="${esc(x.file)}" target="_blank" rel="noopener"><img src="${esc(x.file)}" alt="${esc(x.caption)}" loading="lazy"></a>
+    <div class="src"><a href="${esc(x.file)}" target="_blank" rel="noopener">Open full size</a> · Portal: <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a></div>
+    <div class="src"><b>What to look for:</b> ${esc(x.look)}</div></div></details>`).join("");
+function renderSetup() {
+  safeRender($("#v-setup"), `
+  <div class="card"><h2>A · Entra ID (Free) — <code>infra/entra-id/03-entra-agent-setup.py</code></h2>
+    <table><tr><th>object</th><th>setting</th><th>why it matters for 2LO</th></tr>
+    <tr><td>app <b>rsidc-entra-agent</b><br><code>${esc(ID.agent)}</code></td><td>confidential client; exposes <code>api://…/access_as_user</code> (v2 tokens)</td><td>its appId is the runtime's allowedAudience (user → agent) AND the client_id for client_credentials (agent → API)</td></tr>
+    <tr><td>client secret</td><td>90 days, display name <code>agentcore-credential-provider</code>; held by the AgentCore Identity credential provider</td><td>the app authenticates to Entra with it; the agent code never sees it</td></tr>
+    <tr><td>rsidc-mall-api App Roles</td><td><code>allowedMemberTypes</code> += <code>Application</code></td><td>without it, an app cannot be assigned Tools.Mall.*</td></tr>
+    <tr><td>application permissions</td><td>Tools.Mall.List, Tools.Mall.Footfall (<code>requiredResourceAccess</code> type <code>Role</code>)</td><td>declares what the agent app asks for</td></tr>
+    <tr><td>admin consent</td><td><code>appRoleAssignedTo</code> on the rsidc-mall-api service principal, principal = agent SP</td><td>this assignment is what puts <code>roles</code> into the app-only token</td></tr></table>
+    <h3>Entra admin center screenshots</h3><p class="note" style="margin-top:0">Click a title to show the screenshot and its portal link.</p>${screens()}
+    <div class="grid2" style="margin-top:10px"><div>${code(X.agent_app)}${code(X.roles_const)}${code(X.app_member)}</div><div>${code(X.rra)}${code(X.assign)}${code(X.secret)}</div></div></div>
+  <div class="card"><h2>B · AgentCore Identity + Runtime — <code>infra/entra-id/04-entra-agentcore.sh</code></h2>
+    <table><tr><th>resource</th><th>setting</th></tr>
+    <tr><td>credential provider <b>rsidc-entra</b></td><td>vendor <code>MicrosoftOauth2</code>; clientId = rsidc-entra-agent; tenantId = <code>${esc(ID.tenant)}</code>; secret stored by AgentCore Identity (<code>clientSecretArn</code>). The same provider serves 2LO, 3LO and OBO; the flow is chosen per call (<code>oauth2Flow</code>).</td></tr>
+    <tr><td>runtime <b>rsidc_entra_agent</b></td><td>customJWTAuthorizer: discovery = tenant v2 OIDC metadata, allowedAudience = [rsidc-entra-agent]; <code>Authorization</code> header allow-listed; env <code>CP_ENTRA</code>, <code>MALL_API_APP_ID</code>, <code>ENTRA_GW_URL</code></td></tr></table>
+    <div class="grid2" style="margin-top:10px"><div>${code(X.cp)}${code(X.cp_secret)}</div><div>${code(X.rt_auth)}${code(X.rt_env)}</div></div></div>
+  <div class="card"><h2>C · Gateway + Cedar — <code>infra/entra-id/02-entra-gateway.sh</code></h2>
+    <p class="note">Gateway <code>rsidc-mall-entra-gateway</code>: CUSTOM_JWT, allowedAudience = rsidc-mall-api (<code>${esc(ID.api)}</code>); policy engine with 4 permits (one per tool), mode ENFORCE. Shared with Part 1 and Part 4: 2LO adds nothing here, it just presents a token whose <code>roles</code> belong to the app.</p>
+    <div class="grid2"><div>${code(X.gw_auth)}${code(X.gw_target)}</div><div>${code(X.cedar)}${code(X.pe_attach)}</div></div></div>
+  <div class="card"><h2>D · Commands and verification</h2>
+<pre class="code">${["python infra/entra-id/03-entra-agent-setup.py              # Entra: app rsidc-entra-agent + app roles List/Footfall (application permissions)",
+"bash infra/entra-id/04-entra-agentcore.sh                   # credential provider rsidc-entra + runtime rsidc_entra_agent",
+"# recorded 2LO test run (Entra identity test script, 2lo phase): 7/7 PASS", "",
+"# verify",
+"aws bedrock-agentcore-control get-oauth2-credential-provider --name rsidc-entra --region ap-southeast-1 \\",
+"    --query credentialProviderVendor            # -> \"MicrosoftOauth2\"",
+"# Entra admin center -> Enterprise applications -> rsidc-mall-api -> Users and groups:",
+"#   rsidc-entra-agent holds Tools.Mall.List and Tools.Mall.Footfall"].map(l => `<span class="ln"><i></i>${esc(l)}</span>`).join("")}</pre>
+    <div class="info"><b>Hardening notes.</b> Rotate the 90-day client secret (or move to a certificate credential); keep the app's application permissions to the minimum the agent needs, since every caller inherits them; log the inbound user in the agent for audit, because the resource only sees the app.</div>
+    ${foot()}</div>`);
+}
+
+// ---------- FAQ ----------
+function renderFaq() {
+  const row = (cls, label, v) => v ? `<dt class="${cls}">${label}</dt><dd>${md(v)}</dd>` : "";
+  safeRender($("#v-faq"), `<div class="card"><h2>FAQ</h2>
+  <p class="note">Why the 2LO setup works the way it does. Click a question to open it.</p>
+  <p><button class="sec" id="fopen">Expand all</button> <button class="sec" id="fclose">Collapse all</button></p>
+  ${D.faq.map((f, i) => `<details class="faq"><summary>${i + 1}. ${md(f.q)}</summary><div class="bd"><dl class="qa">
+    ${row("w", "What goes wrong", f.wrong)}${row("y", "Why", f.why)}${row("f", "Fix", f.fix)}${row("v", "Evidence", f.verified)}</dl>
+    <div class="docs"><b>Official docs</b><ul>${f.docs.map(([t, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("")}</ul></div></div></details>`).join("")}
+  ${foot()}</div>`);
+  $("#fopen").onclick = () => document.querySelectorAll("#v-faq details.faq").forEach(d => d.open = true);
+  $("#fclose").onclick = () => document.querySelectorAll("#v-faq details.faq").forEach(d => d.open = false);
+}
+
+renderReplay(); renderHood(); renderRights(); renderSetup(); renderFaq();
+{ const h = (location.hash || "").slice(1); show(TABS.some(([k]) => k === h) ? h : "arch"); }
+</script>
+<style>
+details.codefold{margin:6px 0}
+details.codefold>summary{cursor:pointer;display:inline-block;padding:3px 10px;border:1px solid #8884;border-radius:6px;
+  font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:inherit;opacity:.85;user-select:none}
+details.codefold>summary:hover{opacity:1}
+details.codefold[open]>summary{margin-bottom:6px}
+</style>
+<script>
+(function () {
+  var CODE_FILE = /[\w./-]+\.(py|sh|js|mjs|ts|tsx|json|sql|html|md|txt|yaml|yml)(:\d+(-\d+)?)?/;
+  function label(el) {
+    var p = el.previousElementSibling, t = p && p.textContent.trim();
+    return t && t.length < 140 && CODE_FILE.test(t) ? t : '';
+  }
+  function wrap(el) {
+    if (el.dataset.codefold || el.closest('details.codefold')) return;
+    if (el.tagName === 'PRE' && el.parentElement && el.parentElement.closest('.code')) return;  // the outer .code is wrapped
+    el.dataset.codefold = '1';
+    var lines = (el.textContent.replace(/\n+$/, '').match(/\n/g) || []).length + 1;
+    var kind = el.classList.contains('out') ? 'Show output' : 'Show code';
+    var lb = label(el);
+    var d = document.createElement('details'), s = document.createElement('summary');
+    d.className = 'codefold';
+    s.textContent = '▸ ' + kind + (lb ? ' · ' + lb : '') + ' (' + lines + (lines === 1 ? ' line)' : ' lines)');
+    el.parentNode.insertBefore(d, el);
+    d.appendChild(s); d.appendChild(el);
+  }
+  function scan(root) {
+    if (root.nodeType !== 1) return;
+    if (root.matches('pre, .code')) wrap(root);
+    root.querySelectorAll('pre, .code').forEach(wrap);
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) { m.addedNodes.forEach(scan); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+</body></html>

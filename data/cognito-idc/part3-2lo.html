@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 3 · 2LO (client credentials) · Cognito + IAM Identity Center</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+
+.hops-note{margin:8px 0}
+</style></head>
+<body>
+<div class="banner"><b>Static demo</b> — simulated UI, real recorded data. Nothing here calls AWS.<a href="part3-2lo.zh-CN.html" hreflang="zh-CN" lang="zh-CN" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">中文</a></div>
+<div class="wrap">
+<nav>
+  <h1>Part 3 · 2LO (client credentials)</h1>
+  <div class="sub">The agent authenticates as itself (Cognito client_credentials via AgentCore Identity) → Gateway → Lambda → Redshift as a service user.</div>
+  <a data-s="arch" class="on">0 · Architecture</a>
+  <a data-s="replay">1 · Replay</a>
+  <a data-s="hood">2 · Under the hood</a>
+  <a data-s="setup">3 · Setup</a>
+  <a data-s="faq">4 · FAQ · Findings</a>
+  <div class="sub" style="margin:16px 18px 6px"><b>Other pages</b></div>
+  <a href="part1-quick.html">Part 1 · Quick</a>
+  <a href="part2-3lo.html">Part 2 · 3LO</a>
+  <a href="part3-2lo.html" style="font-weight:600">Part 3 · 2LO (this page)</a>
+  <a href="part4-obo.html">Part 4 · OBO</a>
+  <a href="gateway-rbac.html">Gateway RBAC</a>
+  <a href="foundation.html">Foundation</a>
+  <a href="../../README.md">Repo README</a>
+  <div class="meta" id="navmeta"></div>
+</nav>
+<main>
+<section id="arch" class="on">
+  <h2>Architecture: Agent (client credentials) → Gateway → Lambda → Redshift</h2>
+  <p class="lead">Goal: compare the other AgentCore Identity outbound patterns with OBO on the same Redshift data. The OBO runtime
+  (<code>rsidc_data_agent</code>, version 3) and its tests are <b>not modified</b>; a <b>separate</b> runtime is used.
+  With 2LO the agent authenticates as <b>itself</b>: AgentCore Identity fetches a Cognito token with the <code>client_credentials</code> grant,
+  the Gateway accepts only that client (<code>allowedClients</code>), and the reporting Lambda queries Redshift as the service user <code>svc_reporting</code>.
+  No end-user identity reaches Redshift.</p>
+  <div class="card arch"><a href="img/architecture-2lo.svg" target="_blank" rel="noopener">
+    <img src="img/architecture-2lo.svg" alt="Architecture diagram: the agent gets its own client-credentials token and calls AgentCore Gateway, which invokes a Lambda that queries Redshift as svc_reporting"></a>
+    <div class="ref"><a href="img/architecture-2lo.svg" target="_blank" rel="noopener">Open full size</a> · Click the diagram to open it full size.</div></div>
+  <div class="ref">Animated walkthrough: <a href="flow.html">flow.html</a> (2LO tab).</div>
+  <div class="card"><b>Who authenticates what (2LO / 3LO)</b>
+    <div id="authtbl"></div>
+    <div class="ref">The OAuth runtime (Step 12) is shared with <a href="part2-3lo.html">Part 2 (3LO)</a>.</div></div>
+</section>
+<section id="replay"></section>
+<section id="hood"></section>
+<section id="setup"></section>
+<section id="faq"></section>
+</main></div>
+<script id="data" type="application/json">{"built": "2026-11-05", "code": {"gui_call_agent": {"path": "webchat/cognito-idc/oauth_app.py", "start": 35, "end": 37, "title": "GUI calls the OAuth runtime with the user's ID token", "text": "def call_agent(s, payload):\n    status, body = invoke(s[\"token\"], payload, runtime_arn=RT, session_id=f\"rsidc-web-oauth-{uuid.uuid4()}\")\n    return {\"http\": status, **(body if isinstance(body, dict) else {\"raw\": body})}"}, "oauth_runtime_auth": {"path": "infra/cognito-idc/12-deploy-oauth-runtime.sh", "start": 24, "end": 25, "title": "OAuth runtime inbound JWT authorizer", "text": "  \"authorizerConfiguration\": {\"customJWTAuthorizer\": {\"discoveryUrl\": e[\"COGNITO_DISCOVERY_URL\"], \"allowedAudience\": [e[\"COGNITO_CLIENT_ID\"]]}},\n  \"requestHeaderConfiguration\": {\"requestHeaderAllowlist\": [\"Authorization\"]},"}, "two_lo": {"path": "agents/cognito-idc/oauth/main.py", "start": 36, "end": 43, "title": "2LO: M2M token from AgentCore Identity -> Gateway", "text": "def two_lo(wat: str) -> dict:\n    # 2LO / M2M: no user in the loop -- the token represents the AGENT (Cognito client_credentials).\n    tok = identity.get_resource_oauth2_token(workloadIdentityToken=wat, resourceCredentialProviderName=os.environ[\"CP_2LO\"],\n                                             scopes=[\"rsidc-reports/read\"], oauth2Flow=\"M2M\")[\"accessToken\"]\n    call = {\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"reporting___get_sales_report\", \"arguments\": {}}}\n    res = http_json(os.environ[\"GW_URL\"], tok, call)\n    report = json.loads(res[\"result\"][\"content\"][0][\"text\"])\n    return {\"flow\": \"2LO\", \"outbound_token_claims\": claims(tok), \"gateway_result\": report}"}, "cp_provider": {"path": "infra/cognito-idc/10-credential-providers.py", "start": 18, "end": 28, "title": "Credential providers (client secret kept by AgentCore Identity)", "text": "def provider(name, client_id):\n    secret = idp.describe_user_pool_client(UserPoolId=pool, ClientId=client_id)[\"UserPoolClient\"][\"ClientSecret\"]\n    cfg = {\"customOauth2ProviderConfig\": {\"oauthDiscovery\": {\"discoveryUrl\": os.environ[\"COGNITO_DISCOVERY_URL\"]},\n                                          \"clientId\": client_id, \"clientSecret\": secret}}\n    try:\n        r = ac.create_oauth2_credential_provider(name=name, credentialProviderVendor=\"CustomOauth2\", oauth2ProviderConfigInput=cfg)\n    except ac.exceptions.ValidationException as e:\n        if \"already exists\" not in str(e): raise\n        r = ac.update_oauth2_credential_provider(name=name, credentialProviderVendor=\"CustomOauth2\", oauth2ProviderConfigInput=cfg)\n    print(f\"{name}: arn={r['credentialProviderArn']}\\n  callbackUrl={r.get('callbackUrl')}\\n  secret={r['clientSecretArn']['secretArn']}\")\n    return r"}, "gw2lo_auth": {"path": "infra/cognito-idc/11-2lo-gateway.sh", "start": 35, "end": 38, "title": "2LO gateway: only the 2LO client is allowed", "text": "  save GW_ID $(aws bedrock-agentcore-control create-gateway --region $R --name ${PROJECT}-2lo-gateway --role-arn arn:aws:iam::${ACCOUNT_ID}:role/$GR \\\n    --protocol-type MCP --authorizer-type CUSTOM_JWT \\\n    --authorizer-configuration \"{\\\"customJWTAuthorizer\\\":{\\\"discoveryUrl\\\":\\\"$COGNITO_DISCOVERY_URL\\\",\\\"allowedClients\\\":[\\\"$C2LO_CLIENT_ID\\\"]}}\" \\\n    --query gatewayId --output text)"}, "reporting_lambda": {"path": "infra/cognito-idc/lambda/reporting/handler.py", "start": 22, "end": 25, "title": "Reporting Lambda runs as svc_reporting", "text": "def handler(event, context):\n    tool = (context.client_context.custom or {}).get(\"bedrockAgentCoreToolName\", \"\") if context.client_context else \"\"\n    r = rsd.execute_statement(ClusterIdentifier=os.environ[\"REDSHIFT_CLUSTER_ID\"], Database=os.environ[\"REDSHIFT_DB\"],\n                              DbUser=\"svc_reporting\", Sql=SQL)"}, "sql_svc": {"path": "infra/cognito-idc/sql/02-svc-reporting.sql", "start": 1, "end": 6, "title": "svc_reporting: one broad service identity", "text": "-- 2LO test: ONE shared service identity for the reporting tool behind AgentCore Gateway.\n-- Deliberately broad (all rows, all columns) like a typical service account, to contrast with per-user OBO.\nCREATE USER svc_reporting PASSWORD DISABLE;\nGRANT USAGE ON SCHEMA sales TO svc_reporting;\nGRANT SELECT ON sales.orders TO svc_reporting;\nATTACH RLS POLICY rls_all_rows ON sales.orders TO svc_reporting;"}}, "sales": {"columns": ["order_id", "region", "customer_email", "amount", "order_date"], "rows": [["1", "APAC", "alice@cust.example", "1200.00", "2026-09-01"], ["2", "APAC", "bob@cust.example", "560.50", "2026-09-03"], ["3", "EMEA", "carol@cust.example", "980.00", "2026-09-05"], ["4", "AMER", "dave@cust.example", "2300.00", "2026-09-07"], ["5", "EMEA", "erin@cust.example", "150.25", "2026-09-09"]], "sql": "SELECT * FROM sales.orders ORDER BY 1"}, "screens": [{"step": "9", "file": "img/console/09-cognito-app-clients.png", "caption": "Cognito → rsidc-users → App clients: OBO client, rsidc-2lo-agent, rsidc-3lo-agent", "where": "Cognito app clients", "url": "https://ap-southeast-1.console.aws.amazon.com/cognito/v2/idp/user-pools/{user-pool-id}/applications/app-clients?region=ap-southeast-1", "look": "Three app clients; rsidc-2lo-agent is the confidential client used for client_credentials."}, {"step": "9", "file": "img/console/09b-cognito-domain.png", "caption": "Cognito → rsidc-users → Domain: rsidc-123456789012 with Managed login (v2)", "where": "Cognito domain", "url": "https://ap-southeast-1.console.aws.amazon.com/cognito/v2/idp/user-pools/{user-pool-id}/branding/domain?region=ap-southeast-1", "look": "Domain rsidc-123456789012, Managed login version 2."}, {"step": "10", "file": "img/console/10-agentcore-identity.png", "caption": "AgentCore → Identity: Outbound Auth providers rsidc-2lo-cognito and rsidc-3lo-cognito (Custom OAuth2)", "where": "AgentCore Identity", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/identity?region=ap-southeast-1", "look": "Two Custom OAuth2 providers, one per flow."}, {"step": "10", "file": "img/console/10b-credential-provider-2lo.png", "caption": "AgentCore → Identity → rsidc-2lo-cognito: Custom OAuth2, client {2lo-client-id}, Cognito discovery URL, secret in AgentCore-managed Secrets Manager; M2M token fetches", "where": "rsidc-2lo-cognito", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/identity/rsidc-2lo-cognito?region=ap-southeast-1", "look": "Cognito discovery URL, client ID, and a managed secret (the secret value is never shown)."}, {"step": "11", "file": "img/console/11-agentcore-gateway.png", "caption": "AgentCore → Gateways → rsidc-2lo-gateway: MCP gateway, IAM role rsidc-gateway-role, target 'reporting' (Lambda)", "where": "rsidc-2lo-gateway", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/toolsAndGateways/{2lo-gateway-id}", "look": "MCP protocol, service role rsidc-gateway-role, target reporting (Lambda)."}, {"step": "11", "file": "img/console/11a-gateway-inbound-auth.png", "caption": "AgentCore → Gateways → rsidc-2lo-gateway → Inbound Auth: Cognito, Allowed clients = {2lo-client-id} (2LO client only)", "where": "Gateway inbound auth", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/toolsAndGateways/{2lo-gateway-id}?region=ap-southeast-1", "look": "Allowed clients contains only the 2LO client ID."}, {"step": "11", "file": "img/console/11b-lambda-reporting.png", "caption": "Lambda → rsidc-reporting → Configuration: Gateway target that queries Redshift as svc_reporting", "where": "rsidc-reporting", "url": "https://ap-southeast-1.console.aws.amazon.com/lambda/home?region=ap-southeast-1#/functions/rsidc-reporting?tab=configure", "look": "The Lambda behind the reporting target."}, {"step": "12", "file": "img/console/12-agentcore-runtime-oauth.png", "caption": "AgentCore → Runtime → rsidc_oauth_agent → Version 4: separate runtime for 2LO/3LO (JWT inbound, VPC, env CP_2LO / CP_3LO / GW_URL)", "where": "rsidc_oauth_agent v4", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/agents/{oauth-runtime-id}/version/4?region=ap-southeast-1", "look": "JWT inbound auth, VPC mode, and the CP_2LO / CP_3LO / GW_URL environment variables."}, {"step": "12", "file": "img/console/12b-iam-oauth-runtime-role.png", "caption": "IAM → rsidc-oauth-runtime-role → oauth-runtime (expanded): GetResourceOauth2Token on token-vault + both credential providers + its workload identity; this is what authorizes the runtime to use rsidc-2lo-cognito", "where": "rsidc-oauth-runtime-role", "url": "https://us-east-1.console.aws.amazon.com/iam/home#/roles/details/rsidc-oauth-runtime-role?section=permissions", "look": "GetResourceOauth2Token allowed on the token vault, both providers and the workload identity."}], "steps": [{"id": "s9", "n": "Step 9 · Cognito OAuth clients for 2LO", "res": "rsidc-2lo-agent client_credentials rsidc-reports/read", "purpose": "Managed login domain, resource server and the 2LO client.", "cmd": "infra/common/run.sh ./infra/cognito-idc/09-cognito-oauth-clients.sh", "creates": ["A hosted login domain, `rsidc-123456789012`, on **managed login v2**. v2 is required for `prompt=login`; the classic v1 hosted UI ignores it.", "Resource server `rsidc-reports` with scope `read`.", "`rsidc-2lo-agent`: confidential client, `client_credentials` only."], "result": "rsidc-2lo-agent  client_credentials  rsidc-reports/read\nauthorization_endpoint https://rsidc-123456789012.auth.ap-southeast-1.amazoncognito.com/oauth2/authorize\nManagedLoginVersion 2, ACTIVE", "verify": "aws cognito-idp describe-user-pool-domain --domain rsidc-123456789012 --region ap-southeast-1\naws cognito-idp describe-resource-server --user-pool-id {user-pool-id} --identifier rsidc-reports --region ap-southeast-1\naws cognito-idp describe-user-pool-client --user-pool-id {user-pool-id} --client-id <2LO client id> --region ap-southeast-1", "expect": "Domain shows ManagedLoginVersion 2 and status ACTIVE; the resource server lists scope `read`; the client has AllowedOAuthFlows = [client_credentials] and AllowedOAuthScopes = [rsidc-reports/read]."}, {"id": "s10", "n": "Step 10 · Credential provider rsidc-2lo-cognito", "res": "rsidc-2lo-cognito in the token vault", "purpose": "AgentCore Identity provider for the M2M token.", "cmd": "infra/common/run.sh .venv/bin/python infra/cognito-idc/10-credential-providers.py", "creates": ["Two `CustomOauth2` providers backed by Cognito discovery. Client secrets go straight into the AgentCore Identity vault and are never printed.", "The script then sets the 3LO client's callback to the provider's AgentCore callback URL, copying the client's full configuration because `UpdateUserPoolClient` resets omitted fields."], "result": "rsidc-2lo-cognito  arn:...:token-vault/default/oauth2credentialprovider/rsidc-2lo-cognito", "verify": "aws bedrock-agentcore-control get-oauth2-credential-provider --name rsidc-2lo-cognito --region ap-southeast-1", "expect": "Vendor CustomOauth2, the Cognito discovery URL, the 2LO client ID, and a client secret ARN (the secret value is not returned)."}, {"id": "s11", "n": "Step 11 · 2LO downstream: Gateway → Lambda → Redshift service user", "res": "gateway rsidc-2lo-gateway READY, allowedClients = 2LO client", "purpose": "The tool the agent calls with its own token.", "cmd": "infra/common/run.sh ./infra/cognito-idc/11-2lo-gateway.sh", "creates": ["DB user `svc_reporting` with SELECT on `sales.orders`, all rows (`infra/cognito-idc/sql/02-svc-reporting.sql`).", "Lambda `rsidc-reporting`, which uses the Redshift Data API with `GetClusterCredentials` scoped to `dbuser:rsidc-cluster/svc_reporting`.", "Gateway `rsidc-2lo-gateway` (MCP, CUSTOM_JWT, **allowedClients = 2LO client only**) with target `reporting`, authenticated by the Gateway IAM role."], "result": "gateway READY  https://{2lo-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp\nallowedClients [{2lo-client-id}]   target reporting READY", "verify": "aws bedrock-agentcore-control get-gateway --gateway-identifier {2lo-gateway-id} --region ap-southeast-1\naws bedrock-agentcore-control list-gateway-targets --gateway-identifier {2lo-gateway-id} --region ap-southeast-1\ncurl -si -X POST https://{2lo-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp | head -1", "expect": "Gateway status READY with allowedClients = [the 2LO client only]; target `reporting` READY; a call with no token returns HTTP 401, and a call with a user's ID token returns 403."}, {"id": "s12", "n": "Step 12 · OAuth agent runtime rsidc_oauth_agent (shared by 2LO and 3LO)", "res": "READY, version 4", "purpose": "Separate runtime; the OBO runtime stays untouched.", "cmd": "infra/common/run.sh ./infra/cognito-idc/12-deploy-oauth-runtime.sh", "intro": "This runtime serves both 2LO and 3LO; [Part 2 (3LO)](part2-3lo.html) links back here.", "creates": ["Deploys `rsidc_oauth_agent` (code in `agents/cognito-idc/oauth/`).", "Same Cognito JWT inbound auth and VPC as the OBO runtime; the `Authorization` header is forwarded.", "Its own role, which can only call `GetResourceOauth2Token` on the two providers and read their client secrets. It has no Redshift, IdC or Bedrock model access.", "Its workload identity allows two 3LO return URLs, both set by `infra/cognito-idc/12-deploy-oauth-runtime.sh`: `http://localhost:8765/callback` (the test's stand-in for the app callback page) and `http://localhost:8081/3lo/callback` (the local 2LO/3LO web GUI). Step 14 later adds `<oauth-api>/3lo/callback`."], "result": "status READY, version 4, returnUrls [\"http://localhost:8765/callback\"]\n(recorded at the Step 12 run, before the web GUI return URLs were added)", "verify": "aws bedrock-agentcore-control get-agent-runtime --agent-runtime-id {oauth-runtime-id} --region ap-southeast-1\naws iam get-role-policy --role-name rsidc-oauth-runtime-role --policy-name oauth-runtime", "expect": "Status READY, version 4, authorizer discovery URL = the Cognito pool, requestHeaderAllowlist = [Authorization]; the IAM policy allows GetResourceOauth2Token only on the token vault and the two credential providers (the policy document is `infra/cognito-idc/policies/oauth-runtime-permissions.json`)."}, {"id": "s13", "n": "Step 13 · 2LO test cases", "res": "PASS (2LO cases of 18/18)", "purpose": "Run the suite; 2LO assertions.", "cmd": null, "creates": ["The recorded suite asserts three 2LO runs (wei, zhang, ds1) and two Gateway negative calls. It is not published; to repeat the checks by hand use the GUI in the next section, the Gateway checks in Step 11, and the CloudWatch logs of the `rsidc-reporting` Lambda."], "result": "18/18 asserted cases matched, plus 1 documented observation\nPASS 2LO as wei / zhang / ds1: 5 rows each, redshift_user=svc_reporting, PII visible; token sub = 2LO client id (no user)\nPASS 2LO Gateway with no token -> 401; with a USER id token -> 403 (allowedClients)\n\nOBO regression after the 2LO/3LO build: the OBO matrix still passes 16/16, the negative tests are unchanged, and the OBO runtime is still at version 3.", "verify": null, "expect": null}], "gui": {"setup": ["One-time setup: `infra/common/run.sh .venv/bin/python infra/cognito-idc/13-web-login-client.py` adds the `http://localhost:8081/callback` login callback.", "Start it with `infra/common/run.sh .venv/bin/python webchat/cognito-idc/oauth_app.py`, then open http://localhost:8081 and sign in (login 1).", "**2LO**: *Run sales report via Gateway*. **3LO**: *Connect my profile*. The first time this goes through login 2 (consent), then session binding, then the token is read from the vault. *Check vault only* reads the vault without redirecting."], "result": ["**2LO:** the token claims are `sub=client_id={2lo-client-id}` and `scope=rsidc-reports/read`, with no user. The Redshift user is `svc_reporting`, and all 5 rows including `customer_email` come back. (2026-10-05, headless Chrome, zhang)", "The OBO GUI on 8080 still works unchanged.", "On AWS (Step 14, signed in as wei): outbound token `client_id={2lo-client-id}`, scope `rsidc-reports/read`, rows returned as `svc_reporting`."]}, "auth": [["AgentCore Runtime `rsidc_oauth_agent`", "**Cognito JWT**: the user's ID token (discovery = Cognito pool, audience = OBO client)", "**AgentCore Identity**: 2LO `rsidc-2lo-cognito` (M2M) / 3LO `rsidc-3lo-cognito` (Token Vault)"], ["AgentCore Identity", "The runtime's workload access token + IAM role; for 3LO, the app's `CompleteResourceTokenAuth`", "Cognito token endpoint (client_credentials / authorization code)"], ["AgentCore Gateway (2LO)", "**Cognito JWT**: the M2M token from the same pool (JWKS), allowedClients = 2LO client. **Not** AgentCore Identity.", "Gateway IAM role (`GATEWAY_IAM_ROLE`) → Lambda"], ["Cognito `userInfo` (3LO)", "The user's access token, validated by Cognito itself", "-"]], "hops": [{"t": "Browser → Web GUI", "who": "oauth_app.py", "op": "POST /api/2lo  →  call_agent(s, {\"mode\": \"2lo\"})", "checks": [["Web GUI", "the user signed in earlier (login 1); the GUI holds the user's Cognito ID token server-side"]], "code": ["gui_call_agent"]}, {"t": "Web GUI → Runtime rsidc_oauth_agent", "who": "Runtime customJWTAuthorizer", "op": "InvokeAgentRuntime(agentRuntimeArn=<rsidc_oauth_agent>, payload={\"mode\": \"2lo\"})\nAuthorization: Bearer <user's Cognito ID token>", "checks": [["Runtime customJWTAuthorizer", "signature and expiry, against the Cognito discovery URL (JWKS)", "PASS"], ["Runtime customJWTAuthorizer", "aud must be in allowedAudience = [{obo-client-id}] (the web GUI's app client)", "PASS"], ["Runtime", "requestHeaderAllowlist = [Authorization]: the JWT is forwarded to the agent code"]], "code": ["oauth_runtime_auth"]}, {"t": "Runtime → AgentCore Identity", "who": "AgentCore Identity", "op": "GetWorkloadAccessTokenForJWT(workloadName=<rsidc_oauth_agent workload identity>, userToken=<inbound JWT>)", "checks": [["AgentCore Identity", "the user is taken from the already-validated inbound JWT; the agent never sees a client secret"]], "note": "The Runtime does this for every invocation with an inbound JWT; the agent reads the result with BedrockAgentCoreContext.get_workload_access_token(). The runtime role allows bedrock-agentcore:GetWorkloadAccessTokenForJWT (infra/cognito-idc/policies/oauth-runtime-permissions.json)."}, {"t": "Agent → AgentCore Identity → Cognito", "who": "AgentCore Identity + Cognito", "op": "GetResourceOauth2Token(workloadIdentityToken=<WAT>,\n  resourceCredentialProviderName=\"rsidc-2lo-cognito\",\n  scopes=[\"rsidc-reports/read\"], oauth2Flow=\"M2M\")\n→ Cognito /oauth2/token grant_type=client_credentials", "checks": [["AgentCore Identity", "the 2LO client secret lives in the provider's Secrets Manager secret; the agent never sees it"], ["Cognito", "client_credentials for the 2LO client, scope rsidc-reports/read (resource server); needs the Cognito domain (/oauth2/token)"]], "claims": true, "code": ["two_lo", "cp_provider"]}, {"t": "Agent → Gateway rsidc-2lo-gateway", "who": "Gateway CUSTOM_JWT", "op": "POST <2LO gateway>/mcp  Authorization: Bearer <M2M token>\n{\"method\": \"tools/call\", \"params\": {\"name\": \"reporting___get_sales_report\", \"arguments\": {}}}", "checks": [["Gateway CUSTOM_JWT", "allowedClients = [{2lo-client-id}]: only the 2LO client's tokens", "PASS"], ["Gateway CUSTOM_JWT", "no token → 401; wei's USER ID token → 403 (recorded, Replay section)"]], "code": ["gw2lo_auth"]}, {"t": "Gateway → Lambda → Redshift", "who": "Redshift grants to svc_reporting", "op": "redshift-data ExecuteStatement(DbUser=\"svc_reporting\", Sql=\"SELECT TRIM(current_user) AS redshift_user, order_id, region, customer_email, amount FROM sales.orders …\")\n(Gateway uses GATEWAY_IAM_ROLE to invoke Lambda rsidc-reporting)", "checks": [["Redshift", "svc_reporting: SELECT on sales.orders, rls_all_rows → all rows, all columns (PII)", "ALLOW"], ["(nobody)", "the caller's identity is NOT propagated: Redshift can't tell wei from ds1"]], "code": ["reporting_lambda", "sql_svc"], "final": true}], "negs": [["2LO Gateway called directly with no token", "401/403", "401", "Gateway inbound JWT authorizer (allowedClients = 2LO client only)"], ["2LO Gateway called directly with wei's USER id token (not the 2LO client)", "401/403", "403", "Gateway inbound JWT authorizer (allowedClients = 2LO client only)"]], "compare": [["**OBO** ([Part 4](part4-obo.html))", "the end user (`AWSIDC:zhang@…`)", "2 APAC rows, PII column denied", "denied (42501)"], ["**2LO**", "the agent / service (`svc_reporting`)", "all 5 rows **with PII**", "all 5 rows **with PII**"]], "findings": ["**2LO bypasses per-user data controls by design.** Use it only for data every caller may see, and authorize at the agent/tool level (Gateway allowedClients and scopes).", "**The Data API is an IAM path, not a network path.** The 2LO Lambda's Data API calls are not governed by the Redshift security group. Scope `GetClusterCredentials` to one DB user, as done here, and consider `aws:SourceVpce` or IP conditions."], "teardown": "`infra/common/run.sh ./infra/cognito-idc/99-teardown.sh` also removes the OAuth runtime, Gateway and target, Lambda, credential providers, the three new IAM roles and the Cognito domain.", "client": "{2lo-client-id}", "users": ["wei", "zhang", "ds1"], "summary": "Plain-language: the agent signs in as itself (client credentials), so every user sees the same data."}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+// tiny markdown: `code`, **bold**, *italic*, [text](url)
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/\*([^*]+)\*/g, "<i>$1</i>")
+  .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+const foot = t => `<div class="foot">${esc(t)}</div>`;
+const table = (head, rows) => `<table><tr>${head.map(h => `<th>${esc(h)}</th>`).join("")}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${md(c)}</td>`).join("")}</tr>`).join("")}</table>`;
+
+function codeBlock(key) {
+  const c = D.code[key];
+  const body = c.text.split("\n").map((t, k) => `<div class="row"><span class="ln">${c.start + k}</span>${esc(t)}</div>`).join("");
+  return `<div class="ref"><b>${esc(c.path)}:${c.start}-${c.end}</b> · ${esc(c.title)}</div><pre>${body}</pre>`;
+}
+function screenCard(x) {
+  return `<details class="sc"><summary>Screenshot: ${esc(x.caption)}</summary><div class="b">
+    <a href="${esc(x.file)}" target="_blank" rel="noopener"><img src="${esc(x.file)}" alt="${esc(x.caption)}" loading="lazy"></a>
+    <div class="ref"><a href="${esc(x.file)}" target="_blank" rel="noopener">Open full size</a> · Console: <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.where)}</a></div>
+    <div class="ref"><b>What to look for:</b> ${esc(x.look)}</div></div></details>`;
+}
+
+/* nav */
+function go(sec) {
+  document.querySelectorAll("nav a[data-s]").forEach(x => x.classList.toggle("on", x.dataset.s === sec));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === sec));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav a[data-s]").forEach(a => a.onclick = () => go(a.dataset.s));
+safeRender($("#navmeta"), `Page built ${esc(D.built)}<br>Recorded 2LO run: 3 users, identical result`);
+safeRender($("#authtbl"), table(["Component", "Inbound auth (who may call it, validated how)", "Outbound auth (what it uses downstream)"], D.auth));
+
+/* 1 · Replay */
+const R = {user: "zhang", ran: false};
+function renderReplay() {
+  const el = $("#replay"), u = R.user;
+  safeRender(el, `<h2>Replay: the 2LO panel of the web GUI</h2>
+  <p class="lead">Pick a signed-in user and click <i>Run sales report via Gateway</i>. The result is the real outcome recorded for wei, zhang and ds1: the same 5 rows as
+  <code>svc_reporting</code> for everyone, because the outbound token is the agent's, not the user's. The Gateway checks below were recorded on the same run.
+  The step-by-step call chain is in <a href="#" id="tohood">Under the hood</a>.</p>
+  <div class="card"><b>2LO / 3LO GUI · signed in as</b> <span class="row-btns" style="display:inline-flex;margin-left:8px">${D.users.map(x => `<button class="btn ${x === u ? "on" : ""}" data-u="${x}">${x}</button>`).join("")}</span>
+    <div style="margin:12px 0"><button class="btn pri" id="run">Run sales report via Gateway</button></div>
+    <div id="o2">${R.ran ? result(u) : '<div class="ref">Nothing run yet.</div>'}</div></div>
+  <div class="card"><b>Gateway inbound checks (recorded)</b>${table(["case", "expect", "got", "detail"], D.negs)}
+    <div class="ref">These two calls bypass the agent and hit the Gateway directly.</div></div>
+  <div class="card"><b>Recorded screen</b><pre class="out">┌ 2LO / 3LO GUI · signed in as zhang ─────────────────────────────────────────────┐
+│ [Run sales report via Gateway]                                                  │
+│  outbound token: sub = client_id = &lt;2LO client&gt;, scope = rsidc-reports/read, NO user │
+│  Redshift user: svc_reporting      rows: 5 (customer_email visible)             │
+│ wei, zhang, ds1 → identical result (the user's identity never reaches Redshift) │
+│ Gateway with no token → 401 · with wei's user token → 403 (not the 2LO client)  │
+└─────────────────────────────────────────────────────────────────────────────────┘</pre></div>
+  ${foot("Recorded test results (2026-10-21); GUI run 2026-10-05")}`);
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { R.user = b.dataset.u; R.ran = false; renderReplay(); });
+  $("#run", el).onclick = () => { R.ran = true; renderReplay(); };
+  $("#tohood", el).onclick = e => { e.preventDefault(); go("hood"); };
+}
+function result(u) {
+  const s = D.sales;
+  return `<div class="ev"><b>Same result for every user.</b> Redshift session user = <code>svc_reporting</code>, not you (${esc(u)}). 5 rows, PII visible = True.</div>
+    <div class="ref"><b>Outbound token the agent used</b> (decoded claims recorded by the test; no user claims)</div>
+    ${table(["claim", "value"], [["sub", "client_id = " + D.client + " (the 2LO client)"], ["scope", "rsidc-reports/read"], ["username / email", "none (M2M token)"]])}
+    <div class="ref" style="margin-top:10px"><b>Rows returned</b> (<code>sales.orders</code>, all columns, recorded the same day; the reporting Lambda selects <code>current_user, order_id, region, customer_email, amount</code>)</div>
+    ${table(s.columns, s.rows)}`;
+}
+
+/* 2 · Under the hood */
+const H = {i: 0};
+function renderHood() {
+  const el = $("#hood"), hops = D.hops, h = hops[H.i];
+  safeRender(el, `<h2>Under the hood: agent → GetResourceOauth2Token (M2M) → Cognito → Gateway → Lambda → Redshift</h2>
+  <p class="lead">Six hops for one click on <i>Run sales report via Gateway</i>. Use 2LO only for data that every caller may see; authorize at the agent / tool level.</p>
+  <div class="flow">${hops.map((x, i) => `${i ? '<div class="arrow">→</div>' : ""}<div class="node ${i === H.i ? "on" : ""} ${i === hops.length - 1 ? "good" : ""}" data-i="${i}"><div class="n">hop ${i + 1}</div><div class="t">${esc(x.t)}</div><div class="s">${esc(x.who)}</div></div>`).join("")}</div>
+  <div class="card"><div class="hop-hd"><h3 style="margin:0">Hop ${H.i + 1} · ${esc(h.t)}</h3><span class="pill mut who-chk">checked by: ${esc(h.who)}</span>
+   <span style="flex:1"></span><button class="btn" id="hp" ${H.i ? "" : "disabled"}>← Prev</button><button class="btn pri" id="hn" ${H.i < hops.length - 1 ? "" : "disabled"}>Next →</button></div>
+   <pre class="out">${esc(h.op)}</pre>
+   ${h.claims ? `<div class="ref"><b>Token returned</b> (decoded claims, recorded)</div>${table(["claim", "value", "provenance"], [["sub", D.client + " (client_id)", "recorded"], ["scope", "rsidc-reports/read", "recorded"], ["username / email", "absent: the token is the AGENT", "recorded"]])}` : ""}
+   <h3>What is checked, and by whom</h3>
+   <ul class="checks">${h.checks.map(c => `<li><b>${esc(c[0])}</b>: ${esc(c[1])} ${c[2] ? `<span class="pill ${c[2] === "PASS" || c[2] === "ALLOW" ? "ok" : "no"}">${c[2]}</span>` : ""}</li>`).join("")}</ul>
+   ${h.note ? `<p class="ref">${esc(h.note)}</p>` : ""}
+   ${h.final ? `<div class="ev">Result: 5 rows, <code>svc_reporting</code>; token sub = 2LO client, scope rsidc-reports/read; PII visible = True. Nobody downstream can tell wei from ds1.</div>` : ""}
+   ${(h.code || []).map(codeBlock).join("")}</div>
+  ${foot("Code excerpts from the published repository; results recorded 2026-10-21")}`);
+  el.querySelectorAll(".node").forEach(n => n.onclick = () => { H.i = +n.dataset.i; renderHood(); });
+  $("#hp", el).onclick = () => { H.i--; renderHood(); };
+  $("#hn", el).onclick = () => { H.i++; renderHood(); };
+}
+
+/* 3 · Setup */
+function renderSetup() {
+  const el = $("#setup");
+  const stepHtml = s => `<details class="faq"><summary>${esc(s.n)} <span class="pill ok" style="margin-left:auto">${esc(s.res)}</span></summary><div class="bd">
+    <p class="ref" style="margin-top:0">${esc(s.purpose)}</p>
+    ${s.intro ? `<p>${md(s.intro)}</p>` : ""}
+    ${s.cmd ? `<pre class="out">${esc(s.cmd)}</pre>` : ""}
+    <ul class="checks">${s.creates.map(c => `<li>${md(c)}</li>`).join("")}</ul>
+    ${s.id === "s12" ? `<h3>Who authenticates what (2LO / 3LO)</h3>${table(["Component", "Inbound auth", "Outbound auth"], D.auth)}` : ""}
+    <div class="ref"><b>Result (recorded)</b></div><pre class="out">${esc(s.result)}</pre>
+    ${s.verify ? `<div class="ref"><b>Verify yourself</b></div><pre class="out">${esc(s.verify)}</pre><div class="ref"><b>Expect:</b> ${md(s.expect)}</div>` : ""}
+    ${D.screens.filter(x => x.step === s.id.slice(1)).map(screenCard).join("")}</div></details>`;
+  safeRender(el, `<h2>Setup</h2>
+  <p class="lead">Steps 9 to 13 of the runbook. Each step lists the command, what it creates, the recorded result, and how to check it with the AWS CLI. Click a step to expand it.
+  Prerequisites: the Foundation and OBO steps (Cognito pool, Redshift cluster, network) are already in place; see <a href="foundation.html">Foundation</a>.</p>
+  <div class="row-btns" style="margin-bottom:12px"><button class="btn" id="sopen">Expand all</button><button class="btn" id="sclose">Collapse all</button></div>
+  ${D.steps.map(stepHtml).join("")}
+  <details class="faq"><summary>Web GUI · 2LO panel <span class="pill ok" style="margin-left:auto">token sub = 2LO client, rows as svc_reporting</span></summary><div class="bd">
+    <p class="ref" style="margin-top:0">Click through 2LO as an end user (port 8081).</p>
+    <ol class="checks">${D.gui.setup.map(c => `<li>${md(c)}</li>`).join("")}</ol>
+    <div class="ref"><b>Result (recorded)</b></div><ul class="checks">${D.gui.result.map(c => `<li>${md(c)}</li>`).join("")}</ul>
+    <div class="ref">Try the simulated version in <a href="#" data-go="replay">Replay</a>.</div></div></details>
+  <details class="faq"><summary>2LO teardown <span class="pill ok" style="margin-left:auto">via 99-teardown.sh</span></summary><div class="bd">
+    <pre class="out">infra/common/run.sh ./infra/cognito-idc/99-teardown.sh</pre>
+    <p>${md(D.teardown)}</p></div></details>
+  ${foot("Recorded 2026-10-05 (console captures, Steps 9 to 12, GUI) and 2026-10-21 (test run)")}`);
+  $("#sopen", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = true);
+  $("#sclose", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = false);
+  el.querySelectorAll("[data-go]").forEach(a => a.onclick = e => { e.preventDefault(); go(a.dataset.go); });
+}
+
+/* 4 · FAQ · Findings */
+function renderFaq() {
+  const el = $("#faq");
+  safeRender(el, `<h2>FAQ · Findings</h2>
+  <h3>Comparison with OBO on the same Redshift data</h3>
+  <div class="card">${table(["Pattern", "Whose identity reaches the resource", "zhang (marketing) sees", "ds1 (no grants) sees"], D.compare)}</div>
+  <h3>2LO findings</h3>
+  ${D.findings.map((f, i) => `<details class="faq" open><summary>${i + 1}. ${md(f.split(".")[0] + ".")}</summary><div class="bd"><p>${md(f.slice(f.indexOf(".") + 1).trim())}</p></div></details>`).join("")}
+  <h3>When to use 2LO</h3>
+  <div class="card">Use 2LO only for data that every caller may see, and authorize at the agent / tool level. Per-user data controls need OBO ([Part 4](part4-obo.html)).</div>`.replace(/\[Part 4\]\(part4-obo.html\)/, '<a href="part4-obo.html">Part 4</a>'));
+}
+
+renderReplay(); renderHood(); renderSetup(); renderFaq();
+</script>
+<style>
+details.codefold{margin:6px 0}
+details.codefold>summary{cursor:pointer;display:inline-block;padding:3px 10px;border:1px solid #8884;border-radius:6px;
+  font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:inherit;opacity:.85;user-select:none}
+details.codefold>summary:hover{opacity:1}
+details.codefold[open]>summary{margin-bottom:6px}
+</style>
+<script>
+(function () {
+  var CODE_FILE = /[\w./-]+\.(py|sh|js|mjs|ts|tsx|json|sql|html|md|txt|yaml|yml)(:\d+(-\d+)?)?/;
+  function label(el) {
+    var p = el.previousElementSibling, t = p && p.textContent.trim();
+    return t && t.length < 140 && CODE_FILE.test(t) ? t : '';
+  }
+  function wrap(el) {
+    if (el.dataset.codefold || el.closest('details.codefold')) return;
+    if (el.tagName === 'PRE' && el.parentElement && el.parentElement.closest('.code')) return;  // the outer .code is wrapped
+    el.dataset.codefold = '1';
+    var lines = (el.textContent.replace(/\n+$/, '').match(/\n/g) || []).length + 1;
+    var kind = el.classList.contains('out') ? 'Show output' : 'Show code';
+    var lb = label(el);
+    var d = document.createElement('details'), s = document.createElement('summary');
+    d.className = 'codefold';
+    s.textContent = '▸ ' + kind + (lb ? ' · ' + lb : '') + ' (' + lines + (lines === 1 ? ' line)' : ' lines)');
+    el.parentNode.insertBefore(d, el);
+    d.appendChild(s); d.appendChild(el);
+  }
+  function scan(root) {
+    if (root.nodeType !== 1) return;
+    if (root.matches('pre, .code')) wrap(root);
+    root.querySelectorAll('pre, .code').forEach(wrap);
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) { m.addedNodes.forEach(scan); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+</body></html>

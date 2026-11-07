@@ -1,0 +1,12 @@
+{
+ "name": "rsidc-oauth-agent",
+ "displayName": "2LO / 3LO agent (AgentCore Identity)",
+ "recordType": "CUSTOM",
+ "recordVersion": "1.0.0",
+ "description": "Agent on AgentCore Runtime that demonstrates AgentCore Identity outbound auth: 2LO (M2M token \u2192 AgentCore Gateway \u2192 Redshift as svc_reporting) and 3LO (user consent \u2192 Token Vault \u2192 Cognito userInfo).\nInvoke: POST https://bedrock-agentcore.ap-southeast-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aap-southeast-1%3A123456789012%3Aruntime%2F<oauth-runtime-id>/invocations?qualifier=DEFAULT\nAuth: Bearer Cognito ID token; Cognito user pool <user-pool-id> (ap-southeast-1); audience = OBO client\nOwner: Jacky Wu (rsidc PoC)",
+ "descriptors": {
+  "custom": {
+   "data": "{\"kind\": \"agentcore-runtime\", \"name\": \"rsidc-oauth-agent\", \"description\": \"Agent on AgentCore Runtime that demonstrates AgentCore Identity outbound auth: 2LO (M2M token \\u2192 AgentCore Gateway \\u2192 Redshift as svc_reporting) and 3LO (user consent \\u2192 Token Vault \\u2192 Cognito userInfo).\", \"runtimeArn\": \"arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:runtime/<oauth-runtime-id>\", \"invocationUrl\": \"https://bedrock-agentcore.ap-southeast-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aap-southeast-1%3A123456789012%3Aruntime%2F<oauth-runtime-id>/invocations?qualifier=DEFAULT\", \"protocol\": \"HTTP (AgentCore Runtime invocations)\", \"inboundAuth\": \"Bearer Cognito ID token; Cognito user pool <user-pool-id> (ap-southeast-1); audience = OBO client\", \"owner\": \"Jacky Wu (rsidc PoC)\", \"version\": \"1.0.0\"}"
+  }
+ }
+}

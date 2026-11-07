@@ -1,0 +1,2 @@
+# infra/entra-id/policies/
+IAM permission documents for the Entra track: `entra-runtime-permissions.json` (runtime role, `04-entra-agentcore.sh`), `entra-gateway-permissions.json` (extra inline policy on the shared gateway role, `02-entra-gateway.sh`), `webchat-entra-permissions.json` (web GUI Lambda role, deployed by `../../cognito-idc/14-deploy-webchat.sh`). Placeholders such as `__ACCOUNT__` are filled in with `sed` by the scripts.

@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1 部分 · Amazon Quick → rsidc-mall-entra-gateway（Entra ID）</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+</style></head>
+<body>
+<div class="banner"><b>静态演示</b> — 界面为模拟，数据为真实记录。本页不会调用 AWS 或 Entra。<a href="part1-quick.html" hreflang="en" lang="en" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">English</a></div>
+<div class="wrap">
+<nav>
+  <h1>第 1 部分 · Quick → Entra Gateway</h1>
+  <div class="sub">Amazon Quick → Microsoft Entra ID → AgentCore Gateway，按用户进行工具级授权，并在 Gateway 前使用已验证的自定义域名。</div>
+  <a data-s="arch" class="on">0 · 架构</a>
+  <a data-s="replay">1 · 回放（模拟登录）</a>
+  <a data-s="hood">2 · 原理剖析</a>
+  <a data-s="setup">3 · 配置</a>
+  <a data-s="faq">4 · FAQ · 技术难点</a>
+  <div class="meta" id="navmeta"></div>
+</nav>
+<main>
+<section id="arch" class="on">
+  <h2>架构：Quick → Entra ID → CloudFront → AgentCore Gateway → Lambda</h2>
+  <p class="lead">Amazon Quick 让用户登录 Microsoft Entra ID，并通过自定义域名 <code>mcp.agentzone.click</code> 上的 CloudFront 调用 Gateway。
+  CloudFront 只负责响应 OAuth discovery（<code>mcp-prm</code>）；Gateway 校验 Entra token（CUSTOM_JWT），
+  Policy in AgentCore（Cedar）根据 <code>roles</code> claim 逐个工具做出授权决策。编号与图中的 Flow 图例一致。
+  实线 = 请求，虚线 = 仅做验证（JWKS）。</p>
+  <div class="card arch"><a href="img/architecture-quick-entra-gateway.svg" target="_blank" rel="noopener">
+    <img src="img/architecture-quick-entra-gateway.svg" alt="Amazon Quick → Microsoft Entra ID → Amazon CloudFront（自定义域名）→ Amazon Bedrock AgentCore Gateway → Lambda target"></a>
+    <div class="ref"><a href="img/architecture-quick-entra-gateway.svg" target="_blank" rel="noopener">查看原图</a> · 实线 = 请求；虚线 = 依据 Entra JWKS 校验 token 签名（不做 token 交换）。CloudFront 只改写 OAuth discovery（mcp-prm + response headers policy）；授权在 Gateway 完成（CUSTOM_JWT + 基于 roles claim 的 Cedar）。</div>
+    <div class="ref">点击架构图可查看原图。</div></div>
+</section>
+<section id="replay"></section>
+<section id="hood"></section>
+<section id="setup"></section>
+<section id="faq"></section>
+</main></div>
+<script id="data" type="application/json">{"built": "2026-10-31 08:05", "ids": {"tenant": "{entra-tenant-id}", "apiApp": "{mall-api-app-id}", "testClient": "{test-client-app-id}", "domain": "techfinance.onmicrosoft.com", "account": "123456789012", "gwId": "{entra-gateway-id}", "peId": "{entra-policy-engine-id}"}, "tools": ["mall___get_mall_list", "mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_zone_comparison"], "questions": [["列出所有商场", "mall___get_mall_list"], ["HK01 在 2026-10-01 的客流量", "mall___get_footfall_summary"], ["HK01 在 2026-10-01 的每小时客流", "mall___get_hourly_traffic"], ["对比 HK01 在 2026-10-01 各区域的客流", "mall___get_zone_comparison"]], "assigned": {"wei": ["Tools.Mall.List", "Tools.Mall.Footfall", "Tools.Mall.Hourly", "Tools.Mall.Zone"], "ds1": ["Tools.Mall.List", "Tools.Mall.Footfall"], "chen": []}, "enforce": {"wei": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "ver": "2.0", "roles": ["Tools.Mall.List", "Tools.Mall.Zone", "Tools.Mall.Hourly", "Tools.Mall.Footfall"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "ds1": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_mall_list"], "http": 200, "ver": "2.0", "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_zone_comparison": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}}}, "chen": {"list": {"tools": [], "http": 200, "ver": "2.0", "roles": null, "pass": true}, "calls": {"mall___get_mall_list": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_footfall_summary": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_hourly_traffic": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}, "mall___get_zone_comparison": {"ok": false, "expect": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (deni", "pass": true}}}}, "log_only": {"wei": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "ver": "2.0", "roles": ["Tools.Mall.List", "Tools.Mall.Zone", "Tools.Mall.Hourly", "Tools.Mall.Footfall"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "ds1": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "ver": "2.0", "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"], "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}, "chen": {"list": {"tools": ["mall___get_footfall_summary", "mall___get_hourly_traffic", "mall___get_mall_list", "mall___get_zone_comparison"], "http": 200, "ver": "2.0", "roles": null, "pass": true}, "calls": {"mall___get_mall_list": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_mall_list\",\"result\":[{\"mall_id\":\"HK01\",\"name\":\"Harbour Mall\",\"city\":\"Hong Kong\"},{\"mall_id\":\"HK02", "pass": true}, "mall___get_footfall_summary": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_footfall_summary\",\"result\":{\"mall_id\":\"HK01\",\"date\":\"2026-10-01\",\"visitors\":1010}}", "pass": true}, "mall___get_hourly_traffic": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_hourly_traffic\",\"result\":[{\"hour\":\"10:00\",\"visitors\":459},{\"hour\":\"11:00\",\"visitors\":463},{\"hour\"", "pass": true}, "mall___get_zone_comparison": {"ok": true, "expect": true, "http": 200, "text": "{\"tool\":\"get_zone_comparison\",\"result\":[{\"zone\":\"North Atrium\",\"visitors\":2902},{\"zone\":\"Food Court\",\"visitors", "pass": true}}}}, "negatives": [{"case": "篡改过的 ds1 token（roles 伪造为全部 4 个）", "expect": 403, "actual": 403, "pass": true, "evidence": "签名校验"}, {"case": "Cognito access token（其他 issuer）", "expect": 403, "actual": 403, "pass": true, "evidence": "issuer/JWKS"}, {"case": "面向 Microsoft Graph 的 Entra token（audience 错误）", "expect": true, "actual": true, "pass": true, "evidence": "http=403 aud=https://graph.microsoft.com"}, {"case": "无效 bearer（非 JWT）", "expect": 401, "actual": 401, "pass": true, "evidence": ""}], "change": [{"case": "变更前：ds1 调用 hourly", "expect": false, "actual": false, "pass": true, "evidence": "roles=['Tools.Mall.List', 'Tools.Mall.Footfall']"}, {"case": "分配后，新 token：ds1 调用 hourly", "expect": true, "actual": true, "pass": true, "evidence": "分配后 12 秒：roles=['Tools.Mall.List', 'Tools.Mall.Hourly', 'Tools.Mall.Footfall']"}, {"case": "分配后，旧 token：ds1 调用 hourly", "expect": false, "actual": false, "pass": true, "evidence": "旧 token 过期前 claims 保持不变"}, {"case": "恢复：已移除 Hourly 分配", "expect": true, "actual": true, "pass": true, "evidence": "appRoleAssignment 已删除"}], "runs": {"enforce": {"time": "2026-10-20T11:07:40+0800", "date": "2026-10-20", "pass": 19, "total": 19, "source": "已记录的 enforce 运行", "gateway": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp"}, "log_only": {"time": "2026-10-07T11:26:37+0800", "date": "2026-10-07", "pass": 15, "total": 15, "source": "已记录的 log-only 运行", "gateway": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp"}, "change": {"time": "2026-10-07T11:28:29+0800", "date": "2026-10-07", "pass": 4, "total": 4, "source": "已记录的 change 运行", "gateway": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp"}}, "quick": {"clientTable": [["名称", "`rsidc-quick-mcp-entra`"], ["支持的账户类型", "单租户（仅此目录）"], ["平台 / Redirect URI", "**Web**：`https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback`（替换为你的 Quick 区域）"], ["Certificates & secrets（证书和密码）", "新建 client secret；只保存在密钥存储中（切勿写入代码或截图）"], ["API permissions（API 权限）", "`rsidc-mall-api` → 委托权限 `mcp.access`；Microsoft Graph → `openid`、`profile`、`offline_access`"], ["授予管理员同意", "是（用户登录时不会再被要求同意）"]], "connectorTable": [["名称", "`rsidc-mall-entra`"], ["Base URL", "`https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp`"], ["Authorization URL", "`https://login.microsoftonline.com/{entra-tenant-id}/oauth2/v2.0/authorize`"], ["Token URL", "`https://login.microsoftonline.com/{entra-tenant-id}/oauth2/v2.0/token`"], ["Client ID / secret", "来自第 2 步（`rsidc-quick-mcp-entra`）"], ["Scope", "`api://{mall-api-app-id}/mcp.access openid profile offline_access`"], ["Redirect URL", "`https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback`（必须与第 2 步一致）"]], "aadsts": "AADSTS9010010: The resource parameter provided in the request doesn't match with the requested scopes.", "correlation": "{entra-correlation-id}", "invalidTarget": "Error: invalid_target", "desktopCheck": "2026-10-26 检查：ds1 的 token 中 `roles = [Tools.Mall.List, Tools.Mall.Footfall]`，该 Gateway 的 `tools/list` 只返回 `get_footfall_summary` 和 `get_mall_list`。", "mcpUrl": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp", "discovery": "https://login.microsoftonline.com/{entra-tenant-id}/v2.0/.well-known/openid-configuration", "classification": ["**3LO：** Quick 对 Entra ID 执行 OAuth 授权码流程，并保存**每个用户自己的** token（连接器页面显示 “Signed in as …”）。", "**不是 OBO：** 不发生 token 交换。Quick 发送的就是用户自己的 Entra token，由 Gateway 直接授权。", "**不是 AgentCore Identity 3LO：** 不涉及 credential provider 或 Token Vault。Gateway 的 target 是 Lambda（outbound = Gateway IAM 角色）。"], "why": "Entra v2 根据 `scope`（`api://<rsidc-mall-api>/mcp.access`）确定 token 面向哪个 API。如果同时发送了 `resource`，它必须指向同一个 API。Gateway URL 不能作为该 API 的 Application ID URI，因为 `https://` 形式的 ID URI 必须位于租户中已验证的域名上，而 `amazonaws.com` 无法验证。", "noGatewayChange": "Gateway 无需改动：Gateway 校验的是 `allowedAudience = rsidc-mall-api`，而不是 client ID，因此租户内任何拿到 `api://<rsidc-mall-api>/mcp.access` token 的客户端都会被接受。用户的 App Role 分配（`roles` claim）决定可用的工具。"}, "excerpts": {"roles": {"file": "infra/entra-id/01-entra-setup.py", "ref": "infra/entra-id/01-entra-setup.py:16-17", "parts": [[[16, "ROLES = {\"Tools.Mall.List\": \"Mall List\", \"Tools.Mall.Footfall\": \"Mall Footfall\", \"Tools.Mall.Hourly\": \"Mall Hourly\", \"Tools.Mall.Zone\": \"Mall Zone\"}"], [17, "USERS = {\"wei\": list(ROLES), \"ds1\": [\"Tools.Mall.List\", \"Tools.Mall.Footfall\"], \"chen\": []}"]]], "redacted": false}, "apiApp": {"file": "infra/entra-id/01-entra-setup.py", "ref": "infra/entra-id/01-entra-setup.py:46-63", "parts": [[[46, "# --- API app (resource the gateway trusts) ---"], [47, "api = one(\"/applications\", \"displayName eq 'rsidc-mall-api'\")"], [48, "if not api:"], [49, "    api = g(\"POST\", \"/applications\", {"], [50, "        \"displayName\": \"rsidc-mall-api\", \"signInAudience\": \"AzureADMyOrg\","], [51, "        \"api\": {\"requestedAccessTokenVersion\": 2, \"oauth2PermissionScopes\": [{"], [52, "            \"id\": str(uuid.uuid4()), \"value\": \"mcp.access\", \"type\": \"User\", \"isEnabled\": True,"], [53, "            \"adminConsentDisplayName\": \"Call the mall MCP tools\", \"adminConsentDescription\": \"Call the mall MCP tools through AgentCore Gateway\","], [54, "            \"userConsentDisplayName\": \"Call the mall MCP tools\", \"userConsentDescription\": \"Call the mall MCP tools through AgentCore Gateway\"}]},"], [55, "        \"appRoles\": [{\"id\": str(uuid.uuid4()), \"allowedMemberTypes\": [\"User\"], \"value\": v, \"displayName\": d,"], [56, "                      \"description\": f\"May call the {d} tool\", \"isEnabled\": True} for v, d in ROLES.items()]})"], [57, "    print(\"created app rsidc-mall-api\")"], [58, "if api.get(\"identifierUris\") != [f\"api://{api['appId']}\"]:"], [59, "    g(\"PATCH\", f\"/applications/{api['id']}\", {\"identifierUris\": [f\"api://{api['appId']}\"]})"], [60, "api = g(\"GET\", f\"/applications/{api['id']}\")"], [61, "assert api[\"api\"][\"requestedAccessTokenVersion\"] == 2, \"access tokens must be v2\""], [62, "scope_id = api[\"api\"][\"oauth2PermissionScopes\"][0][\"id\"]"], [63, "role_ids = {r[\"value\"]: r[\"id\"] for r in api[\"appRoles\"]}"]]], "redacted": false}, "testClient": {"file": "infra/entra-id/01-entra-setup.py", "ref": "infra/entra-id/01-entra-setup.py:66-83", "parts": [[[66, "# --- test client (public client: auth code + PKCE) ---"], [67, "graph_sp = sp_for(GRAPH_APP)"], [68, "graph_scopes = {s[\"value\"]: s[\"id\"] for s in graph_sp[\"oauth2PermissionScopes\"] if s[\"value\"] in (\"openid\", \"profile\", \"email\", \"offline_access\")}"], [69, "cli = one(\"/applications\", \"displayName eq 'rsidc-mall-test-client'\")"], [70, "body = {\"publicClient\": {\"redirectUris\": REDIRECTS}, \"isFallbackPublicClient\": True,"], [71, "        \"optionalClaims\": {\"idToken\": [{\"name\": \"login_hint\", \"essential\": False}]},   # -> logout_hint: sign-out without the account picker"], [72, "        \"requiredResourceAccess\": [{\"resourceAppId\": api[\"appId\"], \"resourceAccess\": [{\"id\": scope_id, \"type\": \"Scope\"}]},"], [73, "                                   {\"resourceAppId\": GRAPH_APP, \"resourceAccess\": [{\"id\": i, \"type\": \"Scope\"} for i in graph_scopes.values()]}]}"], [74, "if not cli:"], [75, "    cli = g(\"POST\", \"/applications\", {\"displayName\": \"rsidc-mall-test-client\", \"signInAudience\": \"AzureADMyOrg\", **body}); print(\"created app rsidc-mall-test-client\")"], [76, "else:  # keep permissions added by later parts (e.g. 19: access_as_user on the agent API)"], [77, "    mine = {r[\"resourceAppId\"] for r in body[\"requiredResourceAccess\"]}"], [78, "    body[\"requiredResourceAccess\"] += [r for r in cli.get(\"requiredResourceAccess\", []) if r[\"resourceAppId\"] not in mine]"], [79, "    g(\"PATCH\", f\"/applications/{cli['id']}\", body)"], [80, "cli_sp = sp_for(cli[\"appId\"])"], [81, "for res_sp, scopes in ((api_sp, \"mcp.access\"), (graph_sp, \" \".join(graph_scopes))):   # admin consent for all users"], [82, "    if not one(\"/oauth2PermissionGrants\", f\"clientId eq '{cli_sp['id']}' and resourceId eq '{res_sp['id']}'\"):"], [83, "        g(\"POST\", \"/oauth2PermissionGrants\", {\"clientId\": cli_sp[\"id\"], \"consentType\": \"AllPrincipals\", \"resourceId\": res_sp[\"id\"], \"scope\": scopes})"]]], "redacted": false}, "assign": {"file": "infra/entra-id/01-entra-setup.py", "ref": "infra/entra-id/01-entra-setup.py:92-96,101-103", "parts": [[[92, "assigned = {(a[\"principalId\"], a[\"appRoleId\"]) for a in g(\"GET\", f\"/servicePrincipals/{api_sp['id']}/appRoleAssignedTo\")[\"value\"]}"], [93, "for name, roles in USERS.items():"], [94, "    upn = f\"{name}@{domain}\""], [95, "    u = one(\"/users\", f\"userPrincipalName eq '{upn}'\")"], [96, "    if not u:"]], [[101, "    for r in roles:"], [102, "        if (u[\"id\"], role_ids[r]) not in assigned:"], [103, "            g(\"POST\", f\"/servicePrincipals/{api_sp['id']}/appRoleAssignedTo\", {\"principalId\": u[\"id\"], \"resourceId\": api_sp[\"id\"], \"appRoleId\": role_ids[r]})"]]], "redacted": false}, "gwHeader": {"file": "infra/entra-id/02-entra-gateway.sh", "ref": "infra/entra-id/02-entra-gateway.sh:2-9", "parts": [[[2, "# Entra ID track, Gateway tool RBAC: a Gateway that trusts Microsoft Entra ID directly (no Cognito, no Pre Token trigger)."], [3, "# PREREQUISITE: the Cognito track through step 16 (cognito-idc/16-mall-gateway.sh) must have run: it creates the mall Lambda"], [4, "#   rsidc-mall-tools and the gateway role rsidc-mall-gateway-role used below. Run after 01-entra-setup.py."], [5, "#   inbound : CUSTOM_JWT, discovery = the tenant's v2 OIDC metadata, allowedAudience = the rsidc-mall-api app ID"], [6, "#             (Entra v2 access tokens carry the client in `azp`, not `client_id`, so audience is the right check)"], [7, "#   target  : the same mall Lambda + gateway role as the Cognito customer version."], [8, "#   policy  : its own engine with the same 4 fixed Cedar rules; Entra's native App Role claim `roles` is matched"], [9, "# Usage: 02-entra-gateway.sh LOG_ONLY|ENFORCE"]]], "redacted": false}, "gwAuth": {"file": "infra/entra-id/02-entra-gateway.sh", "ref": "infra/entra-id/02-entra-gateway.sh:11-17", "parts": [[[11, "DISC=\"https://login.microsoftonline.com/$ENTRA_TENANT_ID/v2.0/.well-known/openid-configuration\""], [12, "GR=${PROJECT}-mall-gateway-role; MALL_FN=arn:aws:lambda:$R:${ACCOUNT_ID}:function:${PROJECT}-mall-tools"], [13, "AUTH=\"{\\\"customJWTAuthorizer\\\":{\\\"discoveryUrl\\\":\\\"$DISC\\\",\\\"allowedAudience\\\":[\\\"$ENTRA_API_APP_ID\\\"]}}\""], [14, "if [ -z \"${ENTRA_GW_ID:-}\" ]; then"], [15, "  save ENTRA_GW_ID $(aws bedrock-agentcore-control create-gateway --region $R --name ${PROJECT}-mall-entra-gateway --role-arn arn:aws:iam::${ACCOUNT_ID}:role/$GR \\"], [16, "    --protocol-type MCP --authorizer-type CUSTOM_JWT --description \"rsidc Part 6: Entra ID version (Entra JWT + App Roles -> Cedar -> mall tools)\" \\"], [17, "    --authorizer-configuration \"$AUTH\" --query gatewayId --output text)"]]], "redacted": false}, "gwTarget": {"file": "infra/entra-id/02-entra-gateway.sh", "ref": "infra/entra-id/02-entra-gateway.sh:23-27", "parts": [[[23, "if ! aws bedrock-agentcore-control list-gateway-targets --region $R --gateway-identifier $ENTRA_GW_ID --query \"items[?name=='mall'].targetId\" --output text | grep -q .; then"], [24, "  CFG=$(python3 -c \"import json,sys;print(json.dumps({'mcp':{'lambda':{'lambdaArn':sys.argv[1],'toolSchema':{'inlinePayload':json.load(open(sys.argv[2]))}}}}))\" $MALL_FN \"$ROOT/infra/common/lambda/mall_tools/tools.json\")"], [25, "  aws bedrock-agentcore-control create-gateway-target --region $R --gateway-identifier $ENTRA_GW_ID --name mall \\"], [26, "    --description \"Customer mall-footfall tools (4)\" --target-configuration \"$CFG\" \\"], [27, "    --credential-provider-configurations '[{\"credentialProviderType\":\"GATEWAY_IAM_ROLE\"}]' >/dev/null"]]], "redacted": false}, "gwPolicy": {"file": "infra/entra-id/02-entra-gateway.sh", "ref": "infra/entra-id/02-entra-gateway.sh:37-46", "parts": [[[37, "policy() {  # identical rule shape to the Cognito customer version; only the gateway ARN differs"], [38, "  aws bedrock-agentcore-control list-policies --region $R --policy-engine-id $ENTRA_PE_ID --query \"policies[?name=='$1'].policyId\" --output text | grep -q . && return"], [39, "  local stmt=\"permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\\\"$2\\\", resource == AgentCore::Gateway::\\\"$ENTRA_GW_ARN\\\") when { principal.hasTag(\\\"roles\\\") && principal.getTag(\\\"roles\\\") like \\\"*\\\\\\\"$3\\\\\\\"*\\\" };\""], [40, "  aws bedrock-agentcore-control create-policy --region $R --policy-engine-id $ENTRA_PE_ID --name $1 \\"], [41, "    --description \"$2 requires Entra App Role $3\" --definition \"$(jq -cn --arg s \"$stmt\" '{cedar:{statement:$s}}')\" >/dev/null"], [42, "}"], [43, "policy entra_mall_list     mall___get_mall_list        Tools.Mall.List"], [44, "policy entra_mall_footfall mall___get_footfall_summary Tools.Mall.Footfall"], [45, "policy entra_mall_hourly   mall___get_hourly_traffic   Tools.Mall.Hourly"], [46, "policy entra_mall_zone     mall___get_zone_comparison  Tools.Mall.Zone"]]], "redacted": false}, "gwAttach": {"file": "infra/entra-id/02-entra-gateway.sh", "ref": "infra/entra-id/02-entra-gateway.sh:48-55", "parts": [[[48, "# The shared gateway role gets a SEPARATE inline policy for this engine (the Cognito customer version's policy is left untouched)."], [49, "sed -e \"s|__ENTRA_PE_ARN__|$ENTRA_PE_ARN|\" -e \"s|__ENTRA_GW_ARN__|$ENTRA_GW_ARN|\" \"$ROOT/infra/entra-id/policies/entra-gateway-permissions.json\" > /tmp/$GR-entra.json"], [50, "aws iam put-role-policy --role-name $GR --policy-name entra-gateway --policy-document file:///tmp/$GR-entra.json"], [51, "G=$(aws bedrock-agentcore-control get-gateway --region $R --gateway-identifier $ENTRA_GW_ID --output json)"], [52, "for try in 1 2 3 4 5 6; do aws bedrock-agentcore-control update-gateway --region $R --gateway-identifier $ENTRA_GW_ID \\"], [53, "  --name \"$(jq -r .name <<<\"$G\")\" --role-arn \"$(jq -r .roleArn <<<\"$G\")\" --protocol-type MCP --description \"$(jq -r .description <<<\"$G\")\" \\"], [54, "  --authorizer-type CUSTOM_JWT --authorizer-configuration \"$(jq -c .authorizerConfiguration <<<\"$G\")\" \\"], [55, "  --policy-engine-configuration \"{\\\"arn\\\":\\\"$ENTRA_PE_ARN\\\",\\\"mode\\\":\\\"$MODE\\\"}\" >/dev/null && break; sleep 10; done  # IAM propagation"]]], "redacted": false}, "iamPolicy": {"file": "infra/entra-id/policies/entra-gateway-permissions.json", "ref": "infra/entra-id/policies/entra-gateway-permissions.json:1-5", "parts": [[[1, "{\"Version\":\"2012-10-17\",\"Statement\":["], [2, " {\"Sid\":\"PolicyInAgentCoreEntra\",\"Effect\":\"Allow\","], [3, "  \"Action\":[\"bedrock-agentcore:AuthorizeAction\",\"bedrock-agentcore:PartiallyAuthorizeActions\",\"bedrock-agentcore:GetPolicyEngine\"],"], [4, "  \"Resource\":[\"__ENTRA_PE_ARN__\",\"__ENTRA_GW_ARN__\"]}"], [5, "]}"]]], "redacted": false}, "tokenReq": {"file": "Entra RBAC 测试脚本（节选）", "ref": "Entra RBAC 测试脚本（节选）", "parts": [[[15, "def entra_token(user, scope=None):"], [16, "    r = requests.post(f\"https://login.microsoftonline.com/{T}/oauth2/v2.0/token\", timeout=30, data=dict("], [17, "        grant_type=\"password\", client_id=CLI, username=f\"{user}@{D}\", password=<redacted: read from a secret store>,"], [18, "        scope=scope or f\"api://{API}/mcp.access\")).json()"], [19, "    return r[\"access_token\"]"], [20, ""], [21, ""], [22, "def claims(t):"], [23, "    return json.loads(base64.urlsafe_b64decode(t.split(\".\")[1] + \"==\"))"]]], "redacted": true}, "rpc": {"file": "Entra RBAC 测试脚本（节选）", "ref": "Entra RBAC 测试脚本（节选）", "parts": [[[26, "def rpc(token, method, params=None):"], [27, "    body = {\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": method, **({\"params\": params} if params is not None else {})}"], [28, "    r = requests.post(GW, json=body, timeout=60, headers={\"Authorization\": f\"Bearer {token}\", \"Content-Type\": \"application/json\","], [29, "                                                       \"Accept\": \"application/json, text/event-stream\"})"], [30, "    try:"], [31, "        return r.status_code, r.json()"], [32, "    except ValueError:"], [33, "        return r.status_code, {\"raw\": r.text[:200]}"], [34, ""], [35, ""], [36, "def listed(token):"], [37, "    s, j = rpc(token, \"tools/list\")"], [38, "    return s, sorted(t[\"name\"] for t in j.get(\"result\", {}).get(\"tools\", []))"], [39, ""], [40, ""], [41, "def call(token, name):"], [42, "    s, j = rpc(token, \"tools/call\", {\"name\": name, \"arguments\": {\"mall_id\": \"HK01\", \"date\": \"2026-10-01\"}})"], [43, "    res = j.get(\"result\", {})"], [44, "    ok = s == 200 and \"error\" not in j and not res.get(\"isError\")"], [45, "    txt = (j.get(\"error\") or {}).get(\"message\") or (res.get(\"content\") or [{}])[0].get(\"text\", \"\")"], [46, "    return ok, s, txt[:110].replace(\"\\n\", \" \")"]]], "redacted": false}, "negatives": {"file": "Entra RBAC 测试脚本（节选）", "ref": "Entra RBAC 测试脚本（节选）", "parts": [[[49, "def tamper(token):"], [50, "    h, p, sig = token.split(\".\")"], [51, "    c = json.loads(base64.urlsafe_b64decode(p + \"==\")); c[\"roles\"] = [\"Tools.Mall.List\", \"Tools.Mall.Footfall\", \"Tools.Mall.Hourly\", \"Tools.Mall.Zone\"]"], [52, "    return f\"{h}.{base64.urlsafe_b64encode(json.dumps(c).encode()).decode().rstrip('=')}.{sig}\""]], [[81, "            s, _ = rpc(tamper(entra_token(\"ds1\")), \"tools/list\"); rec(\"tampered ds1 token (roles forged to all 4)\", 403, s, \"signature check\")"], [82, "            s, _ = rpc(cognito_access_token(\"wei\"), \"tools/list\"); rec(\"Cognito access token (other issuer)\", 403, s, \"issuer/JWKS\")"], [83, "            g = entra_token(\"wei\", \"https://graph.microsoft.com/.default\")"], [84, "            s, _ = rpc(g, \"tools/list\"); rec(\"Entra token for Microsoft Graph (wrong audience)\", True, s in (401, 403), f\"http={s} aud={claims(g).get('aud')}\")"], [85, "            s, _ = rpc(\"not-a-jwt\", \"tools/list\"); rec(\"garbage bearer\", 401, s, \"\")"]]], "redacted": false}}, "review": {"API app: 4 App Roles, scope mcp.access, identifierUri api://<appId>, v2 tokens": "{\n  \"roles\": [\n    \"Tools.Mall.Zone\",\n    \"Tools.Mall.Hourly\",\n    \"Tools.Mall.Footfall\",\n    \"Tools.Mall.List\"\n  ],\n  \"scopes\": [\n    \"mcp.access\"\n  ],\n  \"uris\": [\n    \"api://{mall-api-app-id}\"\n  ],\n  \"ver\": 2\n}", "assignments resolve to the expected role values": "ds1 Tools.Mall.Footfall\nds1 Tools.Mall.List\nwei Tools.Mall.Footfall\nwei Tools.Mall.Hourly\nwei Tools.Mall.List\nwei Tools.Mall.Zone", "test client: admin consent (AllPrincipals) for mcp.access": "AllPrincipals\temail offline_access openid profile\nAllPrincipals\tmcp.access", "inbound: Entra v2 discovery + allowedAudience = API appId": "{\n    \"discoveryUrl\": \"https://login.microsoftonline.com/{entra-tenant-id}/v2.0/.well-known/openid-configuration\",\n    \"allowedAudience\": [\n        \"{mall-api-app-id}\"\n    ]\n}", "policy engine attached in ENFORCE": "READY\tENFORCE\tarn:aws:bedrock-agentcore:ap-southeast-1:123456789012:policy-engine/{entra-policy-engine-id}", "target mall READY → Lambda rsidc-mall-tools (gateway IAM role)": "READY\tarn:aws:lambda:ap-southeast-1:123456789012:function:rsidc-mall-tools\tGATEWAY_IAM_ROLE", "4 Cedar policies ACTIVE": "entra_mall_footfall\tACTIVE\nentra_mall_hourly\tACTIVE\nentra_mall_list\tACTIVE\nentra_mall_zone\tACTIVE", "Cedar rule for hourly requires roles ∋ Tools.Mall.Hourly (no group names)": "permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\"mall___get_hourly_traffic\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:gateway/{entra-gateway-id}\") when { principal.hasTag(\"roles\") && principal.getTag(\"roles\") like \"*\\\"Tools.Mall.Hourly\\\"*\" };", "IAM inline policy entra-gateway scoped to this engine + gateway": "{\n    \"Version\": \"2012-10-17\",\n    \"Statement\": [\n        {\n            \"Sid\": \"PolicyInAgentCoreEntra\",\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"bedrock-agentcore:AuthorizeAction\",\n                \"bedrock-agentcore:PartiallyAuthorizeActions\",\n                \"bedrock-agentcore:GetPolicyEngine\"\n            ],\n            \"Resource\": [\n                \"arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:policy-engine/{entra-policy-engine-id}\",\n                \"arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:gateway/{entra-gateway-id}\"\n            ]\n        }\n    ]\n}", "anti-bypass: Lambda has no resource policy and no Function URL": "1\n1"}, "shots": [{"order": "1.1", "name": "e1-api-approles", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/AppRoles/appId/{mall-api-app-id}", "caption": "Entra 应用 rsidc-mall-api：4 个 App Role Tools.Mall.*"}, {"order": "1.2", "name": "e1-api-expose", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/ProtectAnAPI/appId/{mall-api-app-id}", "caption": "Entra 应用 rsidc-mall-api：Expose an API（api://…/mcp.access）"}, {"order": "1.3", "name": "e1-api-manifest", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Manifest/appId/{mall-api-app-id}", "caption": "Entra 应用 rsidc-mall-api：manifest 中 requestedAccessTokenVersion = 2"}, {"order": "1.4", "name": "e1-assignments", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Users/objectId/{entra-sp-object-id}/appId/{mall-api-app-id}", "caption": "企业应用 rsidc-mall-api：Users and groups（角色分配）"}, {"order": "1.5", "name": "e1-client-perms", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/CallAnAPI/appId/{test-client-app-id}", "caption": "Entra 应用 rsidc-mall-test-client：API permissions（已授予管理员同意）"}, {"order": "2.1", "name": "a2-gateway", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/toolsAndGateways?region=ap-southeast-1", "caption": "Gateway rsidc-mall-entra-gateway：Entra discovery URL + audience、target mall、policy engine ENFORCE"}, {"order": "2.2", "name": "a2-gateway-auth", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/toolsAndGateways?region=ap-southeast-1", "caption": "Gateway inbound 认证（Entra v2 discovery、allowed audience）"}, {"order": "2.3", "name": "a2-policies", "url": "https://ap-southeast-1.console.aws.amazon.com/bedrock-agentcore/policy?region=ap-southeast-1", "caption": "Policy engine rsidc_mall_entra_pe：4 条 entra_mall_* 策略均为 ACTIVE"}, {"order": "2.4", "name": "a2-iam-role", "url": "https://us-east-1.console.aws.amazon.com/iam/home#/roles/details/rsidc-mall-gateway-role?section=permissions", "caption": "IAM 角色 rsidc-mall-gateway-role：inline policy entra-gateway"}, {"order": "2.5", "name": "a2-lambda", "url": "https://ap-southeast-1.console.aws.amazon.com/lambda/home?region=ap-southeast-1#/functions/rsidc-mall-tools?tab=configure", "caption": "Lambda rsidc-mall-tools 配置（无 Function URL）"}], "screens": [{"step": "api", "file": "img/entra-02-mall-api-app-roles.png", "caption": "rsidc-mall-api · App roles（定义 Tools.Mall.List / Footfall / Hourly / Zone，允许的成员类型为 Applications + Users/Groups）", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/AppRoles/appId/{mall-api-app-id}", "look": "4 个角色，值为 Tools.Mall.List / Footfall / Hourly / Zone，均已启用；成员类型为 Applications + Users/Groups。"}, {"step": "api", "file": "img/entra-01-wei-app-role-assignments.png", "caption": "用户 wei · Applications（App Role 分配：Mall List、Mall Zone、Mall Hourly、Mall Footfall，均为直接分配）", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/Applications/userId/{entra-user-object-id}", "look": "rsidc-mall-api 下的 4 个 Mall 角色，分配类型为 Direct。App Role 分配并不在用户的 “Assigned roles” 中（那里是目录/管理员角色）：请查看 Enterprise applications → rsidc-mall-api → Users and groups，或该用户的 Applications 页面。"}, {"step": "api", "file": "img/entra-04-mall-api-expose-an-api.png", "caption": "rsidc-mall-api · Expose an API（Application ID URI 为 https://mcp.agentzone.click/mcp；scope 为 https://mcp.agentzone.click/mcp/mcp.access，Admins and users，Enabled）", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/ProtectAnAPI/appId/{mall-api-app-id}", "look": "Application ID URI 位于已验证的自定义域名上；scope 为 mcp.access，Who can consent = Admins and users，State = Enabled。"}, {"step": "api", "file": "img/entra-05-mall-api-manifest-identifieruris.png", "caption": "rsidc-mall-api · Manifest（identifierUris = 自定义域名 URI + api://<appId>；api:// 那一项保留）", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Manifest/appId/{mall-api-app-id}", "look": "identifierUris 同时列出 https://mcp.agentzone.click/mcp 和 api://<appId>。"}, {"step": "quick", "file": "img/entra-03-quick-client-secrets.png", "caption": "rsidc-quick-mcp-entra · Certificates & secrets（Quick 机密客户端的 client secret；值已遮盖）", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Credentials/appId/{quick-entra-app-id}", "look": "Quick 连接器使用的 client secret（描述和到期时间）；值和 ID 已涂黑。"}, {"step": "test", "file": "img/entra-06-test-client-api-permissions.png", "caption": "rsidc-mall-test-client · API permissions（脚本/GUI 使用的公共测试客户端：Graph email/offline_access/openid/profile、rsidc-entra-agent access_as_user、rsidc-mall-api mcp.access，均已为该目录授予同意）", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/CallAnAPI/appId/{test-client-app-id}", "look": "这是测试客户端（脚本、RBAC Web GUI），不是 Quick 的客户端：每项权限都显示已为该目录授予（“Granted for …”）。"}, {"step": "hood", "file": "img/cloudfront-01-mcp-prm-function-code.png", "caption": "CloudFront → Functions → mcp-prm · Build：函数代码（Development 阶段）", "url": "https://us-east-1.console.aws.amazon.com/cloudfront/v4/home#/functions/mcp-prm", "where": "CloudFront 控制台 → Functions → mcp-prm → Build", "look": "对 /.well-known/oauth-protected-resource* 返回 resource = https://mcp.agentzone.click/mcp 和 scopes_supported = [https://mcp.agentzone.click/mcp/mcp.access]；其他请求全部透传。"}, {"step": "hood", "file": "img/cloudfront-02-mcp-prm-publish-association.png", "caption": "CloudFront → Functions → mcp-prm · Publish：以 Viewer request 关联到该 distribution 的 Default (*) 行为", "url": "https://us-east-1.console.aws.amazon.com/cloudfront/v4/home#/functions/mcp-prm", "where": "CloudFront 控制台 → Functions → mcp-prm → Publish", "look": "Event type = Viewer request，Cache behavior = Default (*)；发布会把 Development 复制到 Live。"}, {"step": "hood", "file": "img/entra-12-mall-api-overview-app-id-uri.png", "caption": "rsidc-mall-api · 概览：Application ID URI = https://mcp.agentzone.click/mcp（位于已验证的域名 agentzone.click）", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/{mall-api-app-id}", "look": "Application ID URI（红框）是本租户已验证域名下的 https URI——Quick 发送的 resource= 必须与它一致。"}], "custom": {"source": "测试记录（2026-10-30）", "custom": "https://mcp.agentzone.click", "gwHost": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com", "fnPrm": "function handler(event) {\n  if (event.request.uri.indexOf('/.well-known/oauth-protected-resource') === 0) {\n    return { statusCode: 200, statusDescription: 'OK',\n      headers: { 'content-type': { value: 'application/json' }, 'cache-control': { value: 'no-store' } },\n      body: { encoding: 'text', data: JSON.stringify({\n        resource: 'https://mcp.agentzone.click/mcp',\n        authorization_servers: ['https://login.microsoftonline.com/{entra-tenant-id}/v2.0'],\n        scopes_supported: ['https://mcp.agentzone.click/mcp/mcp.access'],\n        bearer_methods_supported: ['header'] }) } };\n  }\n  return event.request;\n}", "rhpName": "mcp-agentzone-www-authenticate", "rhpValue": "Bearer error=\"invalid_token\", resource_metadata=\"https://mcp.agentzone.click/.well-known/oauth-protected-resource\"", "wwwAfter": "HTTP/1.1 401\nWWW-Authenticate: Bearer error=\"invalid_token\", resource_metadata=\"https://mcp.agentzone.click/.well-known/oauth-protected-resource\"", "wwwAuth": "HTTP/1.1 401\nWWW-Authenticate: Bearer error=\"invalid_token\", resource_metadata=\"https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/.well-known/oauth-protected-resource\"", "prmBefore": "{\n \"authorization_servers\": [\n  \"https://login.microsoftonline.com/{entra-tenant-id}/v2.0\"\n ],\n \"resource\": \"https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp\",\n \"scopes_supported\": []\n}", "prmAfter": "{\n \"resource\": \"https://mcp.agentzone.click/mcp\",\n \"authorization_servers\": [\n  \"https://login.microsoftonline.com/{entra-tenant-id}/v2.0\"\n ],\n \"scopes_supported\": [\n  \"https://mcp.agentzone.click/mcp/mcp.access\"\n ],\n \"bearer_methods_supported\": [\n  \"header\"\n ]\n}", "ev": {"discovery": "GET /.well-known/oauth-protected-resource 和 /.well-known/oauth-protected-resource/mcp → 返回自定义域名的 resource + mcp.access scope；不带 token 的 POST /mcp → 401，resource_metadata 指向自定义域名。", "entra": "以 scope=https://mcp.agentzone.click/mcp/mcp.access + resource=https://mcp.agentzone.click/mcp 请求 token → 成功签发，aud = {mall-api-app-id}（app ID）。对照组：resource = amazonaws Gateway URL → AADSTS9010010。", "cloudfront": "不带 token 的 POST /mcp → 由 Gateway 返回 401（CloudFront 已允许全部 HTTP 方法回源）。", "gateway": "通过自定义域名 scope 获取的 token 被接受（aud = app ID ∈ allowedAudience）：ds1 的 tools/list 返回 2 个工具。", "cedar": "ds1 的 tools/list = get_footfall_summary、get_mall_list；get_mall_list 被允许；get_hourly_traffic → Tool Execution Denied。"}, "ds1Recheck": "已通过自定义域名对 ds1 复核（2026-10-30）：tools/list = get_footfall_summary、get_mall_list；get_mall_list 被允许；get_hourly_traffic 被拒绝。"}, "faq": [{"q": "为什么直接使用 Gateway 原始 URL 时，Quick + Entra 会失败？", "wrong": "Quick 的 OAuth 连接器报错 `invalid_target`；在浏览器中发起同样的 authorize 请求则返回 `AADSTS9010010`。", "extra": "plainUrl", "why": "Microsoft Entra ID 的 AADSTS9010010 错误表示：在 OAuth 2.0 获取 token 的过程中，旧式的 resource 参数与新式的 scope 参数相互冲突。例如，Quick 在发送 `scope=api://<rsidc-mall-api>/mcp.access` 的同时还发送了 `resource=<Gateway MCP URL>`（RFC 8707）；resource 指向的不是 scope 所属的那个 API，因此被 Entra 拒绝。更一般地说：Quick 会把 RFC 8707 的 `resource` 参数设为 MCP Base URL。Entra v2 根据 `scope` 确定 token 的 audience；如果带了 `resource`，它必须指向**同一个 API**（即 scope 的 Application ID URI）。而 amazonaws 的 Gateway URL 不是任何应用的 App ID URI。", "fix": "让 MCP URL 与 App ID URI 使用同一个名称：在 Entra 中验证一个自定义域名（本页采用的方案），或使用 Cognito 作为中转（broker）。", "verified": "记录于 2026-10-27 和 2026-10-30：带 `resource=<Gateway URL>` 的 authorize → AADSTS9010010，去掉 `resource` 的同一请求成功；Quick 连接器 → `invalid_target`。", "docs": [["RFC 8707 · Resource Indicators for OAuth 2.0", "https://datatracker.ietf.org/doc/html/rfc8707"], ["MCP 规范 · Authorization", "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"], ["Amazon Quick · MCP 集成", "https://docs.aws.amazon.com/quick/latest/userguide/mcp-integration.html"], ["Microsoft Entra · 重大变更（AppId URI：已验证域名或 api://{appId}）", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-breaking-changes"], ["Microsoft Entra · AADSTS 错误代码", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes"], ["Microsoft Entra · 授权码流程", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow"]]}, {"q": "Quick 提示 \"One or more parameters are invalid\"：MCP 服务器的 discovery 元数据需要包含什么？", "extra": "discovery", "wrong": "Quick 在 Create and continue 这一步拒绝创建连接器，提示 \"One or more parameters are invalid\"，尽管 Base URL、authorize/token URL、client ID 和 redirect URL 都是正确的。", "why": "Quick 读取 **RFC 9728** protected resource metadata：它沿着 401 响应中的 `WWW-Authenticate … resource_metadata=` 找到 `/.well-known/oauth-protected-resource`，并从中获取 `resource` 和 scope（连接器本身没有 scope 字段）。必须同时满足两点：`resource` 等于 **Base URL**（这里同时也是 Entra 的 App ID URI），且 `scopes_supported` 包含 **Entra scope**。放在代理之后时，Gateway 自己的元数据写的是它的 amazonaws URL，并且 `scopes_supported: []`。", "fix": "在边缘（CloudFront Function `mcp-prm`）为自定义域名提供这份元数据，并让 401 的 `resource_metadata` 指向它（response headers policy）。见「配置」(c)。", "verified": "记录于 2026-10-30：两个 well-known 路径都返回自定义的 `resource` + scope，401 指向自定义域名，Quick 连接器创建成功并能登录 Entra。", "docs": [["RFC 9728 · OAuth 2.0 Protected Resource Metadata", "https://datatracker.ietf.org/doc/html/rfc9728"], ["MCP 规范 · Authorization", "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"], ["Amazon Quick · MCP 集成", "https://docs.aws.amazon.com/quick/latest/userguide/mcp-integration.html"], ["AgentCore Gateway · 自定义域名", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-custom-domains.html"], ["CloudFront Functions", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html"], ["CloudFront · 响应标头策略（response headers policies）", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/modifying-response-headers.html"]]}, {"q": "为什么 AWS 示例（agentcore-samples 04-entra-obo-mcp-runtime）不需要 CloudFront 或自定义域名？", "extra": "awsSample", "why": "**要解决的问题不同。** 该示例的客户端是一个 Python 脚本，通过 MSAL device code flow 在带外获取 token，`scope=<agent-app-GUID>/.default`，**没有 RFC 8707 `resource`**，也**没有 RFC 9728 discovery**，然后用 `Authorization: Bearer` 调用 AgentCore Runtime。Entra 只根据 scope 推导 audience，因此不会出现 AADSTS9010010。原因并不在于用的是 Runtime 还是 Gateway：如果让 Quick 指向一个 Runtime URL，它仍然会发送 `resource=<amazonaws URL>`（推断，未测试）。", "docs": [["AWS 示例 · agentcore-samples 04-entra-obo-mcp-runtime（GitHub，awslabs）", "https://github.com/awslabs/agentcore-samples/tree/main/01-features/05-authenticate-and-authorize/04-entra-obo-mcp-runtime"], ["Amazon Quick · MCP 集成", "https://docs.aws.amazon.com/quick/latest/userguide/mcp-integration.html"], ["AgentCore Gateway · 自定义域名", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-custom-domains.html"], ["AgentCore API · CustomJWTAuthorizerConfiguration", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html"], ["AgentCore Identity · Microsoft Entra ID", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-idp-microsoft.html"], ["Microsoft Entra · On-Behalf-Of 流程", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-on-behalf-of-flow"]]}, {"q": "为什么需要自定义域名？", "why": "`https://` 形式的 App ID URI 必须位于**租户中已验证的域名**上。`amazonaws.com` 无法验证（你无法在其中添加 TXT 记录）。`<tenant>.onmicrosoft.com` 可以用于 App ID URI，但你无法控制它的 DNS，因此它不能作为 Quick 调用的 URL。必须用**同一个名称**同时作为 App ID URI 和 Base URL。", "fix": "准备一个自己的域名（这里是 `agentzone.click`），在 Entra 中完成验证，把 `https://mcp.agentzone.click/mcp` 加入 `identifierUris`，并将 `mcp.agentzone.click` 指向 Gateway。", "verified": "记录于 2026-10-30：以 `scope=https://mcp.agentzone.click/mcp/mcp.access` + `resource=https://mcp.agentzone.click/mcp` 请求 token → 成功签发。", "docs": [["Microsoft Entra · 添加自定义域名", "https://learn.microsoft.com/en-us/entra/fundamentals/add-custom-domain"], ["Microsoft Entra · 重大变更（AppId URI：已验证域名或 api://{appId}）", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-breaking-changes"], ["Microsoft Entra · 应用清单（identifierUris）", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-app-manifest"], ["Route 53 · 注册域名", "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html"], ["Route 53 · 添加或更改名称服务器", "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-name-servers-glue-records.html"], ["CloudFront · 备用域名（CNAME）", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html"], ["CloudFront · SSL/TLS 证书要求（ACM 证书位于 us-east-1）", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html"]]}, {"q": "为什么用 CloudFront？", "why": "Gateway 没有原生的自定义域名设置。AWS 文档 \"Setting up custom domain names for Gateway endpoints\"（AgentCore Developer Guide）使用 CloudFront 作为反向代理。", "fix": "Origin = Gateway 主机（仅 HTTPS）；缓存策略 **CachingDisabled**（每次调用都与具体用户相关）；源请求策略 **AllViewerExceptHostHeader**（转发 `Authorization` 和 MCP 相关标头，但 Host 使用源站自己的）；允许**所有 HTTP 方法**；ACM 证书位于 us-east-1；Route 53 A/AAAA 别名记录。", "verified": "记录于 2026-10-30：无 token 的 POST → Gateway 返回 401；通过自定义域名验证了 ds1 的 `tools/list` 以及 Cedar 的允许/拒绝。", "docs": [["AgentCore Gateway · 自定义域名", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-custom-domains.html"], ["CloudFront · 托管缓存策略（CachingDisabled）", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html"], ["CloudFront · 托管源请求策略（AllViewerExceptHostHeader）", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-origin-request-policies.html"], ["CloudFront · 备用域名（CNAME）", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html"], ["CloudFront · SSL/TLS 证书要求（ACM 证书位于 us-east-1）", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html"]]}, {"q": "为什么需要 CloudFront Function 和 response headers policy？", "wrong": "没有它们时，Quick 会提示 \"One or more parameters are invalid\"（见第 2 题）。", "why": "Quick 通过 RFC 9728 发现 OAuth 设置：401 的 `WWW-Authenticate` 标头指向 `resource_metadata`，该文档给出 `resource` 和 `scopes_supported`。Gateway 的标头和元数据描述的是它的 **amazonaws** URL，且 `scopes_supported: []`；而 Quick 连接器配置中**没有 scope 字段**，因此 Quick 既拿不到匹配的 resource，也没有可申请的 scope。", "fix": "CloudFront Function `mcp-prm`（viewer request）为自定义域名直接响应 `/.well-known/oauth-protected-resource*`，并带上 `mcp.access` scope。Response headers policy `mcp-agentzone-www-authenticate`（override=true）把 401 的 `WWW-Authenticate` 设为 `resource_metadata=\"https://mcp.agentzone.click/.well-known/oauth-protected-resource\"`。安全性不变：两者只改写公开的 discovery 数据；每个 MCP 调用仍然到达 Gateway，由 Gateway 校验 Entra JWT（issuer、签名、`aud`）并执行 Cedar。", "verified": "记录于 2026-10-30：`mcp-prm` 发布前已用 `test-function` 测试；部署后两个 well-known 路径都返回自定义的 `resource` + scope，无 token 的 POST 返回带自定义 `resource_metadata` 的 401，Quick 通过自定义域名完成登录。", "docs": [["RFC 9728 · OAuth 2.0 Protected Resource Metadata", "https://datatracker.ietf.org/doc/html/rfc9728"], ["CloudFront Functions", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html"], ["CloudFront · 响应标头策略（response headers policies）", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/modifying-response-headers.html"], ["AgentCore Gateway · 自定义域名", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-custom-domains.html"], ["AgentCore Gateway · inbound 授权", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"], ["Policy in Amazon Bedrock AgentCore (Cedar)", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html"]]}, {"q": "为什么用 response headers policy，而不是 viewer-response 函数？", "why": "关键的标头位于 Gateway 的 **401** 质询响应中，而**当源站返回 4xx/5xx 时，CloudFront 不会运行 viewer-response 函数**。Response headers policy 则作用于**所有**响应，包括 4xx。", "fix": "在 response headers policy 中设置自定义标头 `WWW-Authenticate`，**override=true**（覆盖 Gateway 返回的值），值指向自定义域名的元数据。", "verified": "记录于 2026-10-30：不带 token 的 POST → 401，且 `resource_metadata=\"https://mcp.agentzone.click/.well-known/oauth-protected-resource\"`。", "docs": [["CloudFront · 源站返回 400 及以上状态码时不运行 viewer response（文档针对 Lambda@Edge 事件说明）", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-cloudfront-trigger-events.html"], ["CloudFront · CloudFront Functions 与 Lambda@Edge 对比", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-choosing.html"], ["CloudFront · 边缘函数的限制", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-restrictions.html"], ["CloudFront · 响应标头策略（response headers policies）", "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/modifying-response-headers.html"]]}, {"q": "为什么 token 的 `aud` 仍然是 app ID（GUID），且 Gateway 无需改动？", "why": "Entra v2 access token 使用资源应用的 **app ID** 作为 `aud`。App ID URI 只是在 `scope`/`resource` 中使用的名称；该应用的任意一个 URI 都映射到同一个应用。", "fix": "无需修改：Gateway 的 `allowedAudience` 本来就是 rsidc-mall-api 的 app ID。", "verified": "记录于 2026-10-30：通过自定义域名 scope 获取的 token，其 `aud` = rsidc-mall-api 的 app ID；Gateway 接受了它（ds1 tools/list）。", "docs": [["Microsoft Entra · access token（v2、aud、roles、scp）", "https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens"], ["Microsoft Entra · scope、权限与同意", "https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc"], ["Microsoft Entra · 添加 App Role", "https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-app-roles-in-apps"], ["AgentCore API · CustomJWTAuthorizerConfiguration", "https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html"], ["AgentCore Gateway · inbound 授权", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"]]}, {"q": "为什么保留 `api://` Application ID URI？", "why": "`identifierUris` 是一个列表。现有客户端（在本环境中是测试客户端、RBAC Web GUI 以及其他 Entra 流程）请求的是 `api://<appId>/mcp.access`；删除它会导致这些客户端失效。两个 URI 解析到同一个应用、同一个 scope 和同一个 `aud`。", "fix": "在 `api://<appId>` 之外新增 `https://mcp.agentzone.click/mcp`，不要替换它。", "docs": [["Microsoft Entra · 应用清单（identifierUris）", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-app-manifest"], ["Microsoft Entra · 重大变更（AppId URI：已验证域名或 api://{appId}）", "https://learn.microsoft.com/en-us/entra/identity-platform/reference-breaking-changes"], ["Microsoft Entra · scope、权限与同意", "https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc"]]}], "checklist": ["已注册域名 → Name servers = 托管区域的 4 条 NS 记录", "在 Entra 中点击 Verify 之前，TXT `MS=ms…` 已可公网解析", "App ID URI 是在 `api://<appId>` 之外新增的（没有替换它）", "ACM 证书位于 **us-east-1**（CloudFront 的要求）", "CloudFront：所有 HTTP 方法、CachingDisabled、AllViewerExceptHostHeader、仅 HTTPS 回源", "使用自定义 scope + `resource` 请求 token → aud = app ID", "自定义域名上的 `/.well-known/oauth-protected-resource` 返回自定义的 `resource` + scope", "自定义域名上 401 的 `WWW-Authenticate` 指向自定义域名（由 response headers policy 设置，override=true）", "Quick 客户端：已同意 Graph `openid profile offline_access`；client secret 保存在密钥存储中"], "aadstsExplain": "Microsoft Entra ID 的 AADSTS9010010 错误表示：在 OAuth 2.0 获取 token 的过程中，旧式的 resource 参数与新式的 scope 参数相互冲突", "aadstsCase": "例如，Quick 在发送 `scope=api://<rsidc-mall-api>/mcp.access` 的同时还发送了 `resource=<Gateway MCP URL>`（RFC 8707）；resource 指向的不是 scope 所属的那个 API，因此被 Entra 拒绝。"}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+// tiny markdown: `code`, **bold**, [text](url)
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+  .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1");
+const short = t => t.replace("mall___", "");
+const upn = u => `${u}@${D.ids.domain}`;
+const foot = date => `<div class="foot">测试记录（${esc(date)}）</div>`;  // no internal file names
+const pill = (ok, yes = "允许", no = "拒绝") => `<span class="pill ${ok ? "ok" : "no"}">${ok ? yes : no}</span>`;
+
+function codeBlock(key, note) {
+  const e = D.excerpts[key];
+  const body = e.parts.map(p => p.map(([n, t]) => `<div class="row"><span class="ln">${n}</span>${esc(t)}</div>`).join(""))
+    .join(`<div class="gap">…</div>`);
+  return `<div class="ref"><b>${esc(e.ref)}</b>${note ? " · " + note : ""}${e.redacted ? " · 本视图中已隐去密码读取" : ""}</div><pre>${body}</pre>`;
+}
+const out = (title, k) => `<div class="ref"><b>${esc(title)}</b> · 已记录的只读检查（2026-10-07）</div><pre class="out">${esc(D.review[k])}</pre>`;
+
+/* ---------------- nav ---------------- */
+function go(sec, anchor) {
+  document.querySelectorAll("nav a").forEach(x => x.classList.toggle("on", x.dataset.s === sec));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === sec));
+  const t = anchor && document.getElementById(anchor);
+  if (t) t.scrollIntoView(); else window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav a").forEach(a => a.onclick = () => go(a.dataset.s));
+safeRender($("#navmeta"), `页面生成于 ${esc(D.built)}<br>测试：enforce ${D.runs.enforce.pass}/${D.runs.enforce.total} · log_only ${D.runs.log_only.pass}/${D.runs.log_only.total} · change ${D.runs.change.pass}/${D.runs.change.total}`);
+
+/* ---------------- 1 · Replay ---------------- */
+const R = {user: null, mode: "enforce", stage: 0};
+function renderReplay() {
+  const el = $("#replay");
+  const stages = ["登录 Microsoft Entra ID", "解码后的 access token", "Quick 聊天 + MCP 连接器"];
+  safeRender(el, `<h2>回放：一个用户、一个 token、四个问题</h2>
+  <p class="lead">选择一个 Entra 用户，用任意密码登录（模拟），查看 v2 access token 的 claims，然后在模拟的 Quick 聊天中提出 4 个商场问题。
+  下面每个工具列表、每次允许/拒绝，都是 Entra RBAC 测试脚本针对 <code>rsidc-mall-entra-gateway</code> 记录的<b>真实</b>结果。
+  连接器面板与 Quick 中的配置一致：<b>Custom user based OAuth</b>，Base URL 为 <code>${esc(D.custom.custom)}/mcp</code>（Gateway 前面是 CloudFront）。
+  工具结果来自针对同一 Gateway 的脚本化运行。${esc(D.custom.ds1Recheck)}</p>
+  <div class="steps">${stages.map((s, i) => `<span class="${i <= R.stage ? "on" : ""}">${i + 1} · ${s}</span>`).join("")}</div>
+  <div id="rp"></div>`);
+  [signIn, tokenView, quickView][R.stage]($("#rp"));
+}
+function signIn(el) {
+  const u = R.user || "wei";
+  safeRender(el, `<div class="ms">
+    <div class="logo"><i style="background:#f25022"></i><i style="background:#7fba00"></i><i style="background:#00a4ef"></i><i style="background:#ffb900"></i></div>
+    <h4>登录</h4>
+    <div class="who">${["wei", "ds1", "chen"].map(x => `<button class="btn ${x === u ? "on" : ""}" data-u="${x}">${x}</button>`).join("")}</div>
+    <input id="upn" value="${esc(upn(u))}" readonly>
+    <input id="pw" type="password" placeholder="密码（任意值，模拟）">
+    <button class="go" id="go">登录</button>
+    <small>模拟的 Microsoft 登录页面，密码不会发送到任何地方。真实租户：<code>${esc(D.ids.tenant)}</code>；已记录测试中的 token 来自 <code>rsidc-mall-test-client</code> 上的 ROPC（非交互式，因此没有 MFA 提示）。</small>
+  </div>
+  <div class="card"><b>用户及其在 rsidc-mall-api 上的 App Role 分配</b>（Entra ID Free：按用户逐个分配）
+    <table><tr><th>用户</th><th>已分配的 App Role</th><th>预期工具数</th></tr>
+    ${["wei", "ds1", "chen"].map(x => `<tr><td><code>${esc(upn(x))}</code></td><td>${D.assigned[x].map(r => `<code>${r}</code>`).join(" ") || "<i>无</i>"}</td><td>${D.assigned[x].length}</td></tr>`).join("")}</table>
+    ${codeBlock("roles", "配置脚本创建的分配")}
+  </div>${foot("2026-10-07")}`);
+  R.user = u;
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { R.user = b.dataset.u; signIn(el); });
+  $("#go", el).onclick = () => { R.stage = 1; renderReplay(); };
+}
+function tokenView(el) {
+  const u = R.user, L = D.enforce[u].list;
+  const roles = L.roles;
+  const rows = [
+    ["aud", D.ids.apiApp + "  (rsidc-mall-api)", "已记录", "已记录的测试 token claims"],
+    ["azp", D.ids.testClient + "  (rsidc-mall-test-client)", "来自请求", "测试所用的客户端（Entra RBAC 测试脚本）；使用 Quick 时为 rsidc-quick-mcp-entra 的 appId"],
+    ["ver", L.ver, "已记录", D.runs.enforce.source],
+    ["roles", roles ? JSON.stringify(roles) : "（无此 claim）", "已记录", D.runs.enforce.source + (roles ? "" : " · 没有任何 App Role 的用户，token 中根本没有 roles claim")],
+    ["preferred_username", upn(u), "来自请求", "token 请求中发送的用户名"],
+    ["scp", "mcp.access", "来自请求", "测试请求的是 api://<rsidc-mall-api>/mcp.access；Quick 请求的是 " + D.custom.custom + "/mcp/mcp.access（同一个 scope，同一个 aud）"],
+  ];
+  safeRender(el, `<div class="grid g2">
+  <div class="card"><b>解码后的 payload：${esc(u)} 的 Entra v2 access token</b>
+    <p class="lead" style="margin:6px 0">本页从不嵌入 token 本身（只展示 claims），也不展示签名和 header。</p>
+    <table class="claims"><tr><th>Claim</th><th>值</th><th>来源</th></tr>
+    ${rows.map(([k, v, p, s]) => `<tr><td>${k}</td><td><code>${esc(v)}</code><div class="ref">${esc(s)}</div></td><td><span class="pill ${p === "已记录" ? "ok" : "mut"}">${p}</span></td></tr>`).join("")}</table>
+  </div>
+  <div class="card"><b>每个 claim 的用途</b>
+    <ul class="checks">
+      <li><code>aud</code>：Gateway 的 <code>allowedAudience</code> = rsidc-mall-api。Graph token（<code>aud=https://graph.microsoft.com</code>）会被拒绝，返回 403（已记录）。</li>
+      <li><code>azp</code>：调用方应用。Gateway <b>不检查</b>它（未设置 allowedClients），因此租户内任何获得 <code>mcp.access</code> token 的客户端都会被接受。</li>
+      <li><code>ver</code> 2.0：必须为 2.0，因为 Gateway 信任的是 <b>v2</b> discovery 文档；由 <code>requestedAccessTokenVersion: 2</code> 设置。</li>
+      <li><code>roles</code>：Cedar 唯一依据的内容。每个工具一条规则： <code>principal.getTag("roles") like "*\"Tools.Mall.X\"*"</code>.</li>
+      <li><code>preferred_username</code>：标识用户（在 Quick 中显示为 “Signed in as”）；不用于授权。</li>
+    </ul>
+    <div class="row-btns"><button class="btn" id="back">← 换个用户登录</button><button class="btn pri" id="next">打开 Quick →</button></div>
+  </div></div>${foot(D.runs.enforce.date)}`);
+  $("#back", el).onclick = () => { R.stage = 0; renderReplay(); };
+  $("#next", el).onclick = () => { R.stage = 2; R.chat = []; renderReplay(); };
+}
+function quickView(el) {
+  const u = R.user, run = D[R.mode][u], meta = D.runs[R.mode];
+  const listed = new Set(run.list.tools);
+  safeRender(el, `<div class="quick">
+   <div class="chat"><div class="hd"><span>Amazon Quick · 聊天（模拟）</span>
+     <span class="row-btns"><button class="btn ${R.mode === "enforce" ? "on" : ""}" data-m="enforce">ENFORCE (${D.runs.enforce.date})</button><button class="btn ${R.mode === "log_only" ? "on" : ""}" data-m="log_only">LOG_ONLY (${D.runs.log_only.date})</button></span></div>
+     <div class="bd" id="bd"></div>
+     <div class="ft">${D.questions.map(([q, t], i) => `<button class="btn" data-q="${i}">${esc(q)}</button>`).join("")}<button class="btn" id="clr">清空</button></div></div>
+   <div><div class="conn"><b>MCP 连接器：agentzone-mall-entra</b>
+     <div class="ref">认证方式：<b>Custom user based OAuth</b>（Microsoft Entra ID，机密客户端 <code>rsidc-quick-mcp-entra</code>）</div>
+     <div style="margin:8px 0"><span class="dot" style="background:var(--ok)"></span>已登录：<b>${esc(upn(u))}</b></div>
+     <div class="ref">Base URL <code>${esc(D.custom.custom)}/mcp</code> → CloudFront → Gateway</div>
+     <div class="ref"><b>tools/list</b> → HTTP ${run.list.http} · ${run.list.tools.length} 个工具（policy ${R.mode.toUpperCase()}）</div>
+     ${D.tools.map(t => `<div class="t ${listed.has(t) ? "" : "off"}"><span>${t}</span>${listed.has(t) ? '<span class="pill ok">已启用</span>' : '<span class="pill mut">未列出</span>'}</div>`).join("")}
+     <div class="row-btns" style="margin-top:12px"><button class="btn" id="out">退出 / 切换用户</button></div></div>
+     <div class="ref" style="margin-top:8px">结果：针对同一 Gateway 的脚本化运行（${esc(meta.date)}）。${u === "ds1" ? " <b>" + esc(D.custom.ds1Recheck) + "</b>" : ""}</div>
+     ${u === "ds1" ? changeCard() : ""}
+   </div></div>${foot(meta.date + " · " + meta.pass + "/" + meta.total + " PASS")}`);
+  const bd = $("#bd", el);
+  const paint = () => {
+    safeRender(bd, R.chat.length ? R.chat.join("") : `<div class="msg a">你好 ${esc(u)}，可以问我商场相关的问题。（将显示工具调用结果。）</div>`);
+    bd.scrollTop = bd.scrollHeight;
+  };
+  paint();
+  el.querySelectorAll("[data-q]").forEach(b => b.onclick = () => {
+    const [q, t] = D.questions[+b.dataset.q], c = run.calls[t];
+    const hidden = !listed.has(t);
+    R.chat.push(`<div class="msg u">${esc(q)}</div>`);
+    R.chat.push(`<div class="msg a"><div class="tc">tools/call <code>${t}</code> {"mall_id":"HK01","date":"2026-10-01"} → HTTP ${c.http} ${pill(c.ok)}</div>
+      ${hidden ? `<div class="ref">该工具不在 ${esc(u)} 的 tools/list 中，因此 Quick agent 通常看不到它。这里回放的是测试仍然发起的<b>直接</b> tools/call：Cedar 对每一次调用做决策，而不只是过滤列表。</div>` : ""}
+      <pre class="out">${esc(c.text)}</pre><div class="ref">已记录的证据（测试截断为 110 个字符）</div></div>`);
+    paint();
+  });
+  el.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { R.mode = b.dataset.m; R.chat = []; quickView(el); });
+  $("#clr", el).onclick = () => { R.chat = []; paint(); };
+  $("#out", el).onclick = () => { R.stage = 0; R.chat = []; renderReplay(); };
+}
+function changeCard() {
+  return `<div class="conn" style="margin-top:12px"><b>附加：ds1 的 App Role 变更（记录于 ${D.runs.change.date}）</b>
+   <table>${D.change.map(c => `<tr><td>${esc(c.case)}</td><td>${c.pass ? '<span class="pill ok">PASS</span>' : '<span class="pill no">FAIL</span>'}<div class="ref">${esc(c.evidence)}</div></td></tr>`).join("")}</table>
+   <div class="ref">只改了 Entra 中的分配；Cedar、Lambda 和 Gateway 均未改动。已签发的 token 在过期前保留原有 claims。</div></div>`;
+}
+
+// numbered code view for embedded snippets (mcp-prm.js)
+function lines(text) {
+  return `<pre>${text.split("\n").map((t, n) => `<div class="row"><span class="ln">${n + 1}</span>${esc(t)}</div>`).join("")}</pre>`;
+}
+const ev = k => `<div class="ev"><span class="pill ok">已验证 2026-10-30</span> ${esc(D.custom.ev[k])}</div>`;
+
+/* ---------------- 5 · FAQ ---------------- */
+// FAQ card 3 detail: comparison with the AWS sample 04-entra-obo-mcp-runtime (research 2026-10-31, read-only)
+function awsSampleDetail() {
+  const L = (u, t) => `<a href="${u}" target="_blank" rel="noopener">${t || u}</a>`;
+  const SAMPLE = "https://github.com/awslabs/agentcore-samples/tree/main/01-features/05-authenticate-and-authorize/04-entra-obo-mcp-runtime";
+  const nt = '<span class="pill warn">未测试</span>';
+  return `<h3>示例要点</h3>
+  <table class="kv">
+   <tr><td>MCP 客户端</td><td>Strands <code>MCPClient</code> + 一个 <code>requests</code> 脚本（<code>agent/agent_obo.py:82</code>、<code>entra_obo_mcp_runtime.py:570</code>）</td></tr>
+   <tr><td>Token</td><td>MSAL device code flow，<code>scope=&lt;agent-app-GUID&gt;/.default</code>；没有 <code>resource</code>，也没有 PRM discovery</td></tr>
+   <tr><td>MCP 服务器</td><td>AgentCore <b>Runtime</b>，协议 MCP（<code>entra_obo_mcp_runtime.py:383</code>）；URL <code>bedrock-agentcore.&lt;region&gt;.amazonaws.com/runtimes/&lt;arn&gt;/invocations?qualifier=DEFAULT</code>（:324-328）</td></tr>
+   <tr><td>Inbound 认证</td><td><code>customJWTAuthorizer</code>，使用 <b>v1</b> discovery URL（不带 <code>/v2.0</code>），allowedAudience = GUID / <code>api://&lt;mcp-app-id&gt;</code>，<code>customClaims</code> roles CONTAINS <code>mcp_invoke</code>（:353-368、:480-485）</td></tr>
+   <tr><td>下游</td><td>通过 AgentCore Identity <code>MicrosoftOauth2</code> 做 OBO，<code>ON_BEHALF_OF_TOKEN_EXCHANGE</code> 换取 Graph <code>User.Read</code>（<code>agent_obo.py:49-54</code>）</td></tr>
+   <tr><td>Entra App ID URIs</td><td>仅 <code>api://&lt;client-id&gt;</code>（<code>ENTRA_SETUP.md</code>）</td></tr></table>
+  <div class="ref">来源：${L(SAMPLE, "awslabs/agentcore-samples · 04-entra-obo-mcp-runtime")}</div>
+  <h3>Quick 有何不同</h3>
+  <ul class="checks">
+   <li>Quick 使用 "Resource Indicators (RFC 8707) to bind access tokens to specific MCP servers"，并且 "determines scopes from the Protected Resource Metadata document"（即：用 RFC 8707 把 access token 绑定到具体的 MCP 服务器，并从 Protected Resource Metadata 文档确定 scope）；用户 OAuth 配置中没有 scope 字段。${L("https://docs.aws.amazon.com/quick/latest/userguide/mcp-integration.html", "Quick MCP 集成")}</li>
+   <li>Microsoft：<code>https://</code> App ID URI 必须位于已验证的域名上，否则请使用 <code>api://{appId}</code>（Entra 自 2021 年 10 月起的重大变更）。</li>
+   <li>AWS 文档 ${L("https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-custom-domains.html", "Setting up custom domain names for Gateway endpoints")}：PRM 的 <code>resource</code> 包含 gateway 域名，文档建议在原生支持之前使用边缘函数作为变通方案。本页的 CloudFront Function 正是这一模式。</li></ul>
+  <h3>已评估的选项</h3>
+  <ol class="checks">
+   <li>Quick 的故障排查文档针对 AADSTS9010010 建议使用 Entra <b>v1.0</b> 端点 + <code>accessTokenAcceptedVersion=2</code>。但 v1 仍要求 <code>resource</code> 映射到某个 <code>identifierUri</code>；使用 amazonaws URL 时预计会得到 AADSTS500011。${nt}</li>
+   <li>有一篇 AWS 博客把 <code>identifierUris</code> PATCH 为 Gateway URL（原文 "depending on your tenant policy"，即视租户策略而定）；当前的租户会拒绝未验证的域名（<code>HostNameNotOnVerifiedDomain</code>）。</li>
+   <li>Quick 的 "Public OAuth client" 选项只决定是否使用 secret；不会改变 <code>resource</code> 或 scope。</li></ol>
+  <h3>Gateway allowedScopes / advertisedScopeMapping 的作用</h3>
+  <p>Gateway <code>CustomJWTAuthorizerConfiguration</code> 提供 <code>allowedScopes</code> + <code>advertisedScopeMapping</code>："The advertised scope appears in OAuth protected resource metadata and WWW-Authenticate response headers"（${L("https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html", "API 参考")}）。
+   实测行为（2026-10-31，rsidc-mall-entra-gateway）：</p>
+  <table class="kv">
+   <tr><td>配置</td><td><code>customJWTAuthorizer</code> += <code>allowedScopes ["mcp.access"]</code>, <code>advertisedScopeMapping {"mcp.access": "https://mcp.agentzone.click/mcp/mcp.access"}</code></td></tr>
+   <tr><td>Gateway PRM（源站）</td><td><code>scopes_supported: ["https://mcp.agentzone.click/mcp/mcp.access"]</code>（未配置时为 <code>[]</code>）<span class="pill ok">原生支持</span>；<code>resource</code> 仍是 amazonaws gateway URL <span class="pill no">未改变</span></td></tr>
+   <tr><td>401 WWW-Authenticate</td><td>新增了 <code>scope="https://mcp.agentzone.click/mcp/mcp.access"</code>；<code>resource_metadata</code> 仍是 amazonaws URL</td></tr>
+   <tr><td><code>allowedScopes</code> 检查</td><td>读取 token 的 <code>scp</code> claim：ds1 用户 token（<code>scp = mcp.access</code>）→ tools/list 200（2 个工具）<span class="pill ok">允许</span>；app-only 2LO token（没有 <code>scp</code>，只有 <code>roles</code>）→ 403 <code>insufficient_scope</code>（<code>WWW-Authenticate: error="insufficient_scope", scope=…</code>）<span class="pill no">被拦截</span></td></tr></table>
+  <p><b>结论：</b><code>advertisedScopeMapping</code> 确实能原生提供 <code>scopes_supported</code>，但它不能替代 CloudFront Function：PRM 的 <code>resource</code> 仍需改写为自定义域名，而 CloudFront Function 无法修改源站的响应体，所以 <code>mcp-prm</code> 仍要返回整份文档（带自己的 scope 列表）。
+   <code>allowedScopes</code> 对用户（委托）token 是一道有用的额外关卡，但它会拒绝没有 <code>scp</code> 的 app-only（2LO）token；如果同一个 gateway 还要服务 app-only 客户端，不要启用它。
+   可选：response headers policy 中静态的 <code>WWW-Authenticate</code> 也可以加上 <code>scope="…"</code>，与 Gateway 保持一致。</p>
+  <h3>可借鉴示例的做法</h3>
+  <ul class="checks"><li>在 Cedar 之上再加一道 authorizer <code>customClaims</code> 关卡（例如 <code>azp</code> EQUALS Quick 的 client ID）。${nt}</li>
+   <li>如果工具需要以用户身份访问下游，可使用 OBO（<code>MicrosoftOauth2</code> + <code>ON_BEHALF_OF_TOKEN_EXCHANGE</code>）。${nt}</li></ul>
+  <div class="foot">调研于 2026-10-31（只读审阅示例仓库 + AWS/Microsoft 文档）；Gateway 行为记录于 2026-10-31</div>`;
+}
+
+// FAQ card 2 detail: how to check an MCP server's discovery metadata (RFC 9728)
+function discoveryDetail() {
+  const C = D.custom;
+  return `<h3>如何检查</h3>
+  <pre class="out">curl -s ${esc(C.custom)}/.well-known/oauth-protected-resource
+curl -s ${esc(C.custom)}/.well-known/oauth-protected-resource/mcp
+curl -si -X POST ${esc(C.custom)}/mcp | grep -i www-authenticate</pre>
+  <div class="grid g2" style="margin-top:8px"><div><div class="ref"><b>正确</b>（由 <code>mcp-prm</code> 返回，记录于 2026-10-30）</div><pre class="out">${esc(C.prmAfter)}</pre><pre class="out">${esc(C.wwwAfter)}</pre></div>
+   <div><div class="ref"><b>代理之后 Gateway 的默认行为</b>：<code>resource</code> 错误，scope 为空</div><pre class="out">${esc(C.prmBefore)}</pre><pre class="out">${esc(C.wwwAuth)}</pre></div></div>
+  <div class="ref">配置细节：「配置」(c) “CloudFront Function mcp-prm”；请求流程：「原理剖析」第 1 跳。</div>
+  ${foot("2026-10-30")}`;
+}
+
+// FAQ card 1 detail: example request with the plain Gateway URL, the recorded errors, alternatives
+function plainUrlDetail() {
+  const Q = D.quick;
+  return `<h3>示例：把 Gateway 原始 URL 作为 Base URL</h3>
+  <ol class="checks">
+   <li><b>Quick 连接器</b>（Integrations → Model Context Protocol → Custom user based OAuth）：
+    <table class="kv">${Q.connectorTable.map(([k, v]) => `<tr><td>${md(k)}</td><td>${md(v)}</td></tr>`).join("")}</table>
+    <div class="ref">机密 Web 应用 <code>rsidc-quick-mcp-entra</code>（Quick 需要 client ID <b>和</b> secret）。 ${md(Q.noGatewayChange)}</div></li>
+   <li><b>Authorize 请求</b>（形态）：
+    <pre class="out">GET https://login.microsoftonline.com/${esc(D.ids.tenant)}/oauth2/v2.0/authorize
+  ?client_id=&lt;rsidc-quick-mcp-entra appId&gt;&amp;response_type=code
+  &amp;redirect_uri=https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback
+  &amp;scope=api://${esc(D.ids.apiApp)}/mcp.access openid profile offline_access
+  &amp;resource=${esc(Q.mcpUrl)}     ← added by Quick (RFC 8707)</pre></li>
+   <li><b>两个已记录的错误，同一个原因</b>
+    <div class="grid g2"><div><div class="ref">浏览器测试 2026-10-27，authorize 请求带 <code>&amp;resource=&lt;Gateway MCP URL&gt;</code></div><div class="err">${esc(Q.aadsts)}</div>
+      <div class="ref">中文释义：请求中提供的 resource 参数与所请求的 scope 不匹配。</div>
+      <div class="ref">correlation ID ${esc(Q.correlation)} · 去掉 <code>resource</code> 的同一请求成功</div></div>
+     <div><div class="ref">Quick 连接器 2026-10-27</div><div class="err">${esc(Q.invalidTarget)}</div>
+      <div class="ref"><code>invalid_target</code> 是 RFC 8707 中表示 <code>resource</code> 被拒绝的错误码</div></div></div></li>
+   <li><b>Entra 为何拒绝：</b>${esc(D.aadstsExplain)}。${md(D.aadstsCase)}
+    <div class="ref">${md(Q.why)}</div></li>
+  </ol>
+  <h3>替代方案</h3>
+  <div class="grid g2">
+   <div class="opt best"><h4>(b) 已验证的自定义域名 + CloudFront <span class="pill ok">本页采用 (b)</span></h4>在 Entra 中验证 <code>agentzone.click</code>，并把 <code>https://mcp.agentzone.click/mcp</code> 同时用作 App ID URI 和 Gateway 前端的 URL，使 <code>resource</code> 与 <code>scope</code> 指向同一个 API。见「配置」(a)–(d) 和 FAQ 第 2 题。</div>
+   <div class="opt"><h4>(a) 以 Cognito 作为中转</h4>Quick → Cognito（resource server = Gateway URL），Entra 作为 OIDC IdP 联合到 Cognito，App Role 映射到 <code>roles</code>。本页不展开。</div>
+   <div class="opt"><h4>(c) Desktop 静态 token 标头</h4>通过 Add MCP → Remote 设置 <code>Authorization: Bearer &lt;Entra token&gt;</code>。可用（ds1，2026-10-26），但只能验证 Gateway RBAC；token 有效期约 1 小时。</div>
+   <div class="opt"><h4>(d) PFR（功能需求）</h4>请求 Quick 将 <code>resource</code> 设为可选或可配置。</div></div>
+  ${foot("2026-10-26 · 2026-10-27")}`;
+}
+function renderFaq() {
+  const el = $("#faq");
+  const row = (cls, label, v) => v ? `<dt class="${cls}">${label}</dt><dd>${md(v)}</dd>` : "";
+  safeRender(el, `<h2>FAQ · 技术难点</h2>
+  <p class="lead">面向开发者，解释 Quick + Entra 方案中每个组件为什么存在。点击问题即可展开。</p>
+  <div class="row-btns" style="margin-bottom:12px"><button class="btn" id="fopen">全部展开</button><button class="btn" id="fclose">全部收起</button></div>
+  ${D.faq.map((f, i) => `<details class="faq"><summary>${i + 1}. ${md(f.q)}</summary><div class="bd"><dl class="qa">
+    ${row("w", "问题现象", f.wrong)}${row("y", "原因", f.why)}${row("f", "解决方法", f.fix)}${row("v", "验证证据", f.verified)}</dl>
+    ${f.extra === "plainUrl" ? plainUrlDetail() : f.extra === "discovery" ? discoveryDetail() : f.extra === "awsSample" ? awsSampleDetail() : ""}
+    <div class="docs"><b>官方文档</b><ul>${f.docs.map(([t, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("")}</ul></div></div></details>`).join("")}
+  <h3>配置检查清单</h3>
+  <div class="card chk">${D.checklist.map(p => `<label><input type="checkbox">${md(p)}</label>`).join("")}
+   <div class="ref">勾选仅在当前页面有效，不会保存。</div></div>
+  ${foot("2026-10-27 · 2026-10-30")}`);
+  $("#fopen", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = true);
+  $("#fclose", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = false);
+}
+
+/* ---------------- 3 · Under the hood ---------------- */
+const H = {i: 0, user: "ds1", tool: "mall___get_hourly_traffic", legacy: false};
+function renderHood() {
+  const el = $("#hood");
+  const u = H.user, L = D.enforce[u].list, c = D.enforce[u].calls[H.tool];
+  const roleNeeded = {"mall___get_mall_list": "Tools.Mall.List", "mall___get_footfall_summary": "Tools.Mall.Footfall",
+    "mall___get_hourly_traffic": "Tools.Mall.Hourly", "mall___get_zone_comparison": "Tools.Mall.Zone"}[H.tool];
+  const hasRole = (L.roles || []).includes(roleNeeded);
+  const C = D.custom, cu = C.custom + "/mcp";
+  const hops = [
+    {t: "Quick → discovery（RFC 9728）", who: "CloudFront Function mcp-prm",
+     body: () => `<pre class="out">GET ${esc(C.custom)}/.well-known/oauth-protected-resource</pre>
+      <p>由 <code>mcp-prm</code>（viewer request）在 CloudFront 边缘直接响应，请求不会到达 Gateway。它告诉 Quick 应该使用哪个 <code>resource</code>、申请哪个 scope。</p>
+      <div class="grid g2"><div><b>响应（验证于 2026-10-30）</b><pre class="out">${esc(C.prmAfter)}</pre></div>
+      <div><b>未认证的 MCP 调用会得到同样的指向</b><pre class="out">${esc(C.wwwAfter)}</pre>
+       <div class="ref">该标头由 response headers policy <code>${esc(C.rhpName)}</code> 设置（override=true）</div></div></div>
+      ${ev("discovery")}
+      ${shotsFor("cloudfront-01-mcp-prm-function-code.png", "cloudfront-02-mcp-prm-publish-association.png")}${lines(C.fnPrm)}`},
+    {t: "Quick → Entra authorize / token", who: "Microsoft Entra ID",
+     body: () => `<pre class="out">GET https://login.microsoftonline.com/${esc(D.ids.tenant)}/oauth2/v2.0/authorize
+  ?client_id=&lt;rsidc-quick-mcp-entra appId&gt;&amp;response_type=code
+  &amp;redirect_uri=https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback
+  &amp;scope=${esc(cu)}/mcp.access openid profile offline_access
+  &amp;resource=${esc(cu)}
+→ POST …/oauth2/v2.0/token  grant_type=authorization_code + client secret</pre>
+      <p class="ref">请求形态（Quick 发送的参数）。</p>${ev("entra")}
+      <div class="toggle"><b>为什么直接使用 Gateway URL 会失败：</b>Quick 会发送 <code>resource=&lt;Base URL&gt;</code>（RFC 8707）。Entra 只接受与 <code>scope</code> 所属 API 的 Application ID URI 一致的 <code>resource</code>。<code>https://</code> 形式的 Application ID URI 只能使用本租户已验证的域名（否则只能用默认的 <code>api://{appId}</code>）。<code>${esc(D.quick.mcpUrl)}</code> 属于 amazonaws.com，不是客户自己的域名，Entra 无法验证，也就不能把它注册成 Application ID URI，于是请求被拒绝（AADSTS9010010 / <code>invalid_target</code>）。使用已验证的自定义域名后，<code>${esc(cu)}</code> 同时是 Application ID URI 和 Quick 的 Base URL，两者一致。
+        <div class="ref"><b>官方文档：</b><a href="https://learn.microsoft.com/en-us/entra/identity-platform/reference-breaking-changes" target="_blank" rel="noopener">Microsoft Entra 重大变更：AppId URI 必须使用已验证域名</a> · <a href="https://datatracker.ietf.org/doc/html/rfc8707" target="_blank" rel="noopener">RFC 8707：OAuth 2.0 Resource Indicators</a></div></div>
+      <div class="card" style="margin:10px 0"><b>Gateway 默认返回的 discovery metadata（未使用自定义域名）</b>
+        <div class="ref">实际记录的响应：<code>resource</code> = amazonaws.com 的 Gateway URL，<code>scopes_supported</code> = <code>[]</code>。</div>
+        <pre class="out">GET https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/.well-known/oauth-protected-resource
+
+{
+  "authorization_servers": ["https://login.microsoftonline.com/{entra-tenant-id}/v2.0"],
+  "resource": "https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp",
+  "scopes_supported": []
+}</pre>
+        <p>Quick 从这里读取 <code>resource</code>，并作为 <code>resource=</code> 发给 Entra → 这是 amazonaws.com 的 URL，不是有效的 Application ID URI → AADSTS9010010。<code>scopes_supported</code> 也是空的，Quick 没有可请求的 scope。</p>
+        <div class="ref">使用自定义域名后，第 1 跳显示 <code>resource</code> = <code>${esc(cu)}</code>，并给出 scope <code>${esc(cu)}/mcp.access</code>。</div></div>
+      <b>Entra 的检查</b><ul class="checks"><li><code>resource</code> = <code>${esc(cu)}</code> 是 rsidc-mall-api 的 Application ID URI，位于<b>已验证的域名</b> <code>agentzone.click</code> 上，且与 scope 所属的 API 一致 <span class="pill ok">已接受</span></li>
+      <li>用户登录（交互式；如开启了 Security defaults 则需 MFA）</li>
+      <li>委托权限 <code>mcp.access</code> + Graph <code>openid profile offline_access</code>，已授予管理员同意（2026-10-30）</li>
+      <li>v2 token（<code>requestedAccessTokenVersion: 2</code>），<code>roles</code> 来自用户的 App Role 分配</li></ul>
+      <p class="ref">下方已记录的测试 token 来自公共测试客户端上的 ROPC，使用 <code>api://&lt;appId&gt;/mcp.access</code>：同一个应用、同一个 <code>aud</code>、同一组 <code>roles</code>。</p>
+      ${shotsFor("entra-12-mall-api-overview-app-id-uri.png", "entra-04-mall-api-expose-an-api.png", "entra-05-mall-api-manifest-identifieruris.png", "entra-03-quick-client-secrets.png")}
+      ${codeBlock("tokenReq")}${codeBlock("apiApp", "scope、App Roles、v2 token、api://&lt;appId&gt;")}`},
+    {t: "Entra → Quick：v2 access token", who: "Microsoft Entra ID（issuer）",
+     body: () => `<table class="claims"><tr><th>Claim</th><th>${esc(u)} 的值</th></tr>
+      <tr><td>aud</td><td><code>${esc(D.ids.apiApp)}</code>（rsidc-mall-api 的 app ID，即使使用自定义域名 scope 也不变；记录于 2026-10-30）</td></tr>
+      <tr><td>azp</td><td>客户端应用（Quick：rsidc-quick-mcp-entra；测试：<code>${esc(D.ids.testClient)}</code>）；下游不检查</td></tr>
+      <tr><td>ver</td><td><code>${esc(L.ver)}</code> <span class="pill ok">已记录</span></td></tr>
+      <tr><td>roles</td><td><code>${L.roles ? esc(JSON.stringify(L.roles)) : "（无此 claim）"}</code> <span class="pill ok">已记录</span></td></tr>
+      <tr><td>preferred_username</td><td><code>${esc(upn(u))}</code> <span class="pill mut">来自请求</span></td></tr></table>
+      <p class="ref">由租户的密钥签名（JWKS 见 v2 discovery 文档）。本页任何地方都不展示 token 本身。</p>
+      ${shotsFor("entra-02-mall-api-app-roles.png", "entra-01-wei-app-role-assignments.png")}
+      ${codeBlock("assign", "按用户的 App Role 分配 → roles claim")}`},
+    {t: "Quick → CloudFront（MCP POST）", who: "CloudFront mcp.agentzone.click",
+     body: () => `<pre class="out">POST ${esc(cu)}
+Authorization: Bearer &lt;Entra v2 access token&gt;
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{"jsonrpc":"2.0","id":1,"method":"tools/call",
+ "params":{"name":"${H.tool}","arguments":{"mall_id":"HK01","date":"2026-10-01"}}}</pre>
+      <table class="kv" style="margin-top:10px"><tr><td>缓存策略</td><td><code>CachingDisabled</code>（每次调用都与具体用户相关）</td></tr>
+      <tr><td>源请求策略</td><td><code>AllViewerExceptHostHeader</code>（转发 <code>Authorization</code> + MCP 相关标头；Host 使用源站自己的）</td></tr>
+      <tr><td>允许的方法</td><td>全部（MCP 使用 POST）</td></tr>
+      <tr><td>源站</td><td><code>${esc(C.gwHost.replace("https://", ""))}</code>（仅 HTTPS）</td></tr>
+      <tr><td>401 响应</td><td><code>WWW-Authenticate</code> 被 response headers policy <code>${esc(C.rhpName)}</code> 替换</td></tr></table>
+      ${ev("cloudfront")}
+      ${codeBlock("rpc")}`},
+    {t: "Gateway inbound 认证：CUSTOM_JWT", who: "AgentCore Gateway",
+     body: () => `<table class="kv"><tr><td>访问路径</td><td>CloudFront 源站 <code>${esc(D.quick.mcpUrl)}</code>（位于 CloudFront 之后）</td></tr>
+      <tr><td>discoveryUrl</td><td><code>${esc(D.quick.discovery)}</code></td></tr>
+      <tr><td>allowedAudience</td><td><code>["${esc(D.ids.apiApp)}"]</code>（rsidc-mall-api 的 app ID；改用自定义域名后无需变更）</td></tr>
+      <tr><td>allowedClients</td><td>未设置：Entra v2 把客户端放在 <code>azp</code> 而非 <code>client_id</code> 中，因此<b>不检查 client ID</b></td></tr></table>
+      ${ev("gateway")}
+      <b>${esc(u)} 的检查项</b><ul class="checks"><li>依据租户 JWKS 校验签名 <span class="pill ok">通过</span></li><li>issuer = 租户 v2 <span class="pill ok">通过</span></li><li>aud ∈ allowedAudience <span class="pill ok">通过</span></li><li>结果：tools/list HTTP ${L.http} <span class="pill ok">已记录</span></li></ul>
+      <b>负面测试 token（记录于 ${D.runs.enforce.date}）</b>
+      <table><tr><th>用例</th><th>预期</th><th>实际</th><th></th></tr>${D.negatives.map(n => `<tr><td>${esc(n.case)}</td><td>${esc(n.expect)}</td><td>${esc(n.actual)} <span class="ref">${esc(n.evidence)}</span></td><td>${n.pass ? '<span class="pill ok">PASS</span>' : '<span class="pill no">FAIL</span>'}</td></tr>`).join("")}</table>
+      ${codeBlock("gwHeader")}${codeBlock("gwAuth")}${codeBlock("negatives", "负面测试 token 的构造方式")}
+      ${out("Gateway authorizer 配置", "inbound: Entra v2 discovery + allowedAudience = API appId")}`},
+    {t: "Policy in AgentCore（Cedar）基于 roles 授权", who: "Policy engine rsidc_mall_entra_pe（ENFORCE）",
+     body: () => `<p><code>${H.tool}</code> 需要 <code>roles</code> 中包含 <code>${roleNeeded}</code>。${esc(u)} ${L.roles ? (hasRole ? "拥有该角色" : "没有该角色") : "没有 <code>roles</code> claim，因此 <code>principal.hasTag(\"roles\")</code> 为 false"} → ${pill(c.ok, "PERMIT", "DENY（无适用策略）")}</p>
+      <ul class="checks"><li><b>tools/list</b> 也按同样的规则过滤：${esc(u)} 能看到 ${L.tools.length} 个工具： ${L.tools.map(t => `<code>${short(t)}</code>`).join(" ") || "<i>无</i>"}</li>
+      <li><b>tools/call</b> 被拒绝 → HTTP 200 且带 <code>isError</code>：<i>Tool Execution Denied</i>（已记录）</li>
+      <li>这里 IAM 也参与决策：Gateway 角色需要对该 engine 拥有 <code>bedrock-agentcore:AuthorizeAction</code> 权限，否则附加 engine 会失败（<code>GetPolicyEngine</code> access denied）。</li></ul>
+      ${ev("cedar")}
+      ${codeBlock("gwPolicy", "每个工具一条固定的 permit")}${out("已部署的规则（hourly）", "Cedar rule for hourly requires roles ∋ Tools.Mall.Hourly (no group names)")}
+      ${codeBlock("gwAttach", "以 LOG_ONLY / ENFORCE 模式附加 policy engine")}${codeBlock("iamPolicy")}`},
+    {t: "Gateway → Lambda rsidc-mall-tools", who: "Gateway IAM 角色",
+     body: () => `<p>只有 Cedar 允许时才会到达这一跳。Target <code>mall</code> → Lambda，使用 <code>GATEWAY_IAM_ROLE</code>；该 Lambda 没有资源策略，也没有 Function URL，因此不存在绕过 Gateway 的路径。</p>
+      <b>${esc(u)} · ${short(H.tool)} 的已记录结果</b> ${pill(c.ok)}<pre class="out">HTTP ${c.http} ${esc(c.text)}</pre>
+      ${codeBlock("gwTarget")}${out("防绕过", "anti-bypass: Lambda has no resource policy and no Function URL")}`},
+  ];
+  const legacy = `<div class="toggle"><b>不使用自定义域名时</b>（Base URL = amazonaws Gateway URL，scope 为 <code>api://&lt;appId&gt;/mcp.access</code>）：Quick 会发送 <code>resource=${esc(D.quick.mcpUrl)}</code>，它不是 rsidc-mall-api 的 App ID URI，因此被 Entra 拒绝。
+    <div class="ref">${esc(D.aadstsExplain)}。${md(D.aadstsCase)}详见 FAQ 第 1 题。</div>
+    <div class="err" style="margin-top:6px">${esc(D.quick.aadsts)}</div><div class="ref">中文释义：请求中提供的 resource 参数与所请求的 scope 不匹配。</div><div class="err" style="margin-top:6px">Quick 连接器：${esc(D.quick.invalidTarget)}</div>
+    <div class="ref">记录于 2026-10-27（浏览器 + Quick）和 2026-10-30（resource = amazonaws URL 的 token 请求）</div></div>`;
+  safeRender(el, `<h2>原理剖析：一次工具调用，逐跳拆解</h2>
+  <p class="lead">自 2026-10-30 起 Quick 使用的自定义域名路径。选择一个用户和一个工具；每一跳都会展示调用内容、claims、由谁检查什么，以及真实的代码/配置（file:line）。</p>
+  <div class="row-btns" style="margin-bottom:8px"><button class="btn ${H.legacy ? "on" : ""}" id="hleg">${H.legacy ? "隐藏" : "显示"}：不使用自定义域名时（旧的失败场景）</button></div>
+  ${H.legacy ? legacy : ""}
+  <div class="row-btns">${["wei", "ds1", "chen"].map(x => `<button class="btn ${x === u ? "on" : ""}" data-u="${x}">${x}</button>`).join("")}
+   <span style="width:16px"></span>${D.tools.map(t => `<button class="btn ${t === H.tool ? "on" : ""}" data-t="${t}">${short(t)}</button>`).join("")}</div>
+  <div class="flow" style="margin-top:12px">${hops.map((h, i) => `${i ? '<div class="arrow">→</div>' : ""}<div class="node ${i === H.i ? "on" : ""} ${i === 5 ? (c.ok ? "good" : "bad") : ""}" data-i="${i}"><div class="n">第 ${i + 1} 跳</div><div class="t">${esc(h.t)}</div><div class="s">${esc(h.who)}</div></div>`).join("")}</div>
+  <div class="card"><div class="hop-hd"><h3 style="margin:0">第 ${H.i + 1} 跳 · ${esc(hops[H.i].t)}</h3><span class="pill mut who-chk">检查方：${esc(hops[H.i].who)}</span>
+   <span style="flex:1"></span><button class="btn" id="hp" ${H.i ? "" : "disabled"}>← 上一跳</button><button class="btn pri" id="hn" ${H.i < hops.length - 1 ? "" : "disabled"}>下一跳 →</button></div>
+   ${hops[H.i].body()}</div>
+  ${foot(D.runs.enforce.date + " · 2026-10-30（自定义域名）")}`);
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { H.user = b.dataset.u; renderHood(); });
+  el.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { H.tool = b.dataset.t; renderHood(); });
+  el.querySelectorAll(".node").forEach(n => n.onclick = () => { H.i = +n.dataset.i; renderHood(); });
+  $("#hp", el).onclick = () => { H.i--; renderHood(); };
+  $("#hleg", el).onclick = () => { H.legacy = !H.legacy; renderHood(); };
+  $("#hn", el).onclick = () => { H.i++; renderHood(); };
+}
+
+/* ---------------- 4 · Setup ---------------- */
+// Screenshot card, collapsed by default; the summary is the caption
+function screenCard(x) {
+  const loc = x.where ? `控制台：<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.where)}</a>` : `门户：<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a>`;
+  return `<details class="sc"><summary>截图：${esc(x.caption)}</summary><div class="b">
+    <a href="${esc(x.file)}" target="_blank" rel="noopener"><img src="${esc(x.file)}" alt="${esc(x.caption)}" loading="lazy"></a>
+    <div class="ref"><a href="${esc(x.file)}" target="_blank" rel="noopener">查看原图</a> · ${loc}</div>
+    <div class="ref"><b>查看要点：</b>${esc(x.look)}</div></div></details>`;
+}
+const shotsFor = (...names) => names.map(n => D.screens.find(x => x.file === "img/" + n)).map(screenCard).join("");
+
+function renderSetup() {
+  const el = $("#setup"), Q = D.quick;
+  const pair = {"e1-api-approles": "API app: 4 App Roles, scope mcp.access, identifierUri api://<appId>, v2 tokens",
+    "e1-api-expose": "API app: 4 App Roles, scope mcp.access, identifierUri api://<appId>, v2 tokens",
+    "e1-api-manifest": "API app: 4 App Roles, scope mcp.access, identifierUri api://<appId>, v2 tokens",
+    "e1-assignments": "assignments resolve to the expected role values", "e1-client-perms": "test client: admin consent (AllPrincipals) for mcp.access",
+    "a2-gateway": "policy engine attached in ENFORCE", "a2-gateway-auth": "inbound: Entra v2 discovery + allowedAudience = API appId",
+    "a2-policies": "4 Cedar policies ACTIVE", "a2-iam-role": "IAM inline policy entra-gateway scoped to this engine + gateway",
+    "a2-lambda": "anti-bypass: Lambda has no resource policy and no Function URL"};
+  // Entra screenshots: collapsed by default; the summary is the caption
+  const screens = step => D.screens.filter(x => x.step === step).map(screenCard).join("");
+  // AWS-side recorded read-only checks (CLI output); zh display labels for the (unchanged) D.review keys
+  const REVIEW_LABEL = {"policy engine attached in ENFORCE": "policy engine 已以 ENFORCE 模式附加",
+    "inbound: Entra v2 discovery + allowedAudience = API appId": "inbound：Entra v2 discovery + allowedAudience = API appId",
+    "4 Cedar policies ACTIVE": "4 条 Cedar 策略均为 ACTIVE",
+    "IAM inline policy entra-gateway scoped to this engine + gateway": "IAM inline policy entra-gateway 仅限此 engine + gateway",
+    "anti-bypass: Lambda has no resource policy and no Function URL": "防绕过：Lambda 没有资源策略，也没有 Function URL"};
+  const checks = pre => D.shots.filter(x => x.name.startsWith(pre)).map(x => `<details class="sc"><summary>已记录的检查：${esc(REVIEW_LABEL[pair[x.name]] || pair[x.name])}</summary><div class="b">
+    <pre class="out">${esc(D.review[pair[x.name]])}</pre><div class="ref">${esc(x.caption)} · 控制台 URL：${esc(x.url)}</div></div></details>`).join("");
+  const C = D.custom, host = C.custom.replace("https://", "");
+  safeRender(el, `<h2>详细配置</h2>
+  <p class="lead">按可用路径的搭建顺序（2026-10-30）：域名 → Entra → CloudFront → Quick，最后是位于 CloudFront 之后的 Gateway。只介绍决定“谁能调用哪个工具”的部分；网络和普通 IAM 角色略过。</p>
+
+  <h3>(a) 域名注册 + Route 53 名称服务器</h3>
+  <div class="card"><table class="kv"><tr><td>域名</td><td><code>agentzone.click</code>，在一个<b>单独的 AWS 账户</b>中通过 Route 53 注册（显示为 123456789012）</td></tr>
+   <tr><td>托管区域</td><td>公有托管区域 <code>agentzone.click</code>（存放 TXT 以及 A/AAAA 别名记录）</td></tr>
+   <tr><td>名称服务器</td><td>已注册域名 → Name servers = 托管区域的 4 条 NS 记录（Registered domains → Actions → Edit name servers）</td></tr></table>
+</div>
+
+  <h3>(b) Entra ID</h3>
+  <p class="ref" style="margin-top:0">Entra 管理中心截图（2026-10-30）。点击标题可显示截图及其门户链接。</p>
+  <div class="grid g2"><div class="card"><b>1 · 自定义域名 <code>agentzone.click</code></b>
+    <table class="kv"><tr><td>添加</td><td>Entra 管理中心 → Custom domain names → Add <code>agentzone.click</code></td></tr>
+    <tr><td>验证</td><td>在托管区域的根域（apex）添加 TXT <code>MS=ms…</code> → Verify <span class="pill ok">已验证 2026-10-30</span></td></tr></table>
+    <p class="ref">之所以需要，是因为 <code>https://</code> 形式的 Application ID URI 必须位于租户中已验证的域名上。</p></div>
+   <div class="card"><b>2 · rsidc-mall-api (<code>${esc(D.ids.apiApp)}</code>) → Expose an API</b>
+    <table class="kv"><tr><td>Application ID URIs</td><td><code>api://${esc(D.ids.apiApp)}</code>（保留）+ <code>${esc(C.custom)}/mcp</code>（2026-10-30 新增）</td></tr>
+    <tr><td>Scope</td><td><code>mcp.access</code> (= <code>${esc(C.custom)}/mcp/mcp.access</code>)</td></tr>
+    <tr><td>App Roles</td><td><code>Tools.Mall.List</code> <code>Tools.Mall.Footfall</code> <code>Tools.Mall.Hourly</code> <code>Tools.Mall.Zone</code></td></tr>
+    <tr><td>Manifest</td><td><code>requestedAccessTokenVersion: 2</code></td></tr>
+    <tr><td>用户 → App Role</td><td>wei：4 个 · ds1：List + Footfall · chen：无</td></tr></table></div></div>
+  <div class="grid g2"><div class="card">${codeBlock("apiApp")}${codeBlock("assign")}</div>
+   <div class="card">${out("Graph 检查：API 应用", "API app: 4 App Roles, scope mcp.access, identifierUri api://<appId>, v2 tokens")}${out("Graph 检查：角色分配", "assignments resolve to the expected role values")}</div></div>
+  <div class="card"><b>rsidc-mall-api 及其角色分配：截图</b>${screens("api")}</div>
+  <div class="grid g2"><div class="card"><b>3 · Quick 的机密客户端 <code>rsidc-quick-mcp-entra</code></b>
+    <table class="kv">${Q.clientTable.map(([k, v]) => `<tr><td>${md(k)}</td><td>${md(v)}</td></tr>`).join("")}
+    <tr><td>Graph 权限</td><td><code>openid profile offline_access</code> + 管理员同意（<code>offline_access</code> 让 Quick 获得 refresh token）</td></tr></table>
+    <div class="ref">在 Entra 管理中心创建。client secret 请保存在密钥存储中，切勿放入源代码仓库或截图。</div>${screens("quick")}</div>
+   <div class="card"><b>对比：脚本使用的公共测试客户端</b> <code>rsidc-mall-test-client</code>（PKCE，无 secret），用于已记录的测试和 desktop token。<span class="pill warn">测试客户端，并非 Quick 所用</span>
+    ${codeBlock("testClient")}${screens("test")}</div></div>
+
+  <h3>(c) ACM + CloudFront + Route 53 别名</h3>
+  <div class="card"><table class="kv">
+    <tr><td>ACM 证书</td><td><b>us-east-1</b>，<code>${esc(host)}</code>（在托管区域中做 DNS 验证）</td></tr>
+    <tr><td>源站</td><td><code>${esc(C.gwHost.replace("https://", ""))}</code>，仅 HTTPS</td></tr>
+    <tr><td>备用域名</td><td><code>${esc(host)}</code></td></tr>
+    <tr><td>缓存策略</td><td><code>CachingDisabled</code></td></tr>
+    <tr><td>源请求策略</td><td><code>AllViewerExceptHostHeader</code></td></tr>
+    <tr><td>允许的方法</td><td>全部（GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE）：MCP 使用 POST</td></tr>
+    <tr><td>Viewer request 函数</td><td><code>mcp-prm</code> (cloudfront-js-2.0)</td></tr>
+    <tr><td>Response headers policy</td><td><code>${esc(C.rhpName)}</code>: <code>WWW-Authenticate</code>, override=true, <code>${esc(C.rhpValue)}</code></td></tr>
+    <tr><td>DNS</td><td>Route 53 A + AAAA 别名 <code>${esc(host)}</code> → 该 distribution</td></tr></table>
+    <div class="ref">401 的标头由 response headers policy 设置，因为源站返回 4xx 时 CloudFront 不会运行 viewer-response 函数。</div></div>
+  <div class="card" id="mcp-prm"><h3 style="margin-top:0">CloudFront Function <code>mcp-prm</code>：用途说明</h3>
+   <b>1 · 为什么需要它</b>
+   <p>Quick（一个 MCP 客户端）通过 <b>RFC 9728</b> 发现 OAuth 设置：收到 401 后，它沿着 <code>WWW-Authenticate … resource_metadata=</code> 去读取 <code>/.well-known/oauth-protected-resource</code>。
+   它从中取得 <code>resource</code>（以 <code>resource=</code> 发给 Entra）和 <code>scopes_supported</code>（Quick 连接器没有 scope 字段）。
+   Gateway 基于自己的 amazonaws URL 生成这份文档，且 <code>scopes_supported: []</code>，因此在自定义域名之后，Quick 会拿到错误的 resource（→ AADSTS9010010 / invalid_target），也拿不到 scope。</p>
+   <table><tr><th>字段</th><th>Gateway（修改前，记录于 2026-10-30）</th><th>mcp-prm（修改后，验证于 2026-10-30）</th></tr>
+    <tr><td><code>resource</code></td><td><code>${esc(C.gwHost)}/mcp</code> <span class="pill no">对 Entra 而言错误</span></td><td><code>${esc(C.custom)}/mcp</code> <span class="pill ok">= App ID URI</span></td></tr>
+    <tr><td><code>scopes_supported</code></td><td><code>[]</code> <span class="pill no">空</span></td><td><code>["${esc(C.custom)}/mcp/mcp.access"]</code></td></tr>
+    <tr><td><code>authorization_servers</code></td><td><code>["https://login.microsoftonline.com/${esc(D.ids.tenant)}/v2.0"]</code></td><td>相同（Entra v2 issuer）</td></tr>
+    <tr><td><code>bearer_methods_supported</code></td><td>（无）</td><td><code>["header"]</code></td></tr></table>
+   <b style="display:block;margin-top:12px">2 · 在哪里配置</b>
+   <p>位于<b>域名所在账户</b>中 <code>${esc(host)}</code> 的 CloudFront distribution（不展示 distribution 和账户 ID；账户 = 123456789012）。</p>
+   <table class="kv"><tr><td>函数</td><td>CloudFront 控制台 → <b>Functions</b> → <code>mcp-prm</code>（Code / Test / Publish）· 运行时 <code>cloudfront-js-2.0</code> · 已发布到 <b>LIVE</b></td></tr>
+    <tr><td>关联</td><td>CloudFront → <b>Distributions</b> → &lt;${esc(host)} 的 distribution&gt; → <b>Behaviors</b> → <b>Default (*)</b> → Edit → <b>Function associations</b> → <b>Viewer request</b> = CloudFront Functions / <code>mcp-prm</code></td></tr>
+    <tr><td>配套</td><td>同一 behavior → <b>Response headers policy</b> = <code>${esc(C.rhpName)}</code>：将 401 的 <code>resource_metadata</code> 指向自定义域名（<code>${esc(C.rhpValue)}</code>）</td></tr></table>
+   <b style="display:block;margin-top:12px">3 · 运行时做了什么</b>
+   <ul class="checks"><li>在边缘对<b>每个 viewer 请求</b>运行，早于 CloudFront 访问源站。</li>
+    <li>路径以 <code>/.well-known/oauth-protected-resource</code> 开头 → <b>直接返回 200 JSON 响应</b>（resource、Entra v2 issuer、<code>mcp.access</code> scope、bearer 放在 header 中）。Gateway 根本看不到这个请求。</li>
+    <li>其他所有请求都<b>原样</b>透传给 Gateway（MCP POST、token 校验、Cedar）。</li>
+    <li>它不涉及 token 或授权：<b>安全性不变</b>。</li>
+    <li>验证：发布前用 CloudFront <code>test-function</code> 测试；部署后用 curl 请求 <code>/.well-known/oauth-protected-resource</code> 和 <code>/.well-known/oauth-protected-resource/mcp</code>，均返回下面的 JSON。</li></ul>
+   <pre class="out">${esc(C.prmAfter)}</pre>
+   <b style="display:block;margin-top:12px">4 · 时序</b>
+   <div class="seq"><div>Quick → <code>POST /mcp</code>（无 token）</div><span>→</span>
+    <div>401 + <code>resource_metadata</code>（response headers policy）</div><span>→</span>
+    <div>Quick → <code>GET /.well-known/oauth-protected-resource</code></div><span>→</span>
+    <div class="edge">在边缘由 <b>mcp-prm</b> 直接响应</div><span>→</span>
+    <div>Entra authorize / token，带 <code>scope</code> + <code>resource</code></div><span>→</span>
+    <div><code>POST /mcp</code> + Bearer</div><span>→</span><div>CloudFront</div><span>→</span><div>Gateway (JWT + Cedar)</div></div>
+   <div class="ref" style="margin-top:10px"><b>mcp-prm.js</b> · viewer request</div>${lines(C.fnPrm)}
+   ${foot("2026-10-30")}</div>
+
+  <h3>(d) Quick 连接器（Quick 界面）</h3>
+  <div class="grid g2"><div class="card"><b>Integrations → Model Context Protocol → Custom user based OAuth</b> <span class="pill ok">可用（2026-10-30）</span>
+    <table class="kv"><tr><td>名称</td><td><code>agentzone-mall-entra</code></td></tr>
+    <tr><td>Base URL</td><td><code>${esc(C.custom)}/mcp</code></td></tr>
+    <tr><td>Authorization URL</td><td><code>https://login.microsoftonline.com/${esc(D.ids.tenant)}/oauth2/v2.0/authorize</code></td></tr>
+    <tr><td>Token URL</td><td><code>https://login.microsoftonline.com/${esc(D.ids.tenant)}/oauth2/v2.0/token</code></td></tr>
+    <tr><td>Client ID</td><td>rsidc-quick-mcp-entra 的 application (client) ID</td></tr>
+    <tr><td>Client secret</td><td>(b) 3 中创建的 client secret</td></tr>
+    <tr><td>客户端类型</td><td>机密客户端：<b>不是</b> public client</td></tr>
+    <tr><td>Redirect URL</td><td><code>https://us-east-1.quicksight.aws.amazon.com/sn/oauthcallback</code>（必须与 (b) 3 一致）</td></tr></table>
+    <div class="ref">Quick 从 <code>mcp-prm</code> 返回的 discovery 元数据中获取 <code>resource</code> 和 scope。</div></div>
+   <div class="card"><div><b>替代方式：desktop Add MCP → Remote</b> <span class="pill ok">可用（ds1，2026-10-26）</span>
+    <table class="kv"><tr><td>URL</td><td><code>${esc(C.custom)}/mcp</code> 或源站 URL</td></tr>
+    <tr><td>标头</td><td><code>Authorization</code> = <code>Bearer &lt;Entra access token&gt;</code></td></tr></table>
+    <p class="ref">${md(Q.desktopCheck)} 仅用于演示：没有 OAuth 登录，token 约 1 小时后过期。</p><p class="ref">分类：${Q.classification.map(md).join(" · ")}</p></div></div></div>
+
+  <h3>Gateway：<code>rsidc-mall-entra-gateway</code>（位于 CloudFront 之后的源站）</h3>
+  <div class="card"><table class="kv"><tr><td>源站 URL（位于 CloudFront 之后）</td><td><code>${esc(Q.mcpUrl)}</code> · 客户端使用 <code>${esc(C.custom)}/mcp</code></td></tr>
+   <tr><td>Inbound 认证</td><td>CUSTOM_JWT · discovery <code>${esc(Q.discovery)}</code> · allowedAudience <code>${esc(D.ids.apiApp)}</code>（改用自定义域名后无需变更）</td></tr>
+   <tr><td>策略</td><td>engine <code>${esc(D.ids.peId)}</code>（ENFORCE）· 4 条规则 <code>entra_mall_*</code>，每个工具一条，基于 <code>roles</code> 匹配</td></tr>
+   <tr><td>Target</td><td><code>mall</code> → Lambda <code>rsidc-mall-tools</code>（GATEWAY_IAM_ROLE）</td></tr></table>
+   <div class="grid g2"><div>${codeBlock("gwAuth")}</div><div>${codeBlock("gwPolicy")}</div></div></div>
+  <div class="card"><b>AWS 侧：已记录的只读检查</b>${checks("a2-")}</div>
+  ${foot("2026-10-07（配置、检查）· 2026-10-30（自定义域名、Entra 截图）")}`);
+}
+
+renderReplay(); renderHood(); renderSetup(); renderFaq();
+</script>
+<style>
+details.codefold{margin:6px 0}
+details.codefold>summary{cursor:pointer;display:inline-block;padding:3px 10px;border:1px solid #8884;border-radius:6px;
+  font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:inherit;opacity:.85;user-select:none}
+details.codefold>summary:hover{opacity:1}
+details.codefold[open]>summary{margin-bottom:6px}
+</style>
+<script>
+(function () {
+  var CODE_FILE = /[\w./-]+\.(py|sh|js|mjs|ts|tsx|json|sql|html|md|txt|yaml|yml)(:\d+(-\d+)?)?/;
+  function label(el) {
+    var p = el.previousElementSibling, t = p && p.textContent.trim();
+    return t && t.length < 140 && CODE_FILE.test(t) ? t : '';
+  }
+  function wrap(el) {
+    if (el.dataset.codefold || el.closest('details.codefold')) return;
+    if (el.tagName === 'PRE' && el.parentElement && el.parentElement.closest('.code')) return;  // the outer .code is wrapped
+    el.dataset.codefold = '1';
+    var lines = (el.textContent.replace(/\n+$/, '').match(/\n/g) || []).length + 1;
+    var kind = el.classList.contains('out') ? '显示输出' : '显示代码';
+    var lb = label(el);
+    var d = document.createElement('details'), s = document.createElement('summary');
+    d.className = 'codefold';
+    s.textContent = '▸ ' + kind + (lb ? ' · ' + lb : '') + '（' + lines + ' 行）';
+    el.parentNode.insertBefore(d, el);
+    d.appendChild(s); d.appendChild(el);
+  }
+  function scan(root) {
+    if (root.nodeType !== 1) return;
+    if (root.matches('pre, .code')) wrap(root);
+    root.querySelectorAll('pre, .code').forEach(wrap);
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) { m.addedNodes.forEach(scan); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+</body></html>

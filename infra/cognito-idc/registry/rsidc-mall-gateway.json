@@ -1,0 +1,19 @@
+{
+ "name": "rsidc-mall-gateway",
+ "displayName": "Mall tools gateway (Cognito groups, Quick)",
+ "recordType": "MCP",
+ "recordVersion": "1.0.0",
+ "description": "AgentCore Gateway (MCP), customer version: 4 mall footfall tools, per-user RBAC via Cedar on the roles claim (from Cognito group Descriptions). Client: Amazon Quick MCP integration (user OAuth).\nAuth: Bearer Cognito access token with roles claim; allowedClients = Quick client + OBO client; Cedar policy engine <mall-policy-engine-id>\nTools: mall___get_mall_list, mall___get_footfall_summary, mall___get_hourly_traffic, mall___get_zone_comparison\nOwner: Jacky Wu (rsidc PoC)",
+ "descriptors": {
+  "mcpServer": {
+   "data": "{\"name\": \"io.github.aws-samples/rsidc-mall-gateway\", \"title\": \"Mall tools gateway (Cognito groups, Quick)\", \"description\": \"AgentCore Gateway (MCP), customer version: 4 mall footfall tools, per-user RBAC via Cedar on the rol\", \"version\": \"1.0.0\", \"remotes\": [{\"type\": \"streamable-http\", \"url\": \"https://<mall-gateway-id>.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp\"}]}",
+   "dataSchemaVersion": "2025-12-11",
+   "additionalData": {
+    "tools": {
+     "data": "{\"tools\": [{\"name\": \"mall___get_mall_list\", \"description\": \"List all malls (id, name, city).\", \"inputSchema\": {\"type\": \"object\", \"properties\": {}}}, {\"name\": \"mall___get_footfall_summary\", \"description\": \"Daily footfall total for one mall.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"date\": {\"type\": \"string\", \"description\": \"YYYY-MM-DD\"}, \"mall_id\": {\"type\": \"string\"}}}}, {\"name\": \"mall___get_hourly_traffic\", \"description\": \"Hourly visitor counts (10:00-21:00) for one mall.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"date\": {\"type\": \"string\", \"description\": \"YYYY-MM-DD\"}, \"mall_id\": {\"type\": \"string\"}}}}, {\"name\": \"mall___get_zone_comparison\", \"description\": \"Visitors per zone for one mall, to compare zones.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"date\": {\"type\": \"string\", \"description\": \"YYYY-MM-DD\"}, \"mall_id\": {\"type\": \"string\"}}}}]}",
+     "dataSchemaVersion": "2025-06-18"
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AgentCore Gateway per-user tool RBAC with Microsoft Entra ID: App Roles → roles claim → Cedar</title>
+<style>
+  :root { --ink:#16191f; --muted:#545b64; --line:#d5dbdb; --aws:#232f3e; --orange:#ff9900; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Amazon Ember",Arial,Helvetica,sans-serif; color:var(--ink); background:#fafafa; }
+  header { background:var(--aws); color:#fff; padding:10px 18px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0; font-weight:600; }
+  .tabs button, .ctl button { font:inherit; border:1px solid #fff3; background:#fff1; color:#fff; padding:6px 12px; border-radius:6px; cursor:pointer; }
+  .tabs button.on { background:var(--orange); color:#000; border-color:var(--orange); font-weight:700; }
+  .ctl { display:flex; gap:6px; align-items:center; margin-left:auto; }
+  .ctl label { font-size:12px; opacity:.85; }
+  main { display:grid; grid-template-columns: 1fr 520px; gap:14px; padding:14px; }
+  .stage { background:#fff; border:1px solid var(--line); border-radius:8px; padding:6px; }
+  .stage svg { width:100%; height:auto; display:block; }
+  aside { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px; font-size:13px; }
+  aside h2 { font-size:14px; margin:4px 0 6px; }
+  #caption { min-height:110px; background:#f1faff; border-left:4px solid #0073bb; padding:8px 10px; border-radius:4px; line-height:1.45; }
+  #caption b.h, #caption b.login { display:block; margin-bottom:4px; }
+  #caption b.login { color:#ff9900; }
+  #code { background:#0f1b2a; color:#d6e4f0; font:11px/1.45 Menlo,Consolas,monospace; padding:8px 10px; border-radius:6px; white-space:pre; overflow-x:auto; margin:8px 0 0; min-height:40px; }
+  #code .c { color:#7f9bb8; } #codeh { font-size:12px; font-weight:700; margin:10px 0 0; color:#232f3e; }
+  ol#steps { padding-left:20px; margin:10px 0; }
+  ol#steps li { margin:3px 0; cursor:pointer; color:var(--muted); }
+  ol#steps li.on { color:var(--ink); font-weight:700; }
+  ol#steps li.done { color:#1d8102; }
+  .key { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .key span { font-size:11px; padding:2px 7px; border-radius:10px; color:#fff; }
+  .note { font-size:11px; color:var(--muted); margin-top:10px; }
+  /* in-SVG animation styling */
+  path.flow-active { stroke-width:3.5 !important; stroke-dasharray:10 6; animation: dash .6s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset:-16; } }
+  .pulse { animation: pulse 1.1s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes pulse { 0% { opacity:.9; transform:scale(.6);} 100% { opacity:0; transform:scale(1.8);} }
+  g.legend-dim { opacity:.28; transition:opacity .3s; }
+  g.legend-on { opacity:1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AgentCore Gateway per-user tool RBAC with Microsoft Entra ID: App Roles → roles claim → Cedar</h1>
+  <div class="tabs"><button data-s="entra" class="on">Entra ID · App Roles</button></div>
+  <div class="ctl">
+    <button id="prev" title="Previous step">◀ Prev</button>
+    <button id="play" title="Play / pause">▶ Play</button>
+    <button id="next" title="Next step">Next ▶</button>
+    <button id="restart" title="Restart">⟲</button>
+    <label>speed <select id="speed"><option value="0.6">0.6×</option><option value="1" selected>1×</option><option value="1.6">1.6×</option><option value="2.5">2.5×</option></select></label>
+  </div>
+</header>
+<main>
+  <div class="stage"><div id="svg-entra"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1744" height="1008" viewBox="0 0 1744 1008"><defs><marker id="arrow-232F3E" markerWidth="9" markerHeight="9" refX="5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M1,0.6906 L5,3 L1,5.3094" fill="none" stroke="#232F3E" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path></marker><marker id="arrow-rev-232F3E" markerWidth="9" markerHeight="9" refX="1" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M5,0.6906 L1,3 L5,5.3094" fill="none" stroke="#232F3E" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path></marker></defs><rect x="0" y="0" width="1744" height="1008" fill="#FFFFFF"></rect><text x="24" y="30" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#232F3E">Entra ID version: Microsoft Entra ID App Roles → roles claim → AgentCore Gateway (Cedar) → mall tools</text><g transform="translate(24 64)"><g data-name="End users"><title>End users</title><svg viewBox="0 0 48 48" overflow="visible" x="56" y="172" width="48" height="48"><title>Icon-Resource/General-Resource/Res_Users_48_Light</title>
+    <g id="Icon-Resource/General-Resource/Res_Users_48" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M28.639,9.286 C28.639,6.371 31.052,4 34.019,4 C36.985,4 39.397,6.371 39.397,9.286 C39.397,12.201 36.985,14.572 34.019,14.572 C31.052,14.572 28.639,12.201 28.639,9.286 L28.639,9.286 Z M40.163,16.334 C39.516,15.932 38.833,15.6 38.128,15.333 C40.098,14.023 41.397,11.802 41.397,9.286 C41.397,5.269 38.087,2 34.019,2 C29.95,2 26.639,5.269 26.639,9.286 C26.639,11.796 27.932,14.014 29.895,15.325 C28.614,15.808 27.41,16.515 26.349,17.425 L27.652,18.943 C29.434,17.414 31.689,16.572 34,16.572 C35.802,16.572 37.569,17.077 39.109,18.033 C41.849,19.735 43.647,22.725 43.953,26 L34,26 L34,28 L45,28 C45.553,28 46,27.553 46,27 C46,22.657 43.764,18.57 40.163,16.334 L40.163,16.334 Z M8.639,9.286 C8.639,6.371 11.052,4 14.019,4 C16.985,4 19.397,6.371 19.397,9.286 C19.397,12.201 16.985,14.572 14.019,14.572 C11.052,14.572 8.639,12.201 8.639,9.286 L8.639,9.286 Z M14,26 L4.046,26 C4.53,20.717 8.81,16.572 14,16.572 C15.802,16.572 17.569,17.077 19.109,18.033 C19.541,18.302 19.958,18.608 20.349,18.943 L21.652,17.426 C21.184,17.024 20.684,16.657 20.163,16.334 C19.516,15.932 18.833,15.6 18.128,15.333 C20.098,14.023 21.397,11.802 21.397,9.286 C21.397,5.269 18.087,2 14.019,2 C9.95,2 6.639,5.269 6.639,9.286 C6.639,11.801 7.937,14.023 9.907,15.332 C5.302,17.071 2,21.638 2,27 C2,27.553 2.448,28 3,28 L14,28 L14,26 Z M14.046,44 C14.53,38.717 18.81,34.572 24,34.572 C25.802,34.572 27.569,35.077 29.109,36.033 C31.849,37.735 33.647,40.725 33.953,44 L14.046,44 Z M18.639,27.286 C18.639,24.371 21.052,22 24.019,22 C26.985,22 29.397,24.371 29.397,27.286 C29.397,30.201 26.985,32.572 24.019,32.572 C21.052,32.572 18.639,30.201 18.639,27.286 L18.639,27.286 Z M30.163,34.334 C29.516,33.932 28.833,33.6 28.128,33.333 C30.098,32.023 31.397,29.802 31.397,27.286 C31.397,23.269 28.087,20 24.019,20 C19.95,20 16.639,23.269 16.639,27.286 C16.639,29.801 17.937,32.023 19.907,33.332 C15.302,35.071 12,39.638 12,45 C12,45.553 12.448,46 13,46 L35,46 C35.553,46 36,45.553 36,45 C36,40.657 33.764,36.57 30.163,34.334 L30.163,34.334 Z" id="Fill-1" fill="#242F3E"></path>
+    </g></svg><text x="80" y="240" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="12" fill="#232F3E">End users</text><text x="80" y="254" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="11" fill="#5A6B86">wei · ds1 · chen @tenant</text></g><g data-name="MCP client"><title>MCP client</title><svg viewBox="0 0 48 48" overflow="visible" x="316" y="32" width="48" height="48"><title>Icon-Resource/General-Resource/Res_Client_48_Light</title>
+    <g id="Icon-Resource/General-Resource/Res_Client_48" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M42.299,38.773 L42.299,40.696 C42.299,41.134 41.945,41.49 41.506,41.49 L30.762,41.49 C30.323,41.49 29.968,41.134 29.968,40.696 L29.968,38.773 C29.968,38.335 30.323,37.98 30.762,37.98 L41.506,37.98 C41.945,37.98 42.299,38.335 42.299,38.773 L42.299,38.773 Z M43.797,42.399 C43.797,42.754 43.508,43.044 43.153,43.044 L4.645,43.044 C4.289,43.044 4,42.754 4,42.399 L4,37.011 C4,36.656 4.289,36.367 4.645,36.367 L43.153,36.367 C43.508,36.367 43.797,36.656 43.797,37.011 L43.797,42.399 Z M43.153,34.367 L4.645,34.367 C3.187,34.367 2,35.553 2,37.011 L2,42.399 C2,43.857 3.187,45.044 4.645,45.044 L43.153,45.044 C44.611,45.044 45.797,43.857 45.797,42.399 L45.797,37.011 C45.797,35.553 44.611,34.367 43.153,34.367 L43.153,34.367 Z M7.501,27.21 L40.264,27.21 L40.264,7.502 L7.501,7.502 L7.501,27.21 Z M40.842,5.502 L6.924,5.502 C6.14,5.502 5.501,6.139 5.501,6.923 L5.501,27.788 C5.501,28.572 6.14,29.21 6.924,29.21 L40.842,29.21 C41.626,29.21 42.264,28.572 42.264,27.788 L42.264,6.923 C42.264,6.139 41.626,5.502 40.842,5.502 L40.842,5.502 Z M43.797,30.067 C43.797,30.422 43.508,30.711 43.153,30.711 L4.645,30.711 C4.289,30.711 4,30.422 4,30.067 L4,4.644 C4,4.289 4.289,4 4.645,4 L43.153,4 C43.508,4 43.797,4.289 43.797,4.644 L43.797,30.067 Z M43.153,2 L4.645,2 C3.187,2 2,3.186 2,4.644 L2,30.067 C2,31.525 3.187,32.711 4.645,32.711 L43.153,32.711 C44.611,32.711 45.797,31.525 45.797,30.067 L45.797,4.644 C45.797,3.186 44.611,2 43.153,2 L43.153,2 Z" id="Fill-3" fill="#232F3D"></path>
+    </g></svg><text x="340" y="100" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="12" fill="#232F3E">MCP client</text><text x="340" y="114" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="11" fill="#5A6B86">test client · RBAC GUI · Amazon Quick</text></g><g data-name="Microsoft Entra ID (tenant a32ee4b2…, Free)" data-kind="generic"><title>Microsoft Entra ID (tenant a32ee4b2…, Free)</title><rect x="216" y="208" width="384" height="152" rx="4" fill="none" stroke="#5A6B86" stroke-width="2" stroke-dasharray="6 4"></rect><text x="226" y="230" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#5A6B86">Microsoft Entra ID (tenant a32ee4b2…, Free)</text><g data-name="Microsoft Entra ID"><title>Microsoft Entra ID</title><svg viewBox="0 0 48 48" overflow="visible" x="388" y="256" width="48" height="48"><title>Icon-Resource/General-Resource/Res_Credentials_48_Light</title>
+    <g id="Icon-Resource/General-Resource/Res_Credentials_48" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M13,18 L24,18 L24,16 L13,16 L13,18 Z M13,11 L35,11 L35,9 L13,9 L13,11 Z M30.083,37.532 C29.276,37.829 28.409,38 27.5,38 C26.654,38 25.843,37.852 25.083,37.593 L25.083,42.84 L27.104,41.126 C27.489,40.798 28.06,40.811 28.433,41.158 L30.083,42.699 L30.083,37.532 Z M27.5,36 C30.532,36 33,33.533 33,30.5 C33,27.467 30.532,25 27.5,25 C24.468,25 22,27.467 22,30.5 C22,33.533 24.468,36 27.5,36 L27.5,36 Z M32.083,36.424 L32.083,45 C32.083,45.398 31.847,45.758 31.481,45.917 C31.354,45.972 31.218,46 31.083,46 C30.835,46 30.59,45.907 30.4,45.731 L27.719,43.227 L24.729,45.763 C24.433,46.015 24.015,46.071 23.663,45.907 C23.31,45.743 23.083,45.389 23.083,45 L23.083,36.548 C21.218,35.182 20,32.983 20,30.5 C20,26.364 23.364,23 27.5,23 C31.636,23 35,26.364 35,30.5 C35,32.909 33.854,35.05 32.083,36.424 L32.083,36.424 Z M40,3 L40,40 C40,40.552 39.553,41 39,41 L34,41 L34,39 L38,39 L38,4 L10,4 L10,39 L21,39 L21,41 L9,41 C8.447,41 8,40.552 8,40 L8,3 C8,2.448 8.447,2 9,2 L39,2 C39.553,2 40,2.448 40,3 L40,3 Z" id="Fill-1" fill="#232F3D"></path>
+    </g></svg><text x="412" y="324" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="12" fill="#232F3E">Microsoft Entra ID</text><text x="412" y="338" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="11" fill="#5A6B86">app rsidc-mall-api · 4 App Roles</text></g></g><g data-name="AWS Cloud" data-kind="aws-cloud"><title>AWS Cloud</title><rect x="656" y="0" width="632" height="392" rx="4" fill="none" stroke="#242F3E" stroke-width="2"></rect><svg viewBox="0 0 40 40" overflow="visible" x="656" y="0" width="28" height="28"><title>Icon-Architecture-Group/32/AWS-Cloud-logo_32</title>
+    <g id="Icon-Architecture-Group/32/AWS-Cloud-logo_32" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect id="Rectangle" fill="#242F3E" x="0" y="0" width="40" height="40"></rect>
+        <path d="M32.6982,23.9008 C33.0592,24.3698 32.2982,26.2998 31.9572,27.1638 C31.8532,27.4258 32.0752,27.5288 32.3072,27.3318 C33.8202,26.0478 34.2122,23.3568 33.9012,22.9688 C33.5942,22.5828 30.9502,22.2518 29.3382,23.4008 C29.0892,23.5778 29.1322,23.8218 29.4072,23.7898 C30.3152,23.6778 32.3382,23.4328 32.6982,23.9008 L32.6982,23.9008 Z M31.8562,25.9098 C32.3742,25.5318 31.9302,24.9688 31.4022,25.1898 C27.8892,26.6538 24.0752,27.3628 20.6022,27.3628 C15.4592,27.3628 10.4752,25.9738 6.4462,23.6678 C6.0942,23.4658 5.8332,23.8228 6.1272,24.0818 C9.8602,27.3978 14.7962,29.3908 20.2742,29.3908 C24.1842,29.3908 28.7252,28.1828 31.8562,25.9098 L31.8562,25.9098 Z M29.7122,20.6948 C29.2142,20.6948 28.7272,20.6418 28.2532,20.5338 C27.7772,20.4248 27.4132,20.3018 27.1602,20.1608 C27.0052,20.0768 26.9082,19.9888 26.8692,19.9028 C26.8312,19.8148 26.8112,19.7288 26.8112,19.6428 L26.8112,19.1738 C26.8112,18.9798 26.8842,18.8808 27.0272,18.8808 C27.0822,18.8808 27.1402,18.8938 27.2002,18.9138 C27.2612,18.9368 27.3412,18.9688 27.4412,19.0118 C27.7612,19.1528 28.1082,19.2598 28.4852,19.3358 C28.8612,19.4108 29.2362,19.4488 29.6112,19.4488 C30.2082,19.4488 30.6692,19.3468 30.9952,19.1408 C31.3222,18.9368 31.4842,18.6458 31.4842,18.2678 C31.4842,18.0078 31.3992,17.7928 31.2272,17.6188 C31.0562,17.4448 30.7382,17.2858 30.2752,17.1338 L28.9002,16.7128 C28.2032,16.4968 27.6982,16.1838 27.3832,15.7748 C27.0682,15.3628 26.9112,14.9158 26.9112,14.4278 C26.9112,14.0408 26.9962,13.6988 27.1692,13.4008 C27.3392,13.1038 27.5642,12.8508 27.8452,12.6398 C28.1302,12.4298 28.4592,12.2718 28.8342,12.1618 C29.2082,12.0548 29.6062,11.9998 30.0262,11.9998 C30.2362,11.9998 30.4492,12.0138 30.6662,12.0408 C30.8812,12.0668 31.0852,12.1028 31.2782,12.1458 C31.4712,12.1908 31.6512,12.2388 31.8162,12.2918 C31.9822,12.3468 32.1142,12.4008 32.2152,12.4538 C32.3462,12.5288 32.4392,12.6048 32.4962,12.6808 C32.5512,12.7558 32.5792,12.8578 32.5792,12.9888 L32.5792,13.4248 C32.5792,13.6198 32.5072,13.7158 32.3622,13.7158 C32.2852,13.7158 32.1652,13.6798 31.9982,13.6038 C31.4582,13.3648 30.8482,13.2478 30.1772,13.2478 C29.6352,13.2478 29.2142,13.3338 28.9162,13.5058 C28.6172,13.6798 28.4682,13.9548 28.4682,14.3328 C28.4682,14.5908 28.5622,14.8098 28.7512,14.9878 C28.9392,15.1658 29.2862,15.3358 29.7952,15.4988 L31.1372,15.9208 C31.8222,16.1348 32.3112,16.4328 32.6032,16.8088 C32.8972,17.1878 33.0442,17.6188 33.0442,18.1038 C33.0442,18.5048 32.9612,18.8638 32.7942,19.1818 C32.6282,19.5008 32.3992,19.7718 32.1052,19.9988 C31.8132,20.2258 31.4632,20.3978 31.0542,20.5168 C30.6442,20.6368 30.1972,20.6948 29.7122,20.6948 L29.7122,20.6948 Z M17.5472,20.4508 C17.3812,20.4508 17.2602,20.4238 17.1822,20.3638 C17.1042,20.3028 17.0382,20.1828 16.9832,19.9988 L14.7612,12.8418 C14.7082,12.6578 14.6792,12.5348 14.6792,12.4708 C14.6792,12.3198 14.7572,12.2438 14.9122,12.2438 L15.8392,12.2438 C16.0162,12.2438 16.1402,12.2738 16.2132,12.3338 C16.2842,12.3918 16.3472,12.5118 16.4022,12.6978 L17.9932,18.8178 L19.4702,12.6978 C19.5142,12.5118 19.5742,12.3918 19.6512,12.3338 C19.7282,12.2738 19.8552,12.2438 20.0312,12.2438 L20.7962,12.2438 C20.9712,12.2438 21.0982,12.2738 21.1762,12.3338 C21.2532,12.3918 21.3142,12.5118 21.3582,12.6978 L22.8512,18.8988 L24.4912,12.6978 C24.5462,12.5118 24.6092,12.3918 24.6812,12.3338 C24.7542,12.2738 24.8772,12.2438 25.0542,12.2438 L25.9322,12.2438 C26.0882,12.2438 26.1652,12.3198 26.1652,12.4708 C26.1652,12.5118 26.1582,12.5618 26.1492,12.6148 C26.1362,12.6708 26.1162,12.7458 26.0812,12.8418 L23.7952,19.9988 C23.7402,20.1828 23.6732,20.3028 23.5952,20.3638 C23.5182,20.4238 23.3962,20.4508 23.2312,20.4508 L22.4182,20.4508 C22.2422,20.4508 22.1152,20.4208 22.0382,20.3568 C21.9612,20.2918 21.9002,20.1658 21.8562,19.9838 L20.3802,14.0238 L18.9232,19.9838 C18.8792,20.1658 18.8172,20.2918 18.7402,20.3568 C18.6622,20.4208 18.5362,20.4508 18.3592,20.4508 L17.5472,20.4508 Z M9.9392,19.4488 C10.2502,19.4488 10.5752,19.3918 10.9182,19.2788 C11.2602,19.1648 11.5582,18.9688 11.8122,18.6868 C11.9682,18.5148 12.0742,18.3178 12.1362,18.0958 C12.1962,17.8758 12.2252,17.6088 12.2252,17.2948 L12.2252,16.9068 C11.9512,16.8418 11.6612,16.7908 11.3562,16.7528 C11.0522,16.7158 10.7572,16.6958 10.4692,16.6958 C9.8402,16.6958 9.3692,16.8198 9.0612,17.0688 C8.7522,17.3168 8.5962,17.6718 8.5962,18.1388 C8.5962,18.5698 8.7132,18.8948 8.9452,19.1168 C9.1772,19.3388 9.5092,19.4488 9.9392,19.4488 L9.9392,19.4488 Z M13.7852,18.0408 C13.7852,18.3858 13.8202,18.6598 13.8922,18.8658 C13.9652,19.0718 14.0672,19.2938 14.1992,19.5298 C14.2432,19.6058 14.2652,19.6758 14.2652,19.7388 C14.2652,19.8378 14.2042,19.9298 14.0832,20.0148 L13.4862,20.4048 C13.3982,20.4578 13.3152,20.4858 13.2382,20.4858 C13.1372,20.4858 13.0442,20.4428 12.9562,20.3568 C12.8222,20.2258 12.7102,20.0838 12.6172,19.9268 C12.5212,19.7708 12.4252,19.5878 12.3262,19.3828 C11.5852,20.2358 10.6582,20.6628 9.5422,20.6628 C8.7462,20.6628 8.1162,20.4428 7.6512,19.9988 C7.1882,19.5568 6.9562,18.9628 6.9562,18.2188 C6.9562,17.4318 7.2432,16.7958 7.8192,16.3158 C8.3922,15.8358 9.1672,15.5948 10.1382,15.5948 C10.4592,15.5948 10.7932,15.6198 11.1412,15.6678 C11.4882,15.7158 11.8512,15.7848 12.2252,15.8708 L12.2252,15.1918 C12.2252,14.4898 12.0782,13.9958 11.7792,13.7088 C11.4812,13.4228 10.9682,13.2808 10.2392,13.2808 C9.9062,13.2808 9.5662,13.3198 9.2182,13.4008 C8.8712,13.4818 8.5302,13.5868 8.1992,13.7158 C8.0442,13.7808 7.9332,13.8218 7.8682,13.8378 C7.8022,13.8538 7.7522,13.8618 7.7192,13.8618 C7.5872,13.8618 7.5192,13.7658 7.5192,13.5698 L7.5192,13.1178 C7.5192,12.9658 7.5432,12.8578 7.5872,12.7948 C7.6312,12.7288 7.7192,12.6638 7.8522,12.5998 C8.1832,12.4368 8.5812,12.2968 9.0442,12.1788 C9.5092,12.0598 10.0002,11.9998 10.5202,11.9998 C11.6462,11.9998 12.4722,12.2528 12.9972,12.7528 C13.5212,13.2548 13.7852,14.0128 13.7852,15.0278 L13.7852,18.0408 Z" id="Fill-1" fill="#FFFFFF"></path>
+    </g></svg><text x="690" y="19" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#242F3E">AWS Cloud</text><g data-name="Region: ap-southeast-1 (Singapore)" data-kind="region"><title>Region: ap-southeast-1 (Singapore)</title><rect x="672" y="48" width="600" height="328" rx="4" fill="none" stroke="#00A4A6" stroke-width="2" stroke-dasharray="6 4"></rect><svg viewBox="0 0 40 40" overflow="visible" x="672" y="48" width="28" height="28"><title>Icon-Architecture-Group/32/Region_32</title>
+    <g id="Icon-Architecture-Group/32/Region_32" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect id="Rectangle" fill="#00A4A6" x="0" y="0" width="40" height="40"></rect>
+        <path d="M14,20.026 L14,11.026 L29.293,11.026 L25.146,15.172 C24.951,15.368 24.951,15.684 25.146,15.88 L29.293,20.026 L14,20.026 Z M26.207,15.526 L30.854,10.88 C30.996,10.736 31.039,10.522 30.962,10.335 C30.885,10.148 30.702,10.026 30.5,10.026 L14,10.026 L14,8.97 C14.596,8.76 15.026,8.198 15.026,7.531 C15.026,6.687 14.34,6 13.495,6 C12.65,6 11.963,6.687 11.963,7.531 C11.963,8.201 12.398,8.766 13,8.973 L13,33.026 L10,33.026 L10,34.026 L17,34.026 L17,33.026 L14,33.026 L14,21.026 L30.5,21.026 C30.702,21.026 30.885,20.904 30.962,20.717 C31.039,20.53 30.996,20.316 30.854,20.172 L26.207,15.526 Z" id="Fill-1" fill="#FFFFFF"></path>
+    </g></svg><text x="706" y="67" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#00A4A6">Region: ap-southeast-1 (Singapore)</text><g data-name="Amazon Bedrock AgentCore"><title>Amazon Bedrock AgentCore</title><svg viewBox="0 0 80 80" overflow="visible" x="780" y="96" width="48" height="48"><g clip-path="url(#clip0_211_73)">
+<rect width="80" height="80" fill="#01A88D"/>
+<path d="M67.3721 28.0727L64.1777 26.792L62.9326 23.6338C62.7812 23.2519 62.4121 23.001 62.0019 23.001C61.5908 23.0014 61.2217 23.2529 61.0713 23.6357L59.8144 26.8379L56.6377 28.0708C56.2529 28.2202 55.999 28.5918 56 29.0054C56.001 29.4189 56.2568 29.7895 56.6426 29.937L59.8896 31.1777L61.0625 34.3481C61.2051 34.7353 61.5722 34.9946 61.9853 35.001H62C62.4072 35.001 62.7744 34.7539 62.9277 34.375L64.2314 31.1416L67.3603 29.9341C67.7431 29.7861 67.9971 29.4184 68 29.0073C68.0029 28.5967 67.7539 28.2256 67.3721 28.0727ZM63.1064 29.4316C62.8486 29.5317 62.6426 29.7339 62.5391 29.9907L62.0401 31.2275L61.6074 30.0581C61.5078 29.7881 61.2959 29.5742 61.0274 29.4712L59.7822 28.9956L60.9473 28.5434C61.207 28.4424 61.4141 28.2368 61.5156 27.9765L62.0039 26.7319L62.4346 27.8222C62.5225 28.1421 62.7666 28.3984 63.0791 28.5058L64.2686 28.9834L63.1064 29.4316ZM64.0527 38.6001L54.9141 34.9345L51.3506 25.9018C51.123 25.3252 50.5752 24.9531 49.9551 24.9531C49.335 24.9536 48.7861 25.3271 48.5596 25.9048L44.958 35.0825L42 36.2304V16C42 15.5693 41.7246 15.1875 41.3164 15.0512L32.3164 12.0512C32.042 11.9609 31.7441 11.9907 31.4961 12.1362L19.4961 19.1362C19.1885 19.3154 19 19.6445 19 20V29.4199L12.5039 33.1318C12.1924 33.3095 12 33.6411 12 34V46C12 46.3589 12.1924 46.6904 12.5039 46.8681L19 50.58V60C19 60.3554 19.1885 60.6845 19.4961 60.8637L31.4961 67.8637C31.6504 67.9541 31.8252 68 32 68C32.1064 68 32.2129 67.9829 32.3164 67.9487L41.3164 64.9487C41.7246 64.8125 42 64.4306 42 64V43.7384L45.2002 44.9614L48.5606 54.0458C48.7774 54.6318 49.3203 55.0165 49.9453 55.0263H49.9688C50.584 55.0263 51.1279 54.6596 51.3594 54.0874L55.0889 44.8452L64.0352 41.3916C64.6143 41.1679 64.9912 40.6225 64.9951 40.0014C64.999 39.3808 64.6289 38.831 64.0527 38.6001ZM32.1133 65.9082L28.8654 64.0136L35.5303 59.8481L34.4697 58.1518L26.913 62.8748L21 59.4257V50.5351L26.5547 46.832L25.4453 45.1679L19.9595 48.8252L14 45.4199V40.5802L20.4961 36.8681L19.5039 35.1318L14 38.2769V34.5801L20 31.1516L26 34.5802V38.4336L21.4853 41.1425L22.5147 42.8574L27 40.1662L31.4853 42.8574L32.5147 41.1425L28 38.4337V34.5351L33.5547 30.832C33.833 30.6465 34 30.3344 34 30V23H32V29.4648L26.9595 32.8252L21 29.4198V20.5742L26 17.6577V26H28V16.4911L32.1133 14.0918L40 16.7207V45.4338L25.4853 54.1426L26.5147 55.8574L40 47.7662V63.2793L32.1133 65.9082ZM53.9639 43.1352C53.7061 43.2353 53.501 43.4375 53.3965 43.6943L49.9883 52.1401L46.918 43.8423C46.8184 43.5722 46.6065 43.3584 46.3379 43.2553L42 41.5971V38.3752L46.0899 36.7881C46.3506 36.687 46.5576 36.4814 46.6592 36.2212L49.957 27.8183L53.1397 35.8862C53.209 36.2524 53.4863 36.5483 53.8399 36.6587L62.1289 39.9834L53.9639 43.1352Z" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_211_73">
+<rect width="80" height="80" fill="white"/>
+</clipPath>
+</defs></svg><text x="804" y="164" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="12" fill="#232F3E">Amazon Bedrock AgentCore</text><text x="804" y="178" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="11" fill="#5A6B86">Gateway · rsidc-mall-entra-gateway</text></g><g data-name="Amazon Bedrock AgentCore"><title>Amazon Bedrock AgentCore</title><svg viewBox="0 0 80 80" overflow="visible" x="780" y="272" width="48" height="48"><g clip-path="url(#clip0_211_73)">
+<rect width="80" height="80" fill="#01A88D"/>
+<path d="M67.3721 28.0727L64.1777 26.792L62.9326 23.6338C62.7812 23.2519 62.4121 23.001 62.0019 23.001C61.5908 23.0014 61.2217 23.2529 61.0713 23.6357L59.8144 26.8379L56.6377 28.0708C56.2529 28.2202 55.999 28.5918 56 29.0054C56.001 29.4189 56.2568 29.7895 56.6426 29.937L59.8896 31.1777L61.0625 34.3481C61.2051 34.7353 61.5722 34.9946 61.9853 35.001H62C62.4072 35.001 62.7744 34.7539 62.9277 34.375L64.2314 31.1416L67.3603 29.9341C67.7431 29.7861 67.9971 29.4184 68 29.0073C68.0029 28.5967 67.7539 28.2256 67.3721 28.0727ZM63.1064 29.4316C62.8486 29.5317 62.6426 29.7339 62.5391 29.9907L62.0401 31.2275L61.6074 30.0581C61.5078 29.7881 61.2959 29.5742 61.0274 29.4712L59.7822 28.9956L60.9473 28.5434C61.207 28.4424 61.4141 28.2368 61.5156 27.9765L62.0039 26.7319L62.4346 27.8222C62.5225 28.1421 62.7666 28.3984 63.0791 28.5058L64.2686 28.9834L63.1064 29.4316ZM64.0527 38.6001L54.9141 34.9345L51.3506 25.9018C51.123 25.3252 50.5752 24.9531 49.9551 24.9531C49.335 24.9536 48.7861 25.3271 48.5596 25.9048L44.958 35.0825L42 36.2304V16C42 15.5693 41.7246 15.1875 41.3164 15.0512L32.3164 12.0512C32.042 11.9609 31.7441 11.9907 31.4961 12.1362L19.4961 19.1362C19.1885 19.3154 19 19.6445 19 20V29.4199L12.5039 33.1318C12.1924 33.3095 12 33.6411 12 34V46C12 46.3589 12.1924 46.6904 12.5039 46.8681L19 50.58V60C19 60.3554 19.1885 60.6845 19.4961 60.8637L31.4961 67.8637C31.6504 67.9541 31.8252 68 32 68C32.1064 68 32.2129 67.9829 32.3164 67.9487L41.3164 64.9487C41.7246 64.8125 42 64.4306 42 64V43.7384L45.2002 44.9614L48.5606 54.0458C48.7774 54.6318 49.3203 55.0165 49.9453 55.0263H49.9688C50.584 55.0263 51.1279 54.6596 51.3594 54.0874L55.0889 44.8452L64.0352 41.3916C64.6143 41.1679 64.9912 40.6225 64.9951 40.0014C64.999 39.3808 64.6289 38.831 64.0527 38.6001ZM32.1133 65.9082L28.8654 64.0136L35.5303 59.8481L34.4697 58.1518L26.913 62.8748L21 59.4257V50.5351L26.5547 46.832L25.4453 45.1679L19.9595 48.8252L14 45.4199V40.5802L20.4961 36.8681L19.5039 35.1318L14 38.2769V34.5801L20 31.1516L26 34.5802V38.4336L21.4853 41.1425L22.5147 42.8574L27 40.1662L31.4853 42.8574L32.5147 41.1425L28 38.4337V34.5351L33.5547 30.832C33.833 30.6465 34 30.3344 34 30V23H32V29.4648L26.9595 32.8252L21 29.4198V20.5742L26 17.6577V26H28V16.4911L32.1133 14.0918L40 16.7207V45.4338L25.4853 54.1426L26.5147 55.8574L40 47.7662V63.2793L32.1133 65.9082ZM53.9639 43.1352C53.7061 43.2353 53.501 43.4375 53.3965 43.6943L49.9883 52.1401L46.918 43.8423C46.8184 43.5722 46.6065 43.3584 46.3379 43.2553L42 41.5971V38.3752L46.0899 36.7881C46.3506 36.687 46.5576 36.4814 46.6592 36.2212L49.957 27.8183L53.1397 35.8862C53.209 36.2524 53.4863 36.5483 53.8399 36.6587L62.1289 39.9834L53.9639 43.1352Z" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_211_73">
+<rect width="80" height="80" fill="white"/>
+</clipPath>
+</defs></svg><text x="804" y="340" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="12" fill="#232F3E">Amazon Bedrock AgentCore</text><text x="804" y="354" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="11" fill="#5A6B86">Policy · Cedar · ENFORCE</text></g><g data-name="AWS Lambda"><title>AWS Lambda</title><svg viewBox="0 0 80 80" overflow="visible" x="1108" y="96" width="48" height="48"><title>Icon-Architecture/64/Arch_AWS-Lambda_64</title>
+    <g id="Icon-Architecture/64/Arch_AWS-Lambda_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Icon-Architecture-BG/64/Compute" fill="#ED7100">
+            <rect id="Rectangle" x="0" y="0" width="80" height="80"></rect>
+        </g>
+        <path d="M28.0075352,66 L15.5907274,66 L29.3235885,37.296 L35.5460249,50.106 L28.0075352,66 Z M30.2196674,34.553 C30.0512768,34.208 29.7004629,33.989 29.3175745,33.989 L29.3145676,33.989 C28.9286723,33.99 28.5778583,34.211 28.4124746,34.558 L13.097944,66.569 C12.9495999,66.879 12.9706487,67.243 13.1550766,67.534 C13.3374998,67.824 13.6582439,68 14.0020416,68 L28.6420072,68 C29.0299071,68 29.3817234,67.777 29.5481094,67.428 L37.563706,50.528 C37.693006,50.254 37.6920037,49.937 37.5586944,49.665 L30.2196674,34.553 Z M64.9953491,66 L52.6587274,66 L32.866809,24.57 C32.7014253,24.222 32.3486067,24 31.9617091,24 L23.8899822,24 L23.8990031,14 L39.7197081,14 L59.4204149,55.429 C59.5857986,55.777 59.9386172,56 60.3255148,56 L64.9953491,56 L64.9953491,66 Z M65.9976745,54 L60.9599868,54 L41.25928,12.571 C41.0938963,12.223 40.7410777,12 40.3531778,12 L22.89768,12 C22.3453987,12 21.8963569,12.447 21.8953545,12.999 L21.884329,24.999 C21.884329,25.265 21.9885708,25.519 22.1780103,25.707 C22.3654452,25.895 22.6200358,26 22.8866544,26 L31.3292417,26 L51.1221625,67.43 C51.2885485,67.778 51.6393624,68 52.02626,68 L65.9976745,68 C66.5519605,68 67,67.552 67,67 L67,55 C67,54.448 66.5519605,54 65.9976745,54 L65.9976745,54 Z" id="AWS-Lambda_Icon_64_Squid" fill="#FFFFFF"></path>
+    </g></svg><text x="1132" y="164" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="12" fill="#232F3E">AWS Lambda</text><text x="1132" y="178" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="11" fill="#5A6B86">rsidc-mall-tools · same Lambda as the Cognito version</text></g></g></g><g data-kind="borderless"><rect x="0" y="456" width="1224" height="128" rx="4" fill="none" stroke="none" stroke-width="2"></rect></g><g data-kind="borderless"><rect x="0" y="648" width="1224" height="272" rx="4" fill="none" stroke="none" stroke-width="2"></rect></g><g><rect x="0" y="488" width="1224" height="128" rx="8" fill="#f8f9fa" stroke="#aab7b8"/><text x="16" y="510" font-family="Arial" font-size="14" font-weight="700" fill="#232f3e">User → App Role assignment lives in Entra ID (Cedar never changes)</text><rect x="8" y="520" width="1208" height="22" fill="#232f3e"/><text x="16" y="535" font-family="Arial" font-size="12" font-weight="700" fill="#fff">Entra user</text><text x="246" y="535" font-family="Arial" font-size="12" font-weight="700" fill="#fff">Assigned App Roles (roles claim)</text><text x="743" y="535" font-family="Arial" font-size="12" font-weight="700" fill="#fff">Result through the Gateway (ENFORCE)</text><rect x="8" y="542" width="1208" height="24" fill="#eef2f5"/><text x="16" y="558" font-family="Arial" font-size="12" font-weight="700" fill="#16191f">wei</text><text x="246" y="558" font-family="Arial" font-size="12" fill="#16191f">Tools.Mall.List, Footfall, Hourly, Zone</text><text x="743" y="558" font-family="Arial" font-size="12" fill="#16191f">all 4 tools listed + allowed</text><rect x="8" y="566" width="1208" height="24" fill="#ffffff"/><text x="16" y="582" font-family="Arial" font-size="12" font-weight="700" fill="#16191f">ds1</text><text x="246" y="582" font-family="Arial" font-size="12" fill="#16191f">Tools.Mall.List, Tools.Mall.Footfall</text><text x="743" y="582" font-family="Arial" font-size="12" fill="#16191f">list + footfall ✓ · hourly + zone hidden and ✗ (isError)</text><rect x="8" y="590" width="1208" height="24" fill="#eef2f5"/><text x="16" y="606" font-family="Arial" font-size="12" font-weight="700" fill="#16191f">chen</text><text x="246" y="606" font-family="Arial" font-size="12" fill="#16191f">— (token has no roles claim)</text><text x="743" y="606" font-family="Arial" font-size="12" fill="#16191f">nothing listed · every call ✗</text></g><g><rect x="0" y="640" width="1224" height="272" rx="8" fill="#0f1b2a" stroke="#232f3e"/><text x="16" y="664" font-family="Arial" font-size="14" font-weight="700" fill="#ff9900">Key code: Entra ID version (numbers = steps)</text><rect x="16" y="680" width="588" height="118" rx="6" fill="#16263a" stroke="#2c4462"/><circle cx="30" cy="694" r="9" fill="#ff9900"/><text x="30" y="698" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#000">1</text><text x="46" y="698" font-family="Arial" font-size="12" font-weight="700" fill="#ffffff">Entra app rsidc-mall-api via Microsoft Graph (infra/entra-id/01-entra-setup.py)</text><text x="28" y="716" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">POST /v1.0/applications {"displayName": "rsidc-mall-api",</text><text x="28" y="731" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">  "api": {"requestedAccessTokenVersion": 2,</text><text x="28" y="746" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">          "oauth2PermissionScopes": [{"value": "mcp.access", ...}]},</text><text x="28" y="761" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">  "appRoles": [{"value": "Tools.Mall.Hourly", ...} x4]}</text><text x="28" y="776" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">POST /v1.0/servicePrincipals/{api-sp}/appRoleAssignedTo</text><text x="28" y="791" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">  {"principalId": "&lt;ds1&gt;", "appRoleId": "&lt;Tools.Mall.List&gt;", ...}</text><rect x="16" y="804" width="588" height="88" rx="6" fill="#16263a" stroke="#2c4462"/><circle cx="30" cy="818" r="9" fill="#ff9900"/><text x="30" y="822" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#000">4</text><text x="46" y="822" font-family="Arial" font-size="12" font-weight="700" fill="#ffffff">Entra v2 access token claims (ds1)</text><text x="28" y="840" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">{"ver": "2.0", "iss": "https://login.microsoftonline.com/a32ee4b2-.../v2.0",</text><text x="28" y="855" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve"> "aud": "&lt;mall-api-app-id&gt;",</text><text x="28" y="870" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve"> "azp": "650791ca-...", "scp": "mcp.access",</text><text x="28" y="885" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve"> "roles": ["Tools.Mall.List", "Tools.Mall.Footfall"]}   # native claim</text><rect x="620" y="680" width="588" height="103" rx="6" fill="#16263a" stroke="#2c4462"/><circle cx="634" cy="694" r="9" fill="#ff9900"/><text x="634" y="698" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#000">5</text><text x="650" y="698" font-family="Arial" font-size="12" font-weight="700" fill="#ffffff">Gateway inbound authorizer (infra/entra-id/02-entra-gateway.sh)</text><text x="632" y="716" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">{"customJWTAuthorizer": {</text><text x="632" y="731" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">  "discoveryUrl": "https://login.microsoftonline.com/&lt;tenant&gt;/v2.0</text><text x="632" y="746" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">                   /.well-known/openid-configuration",</text><text x="632" y="761" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">  "allowedAudience": ["&lt;mall-api-app-id&gt;"]}}</text><text x="632" y="776" font-family="Menlo, Consolas, monospace" font-size="11" fill="#7f9bb8" xml:space="preserve"># v2 tokens carry the client in azp (not client_id) -&gt; check audience</text><rect x="620" y="789" width="588" height="103" rx="6" fill="#16263a" stroke="#2c4462"/><circle cx="634" cy="803" r="9" fill="#ff9900"/><text x="634" y="807" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#000">6</text><text x="650" y="807" font-family="Arial" font-size="12" font-weight="700" fill="#ffffff">Cedar: same rule shape as the Cognito version</text><text x="632" y="825" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">permit(principal is AgentCore::OAuthUser,</text><text x="632" y="840" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">       action == AgentCore::Action::"mall___get_hourly_traffic",</text><text x="632" y="855" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">       resource == AgentCore::Gateway::"&lt;rsidc-mall-entra-gateway ARN&gt;")</text><text x="632" y="870" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">when { principal.hasTag("roles") &amp;&amp;</text><text x="632" y="885" font-family="Menlo, Consolas, monospace" font-size="11" fill="#d6e4f0" xml:space="preserve">       principal.getTag("roles") like "*\"Tools.Mall.Hourly\"*" };</text></g><g data-name="connectors"><g data-arrow-id="e2"><path d="M 112 196 L 194 196 Q 200 196 200 190 L 200 62 Q 200 56 206 56 L 308 56" fill="none" stroke="#232F3E" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#arrow-232F3E)"></path></g><g data-arrow-id="e3"><path d="M 340 120 L 340 274 Q 340 280 346 280 L 380 280" fill="none" stroke="#232F3E" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#arrow-232F3E)"></path></g><g data-arrow-id="e5"><path d="M 372 56 L 554 56 Q 560 56 560 62 L 560 114 Q 560 120 566 120 L 772 120" fill="none" stroke="#232F3E" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#arrow-232F3E)"></path></g><g data-arrow-id="e6"><path d="M 804 184 L 804 264" fill="none" stroke="#232F3E" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#arrow-232F3E)"></path></g><g data-arrow-id="e7"><path d="M 836 120 L 1100 120" fill="none" stroke="#232F3E" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#arrow-232F3E)"></path></g><g data-arrow-id="ejwks"><path d="M 772 120 L 630 120 Q 624 120 624 126 L 624 274 Q 624 280 618 280 L 444 280" fill="none" stroke="#232F3E" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="5 4" marker-end="url(#arrow-232F3E)"></path></g></g><g data-name="arrow-labels"><g><g><text x="534" y="273.6" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" font-style="italic" fill="#232F3E" stroke="#FFFFFF" stroke-width="3.3600000000000003" stroke-linejoin="round" paint-order="stroke">JWKS (v2 metadata)</text></g></g></g><g data-name="step-badges"><g data-name="step 2"><title>Step 2</title><circle cx="176" cy="120" r="16" fill="#232F3E"></circle><text x="176" y="125.44" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="17.6" font-weight="bold" fill="#FFFFFF">2</text></g><g data-name="step 3"><title>Step 3</title><circle cx="368" cy="144" r="16" fill="#232F3E"></circle><text x="368" y="149.44" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="17.6" font-weight="bold" fill="#FFFFFF">3</text></g><g data-name="step 5"><title>Step 5</title><circle cx="536" cy="104" r="16" fill="#232F3E"></circle><text x="536" y="109.44" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="17.6" font-weight="bold" fill="#FFFFFF">5</text></g><g data-name="step 6"><title>Step 6</title><circle cx="832" cy="224" r="16" fill="#232F3E"></circle><text x="832" y="229.44" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="17.6" font-weight="bold" fill="#FFFFFF">6</text></g><g data-name="step 7"><title>Step 7</title><circle cx="968" cy="96" r="16" fill="#232F3E"></circle><text x="968" y="101.44" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="17.6" font-weight="bold" fill="#FFFFFF">7</text></g></g></g><g data-name="step-legend"><rect x="1360" y="0" width="360" height="1008" fill="#F2F3F3"></rect><g data-name="step 1"><title>Step 1</title><circle cx="1398" cy="38" r="14" fill="#232F3E"></circle><text x="1398" y="42.76" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="15.400000000000002" font-weight="bold" fill="#FFFFFF">1</text></g><text x="1424" y="37" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">Admin setup in Microsoft Entra ID</text><text x="1424" y="55" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">(infra/entra-id/01-entra-setup.py, Entra ID</text><text x="1424" y="73" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">Free): app rsidc-mall-api exposes</text><text x="1424" y="91" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">api://&lt;appId&gt;/mcp.access, issues</text><text x="1424" y="109" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">v2 access tokens and defines 4 App</text><text x="1424" y="127" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">Roles Tools.Mall.*; users are</text><text x="1424" y="145" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">assigned to roles (Free tier: per</text><text x="1424" y="163" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">user; P1/P2: per group).</text><g data-name="step 2"><title>Step 2</title><circle cx="1398" cy="198" r="14" fill="#232F3E"></circle><text x="1398" y="202.76" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="15.400000000000002" font-weight="bold" fill="#FFFFFF">2</text></g><text x="1424" y="197" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">The user (wei / ds1 / chen) opens</text><text x="1424" y="215" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">an MCP client: the test client,</text><text x="1424" y="233" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">the RBAC web GUI, or Amazon Quick.</text><g data-name="step 3"><title>Step 3</title><circle cx="1398" cy="268" r="14" fill="#232F3E"></circle><text x="1398" y="272.76" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="15.400000000000002" font-weight="bold" fill="#FFFFFF">3</text></g><text x="1424" y="267" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">The client signs the user in to</text><text x="1424" y="285" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">Entra ID (authorization code +</text><text x="1424" y="303" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">PKCE; the scripted test uses ROPC)</text><text x="1424" y="321" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">and asks for scope</text><text x="1424" y="339" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">api://&lt;appId&gt;/mcp.access.</text><g data-name="step 4"><title>Step 4</title><circle cx="1398" cy="374" r="14" fill="#232F3E"></circle><text x="1398" y="378.76" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="15.400000000000002" font-weight="bold" fill="#FFFFFF">4</text></g><text x="1424" y="373" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">Entra issues a v2 access token:</text><text x="1424" y="391" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">iss =</text><text x="1424" y="409" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">login.microsoftonline.com/&lt;tenant&gt;/v2.0,</text><text x="1424" y="427" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">aud = API appId, azp = client, and</text><text x="1424" y="445" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">the NATIVE claim roles = the</text><text x="1424" y="463" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">user&#x27;s App Roles (no roles claim</text><text x="1424" y="481" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">at all for chen).</text><g data-name="step 5"><title>Step 5</title><circle cx="1398" cy="516" r="14" fill="#232F3E"></circle><text x="1398" y="520.76" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="15.400000000000002" font-weight="bold" fill="#FFFFFF">5</text></g><text x="1424" y="515" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">The client calls the Gateway&#x27;s MCP</text><text x="1424" y="533" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">endpoint with Bearer &lt;Entra</text><text x="1424" y="551" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">token&gt;. Gateway inbound:</text><text x="1424" y="569" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">CUSTOM_JWT, discovery = the</text><text x="1424" y="587" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">tenant&#x27;s v2 metadata (JWKS),</text><text x="1424" y="605" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">allowedAudience = API appId.</text><text x="1424" y="623" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">Cognito tokens, Graph tokens and</text><text x="1424" y="641" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">tampered tokens get 403.</text><g data-name="step 6"><title>Step 6</title><circle cx="1398" cy="676" r="14" fill="#232F3E"></circle><text x="1398" y="680.76" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="15.400000000000002" font-weight="bold" fill="#FFFFFF">6</text></g><text x="1424" y="675" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">Policy in AgentCore (Cedar,</text><text x="1424" y="693" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">ENFORCE): the same fixed rule per</text><text x="1424" y="711" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">tool as the Cognito version; only</text><text x="1424" y="729" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">the gateway ARN differs.</text><text x="1424" y="747" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">tools/list is filtered; a direct</text><text x="1424" y="765" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">call to a hidden tool returns HTTP</text><text x="1424" y="783" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">200 + result.isError.</text><g data-name="step 7"><title>Step 7</title><circle cx="1398" cy="818" r="14" fill="#232F3E"></circle><text x="1398" y="822.76" text-anchor="middle" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="15.400000000000002" font-weight="bold" fill="#FFFFFF">7</text></g><text x="1424" y="817" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">If permitted, the Gateway invokes</text><text x="1424" y="835" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">the shared mall tools Lambda with</text><text x="1424" y="853" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">its IAM role (no Function URL, no</text><text x="1424" y="871" font-family="Amazon Ember, Arial, Helvetica, sans-serif" font-size="13" fill="#232F3E">resource policy).</text></g></svg></div></div>
+  <aside>
+    <h2 id="title"></h2>
+    <div id="caption"></div>
+    <div id="codeh">Key code for this step</div><pre id="code">—</pre>
+    <ol id="steps"></ol>
+    <div class="key"><span style="background:#ff9900;color:#000">login / credentials</span><span style="background:#0073bb;color:#fff">access token (roles)</span><span style="background:#1d8102;color:#fff">group lookup</span><span style="background:#687078;color:#fff">MCP request / data</span><span style="background:#d13212;color:#fff">denied</span></div>
+    <p class="note">Animated walkthrough of per-user tool authorization on AgentCore Gateway: Entra App Role assignments appear as the roles claim in the v2 access token; Policy in AgentCore (Cedar) filters tools/list and allows or denies each call.</p>
+  </aside>
+</main>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+/* Generated file; edit the flow config it was built from, not this file.
+   Actions:  ["move", [arrowRef...], reverse, "chip label", colourKey]   arrowRef = <Arrow id> or connector index
+             ["jump", nodeKeyA, nodeKeyB, "chip label", colourKey]       hop without a drawn arrow (dashed temp line)
+             ["badge", nodeKey, "login"|"ok"|"warn"|"info", "text"]       callout at a node until the next step */
+const C = {"login":{"color":"#ff9900","label":"login / credentials","ink":"#000"},"jwt":{"color":"#0073bb","label":"access token (roles)"},"idc":{"color":"#1d8102","label":"group lookup"},"data":{"color":"#687078","label":"MCP request / data"},"deny":{"color":"#d13212","label":"denied"}};
+const S = {
+ "entra": {
+  "svg": "svg-entra",
+  "title": "Microsoft Entra ID → Gateway: native App Role claim roles; no Cognito, no trigger",
+  "nodes": {
+   "users": [
+    "End users",
+    0
+   ],
+   "client": [
+    "MCP client",
+    0
+   ],
+   "idp": [
+    "Microsoft Entra ID",
+    0
+   ],
+   "gw": [
+    "Amazon Bedrock AgentCore",
+    0
+   ],
+   "policy": [
+    "Amazon Bedrock AgentCore",
+    1
+   ],
+   "tools": [
+    "AWS Lambda",
+    0
+   ]
+  },
+  "steps": [
+   {
+    "legend": [
+     1
+    ],
+    "t": "Admin: App Roles + assignments",
+    "d": "In Entra ID, app rsidc-mall-api defines 4 App Roles and v2 tokens. wei is assigned all 4, ds1 List + Footfall, chen none (Free tier: per user).",
+    "code": "POST /v1.0/servicePrincipals/{api-sp}/appRoleAssignedTo\n  {\"principalId\": \"<ds1>\", \"resourceId\": \"<api-sp>\", \"appRoleId\": \"<Tools.Mall.List>\"}",
+    "a": [
+     [
+      "badge",
+      "idp",
+      "info",
+      "ds1 → Tools.Mall.List, Tools.Mall.Footfall"
+     ]
+    ]
+   },
+   {
+    "legend": [
+     2
+    ],
+    "t": "User opens an MCP client",
+    "d": "ds1 uses the test client (or the RBAC GUI / Amazon Quick).",
+    "code": "# any MCP client: webchat/cognito-idc/rbac_app.py, or an Amazon Quick MCP integration",
+    "a": [
+     [
+      "move",
+      [
+       "e2"
+      ],
+      false,
+      "open client",
+      "data"
+     ]
+    ]
+   },
+   {
+    "legend": [
+     3
+    ],
+    "t": "Sign in to Entra ID",
+    "d": "The client signs ds1 in to Entra ID and asks for scope api://<appId>/mcp.access.",
+    "code": "POST https://login.microsoftonline.com/a32ee4b2-.../oauth2/v2.0/token\n  client_id=650791ca-...  scope=api://99a0f5bd-.../mcp.access  (auth code + PKCE)",
+    "a": [
+     [
+      "move",
+      [
+       "e3"
+      ],
+      false,
+      "username + password",
+      "login"
+     ],
+     [
+      "badge",
+      "idp",
+      "login",
+      "LOGIN · Entra ID"
+     ]
+    ]
+   },
+   {
+    "legend": [
+     4
+    ],
+    "t": "v2 access token with roles",
+    "d": "Entra issues a v2 token: aud = API appId, azp = client, and the native roles claim. chen's token has no roles claim at all.",
+    "code": "{\"ver\": \"2.0\", \"aud\": \"99a0f5bd-...\", \"azp\": \"650791ca-...\", \"scp\": \"mcp.access\",\n \"roles\": [\"Tools.Mall.List\", \"Tools.Mall.Footfall\"]}",
+    "a": [
+     [
+      "move",
+      [
+       "e3"
+      ],
+      true,
+      "access token · roles",
+      "jwt"
+     ],
+     [
+      "badge",
+      "client",
+      "ok",
+      "roles: List, Footfall"
+     ]
+    ]
+   },
+   {
+    "legend": [
+     5
+    ],
+    "t": "Client → Gateway (tools/list)",
+    "d": "The Gateway trusts Entra directly: discovery = tenant v2 metadata, allowedAudience = API appId. Cognito tokens, Graph tokens and tampered tokens get 403.",
+    "code": "POST https://{entra-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp\n  Authorization: Bearer <Entra access token>",
+    "a": [
+     [
+      "move",
+      [
+       "e5"
+      ],
+      false,
+      "tools/list · Bearer",
+      "jwt"
+     ],
+     [
+      "move",
+      [
+       "ejwks"
+      ],
+      false,
+      "verify (JWKS)",
+      "data"
+     ],
+     [
+      "badge",
+      "gw",
+      "ok",
+      "inbound: Entra JWT ✓"
+     ]
+    ]
+   },
+   {
+    "legend": [
+     6
+    ],
+    "t": "Cedar: 2 of 4 tools",
+    "d": "The same fixed Cedar rule per tool as the Cognito version. tools/list is filtered for ds1.",
+    "code": "permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\"mall___get_hourly_traffic\", resource == ...)\nwhen { principal.hasTag(\"roles\") && principal.getTag(\"roles\") like \"*\\\"Tools.Mall.Hourly\\\"*\" };",
+    "a": [
+     [
+      "move",
+      [
+       "e6"
+      ],
+      false,
+      "principal tags: roles",
+      "jwt"
+     ],
+     [
+      "badge",
+      "policy",
+      "ok",
+      "ds1 → list + footfall"
+     ],
+     [
+      "move",
+      [
+       "e6",
+       "e5"
+      ],
+      true,
+      "2 tools",
+      "data"
+     ]
+    ]
+   },
+   {
+    "legend": [
+     6
+    ],
+    "t": "Hidden tool → denied",
+    "d": "Calling get_hourly_traffic directly is denied (HTTP 200 + isError).",
+    "code": "{\"method\":\"tools/call\",\"params\":{\"name\":\"mall___get_hourly_traffic\"}}\n# -> {\"result\":{\"isError\":true,\"content\":[{\"text\":\"Tool Execution Denied ...\"}]}}",
+    "a": [
+     [
+      "move",
+      [
+       "e5"
+      ],
+      false,
+      "tools/call hourly",
+      "data"
+     ],
+     [
+      "move",
+      [
+       "e6"
+      ],
+      false,
+      "evaluate",
+      "jwt"
+     ],
+     [
+      "badge",
+      "policy",
+      "warn",
+      "no permit → DENY"
+     ],
+     [
+      "move",
+      [
+       "e5"
+      ],
+      true,
+      "isError: true",
+      "deny"
+     ]
+    ]
+   },
+   {
+    "legend": [
+     7
+    ],
+    "t": "Allowed tool → Lambda",
+    "d": "get_footfall_summary is permitted; the Gateway invokes the shared mall Lambda with its IAM role.",
+    "code": "# Gateway target 'mall' (GATEWAY_IAM_ROLE) -> lambda rsidc-mall-tools (same Lambda as the Cognito version)",
+    "a": [
+     [
+      "move",
+      [
+       "e5"
+      ],
+      false,
+      "tools/call footfall",
+      "jwt"
+     ],
+     [
+      "badge",
+      "policy",
+      "ok",
+      "Tools.Mall.Footfall → PERMIT"
+     ],
+     [
+      "move",
+      [
+       "e7"
+      ],
+      false,
+      "IAM invoke",
+      "data"
+     ],
+     [
+      "move",
+      [
+       "e7",
+       "e5"
+      ],
+      true,
+      "footfall data",
+      "data"
+     ]
+    ]
+   }
+  ]
+ }
+};
+/* ---------- engine ---------- */
+const NS = "http://www.w3.org/2000/svg";
+let cur = Object.keys(S)[0], idx = -1, playing = false, runId = 0;
+const sp = () => parseFloat(document.getElementById("speed").value);
+const svgOf = s => document.querySelector("#" + S[s].svg + " svg");
+const sleep = (ms, id) => new Promise((res, rej) => setTimeout(() => id === runId ? res() : rej("cancel"), ms / sp()));
+
+function nodeCenter(svg, [name, n]) {
+  const g = [...svg.querySelectorAll(`g[data-name="${name}"]`)].filter(x => x.querySelector(":scope > svg"))[n];
+  const ic = g.querySelector(":scope > svg");
+  const x = +ic.getAttribute("x"), y = +ic.getAttribute("y"), w = +ic.getAttribute("width"), h = +ic.getAttribute("height");
+  return { x: x + w / 2, y: y + h / 2, top: y, right: x + w };
+}
+function paths(svg) { return [...svg.querySelectorAll('g[data-name="connectors"] path')]; }
+// An arrow ref is either an <Arrow id> (data-arrow-id, preferred) or a 0-based index into the connectors layer.
+function pathOf(svg, ref) { return typeof ref === "number" ? paths(svg)[ref] : svg.querySelector(`g[data-name="connectors"] g[data-arrow-id="${ref}"] path`); }
+const col = c => (C[c] && C[c].color) || c;
+function layer(svg) {
+  let l = svg.querySelector("#anim-layer");
+  if (!l) { l = document.createElementNS(NS, "g"); l.id = "anim-layer"; svg.appendChild(l); }
+  return l;
+}
+function clearLayer(svg) { safeRender(layer(svg), ""); paths(svg).forEach(p => { p.classList.remove("flow-active"); if (p.dataset.stroke) p.setAttribute("stroke", p.dataset.stroke); }); }
+
+function chip(svg, text, color) {
+  const g = document.createElementNS(NS, "g"); const w = Math.max(60, text.length * 6.6 + 18);
+  safeRender(g, `<rect x="${-w/2}" y="-24" width="${w}" height="20" rx="10" fill="${color}" stroke="#fff" stroke-width="1.5"/>
+    <text x="0" y="-10" text-anchor="middle" font-size="11.5" font-weight="700" fill="${Object.values(C).find(k => k.color === color)?.ink || '#fff'}" font-family="Arial">${text}</text>
+    <circle r="5" fill="${color}" stroke="#fff" stroke-width="1.5"/>`);
+  layer(svg).appendChild(g); return g;
+}
+async function along(svg, getPt, len, label, color, id) {
+  const g = chip(svg, label, color); const dur = Math.max(900, len * 4.2) / sp(); const t0 = performance.now();
+  await new Promise((res, rej) => {
+    const f = now => { if (id !== runId) { g.remove(); return rej("cancel"); }
+      const k = Math.min(1, (now - t0) / dur); const e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2; const p = getPt(e * len);
+      g.setAttribute("transform", `translate(${p.x},${p.y})`); k < 1 ? requestAnimationFrame(f) : res(); };
+    requestAnimationFrame(f);
+  });
+  await sleep(250, id); g.remove();
+}
+async function move(svg, list, rev, label, color, id) {
+  color = col(color); const seq = list.map(r => pathOf(svg, r));
+  seq.forEach(p => { if (!p.dataset.stroke) p.dataset.stroke = p.getAttribute("stroke"); p.setAttribute("stroke", color); p.classList.add("flow-active"); });
+  const lens = seq.map(p => p.getTotalLength()); const total = lens.reduce((a, b) => a + b, 0);
+  const getPt = d => { let acc = 0;
+    for (let i = 0; i < seq.length; i++) { if (d <= acc + lens[i] || i === seq.length - 1) {
+      const local = Math.min(lens[i], d - acc); return seq[i].getPointAtLength(rev ? lens[i] - local : local); } acc += lens[i]; } };
+  await along(svg, getPt, total, label, color, id);
+  seq.forEach(p => { p.classList.remove("flow-active"); p.setAttribute("stroke", p.dataset.stroke); });
+}
+async function jump(svg, a, b, label, color, id) {
+  color = col(color);
+  const A = nodeCenter(svg, S[cur].nodes[a]), B = nodeCenter(svg, S[cur].nodes[b]);
+  const ln = document.createElementNS(NS, "line");
+  Object.entries({ x1:A.x, y1:A.y, x2:B.x, y2:B.y, stroke:color, "stroke-width":2.5, "stroke-dasharray":"6 5", opacity:.8 }).forEach(([k, v]) => ln.setAttribute(k, v));
+  layer(svg).appendChild(ln); const len = Math.hypot(B.x - A.x, B.y - A.y);
+  await along(svg, d => ({ x: A.x + (B.x - A.x) * d / len, y: A.y + (B.y - A.y) * d / len }), len, label, color, id);
+  ln.remove();
+}
+function badge(svg, n, kind, text) {
+  const c = nodeCenter(svg, S[cur].nodes[n]);
+  const col = { login: "#ff9900", ok: "#1d8102", warn: "#d13212", info: "#0073bb" }[kind];
+  const icon = { login: "▶", ok: "✔", warn: "⚠", info: "ℹ" }[kind];
+  const w = text.length * 6.4 + 34; const x = c.right + 6, y = c.top - 30;
+  const g = document.createElementNS(NS, "g");
+  safeRender(g, (kind === "login" ? `<circle class="pulse" cx="${c.x}" cy="${c.y}" r="34" fill="none" stroke="${col}" stroke-width="4"/>` : "") +
+    `<rect x="${x}" y="${y}" width="${w}" height="22" rx="5" fill="#fff" stroke="${col}" stroke-width="2"/>
+     <text x="${x + 8}" y="${y + 15}" font-size="12" font-family="Arial" font-weight="700" fill="${col}">${icon} ${text}</text>`);
+  layer(svg).appendChild(g);
+}
+function legend(svg, nums) {
+  const leg = svg.querySelector('g[data-name="step-legend"]'); const bad = svg.querySelector('g[data-name="step-badges"]');
+  [leg, bad].forEach(root => root && root.querySelectorAll(':scope > g[data-name^="step "]').forEach(g => {
+    const n = +g.getAttribute("data-name").split(" ")[1]; const on = !nums || nums.includes(n);
+    g.classList.toggle("legend-dim", !on); g.classList.toggle("legend-on", on); }));
+}
+async function runStep(i, id) {
+  const sc = S[cur], st = sc.steps[i], svg = svgOf(cur);
+  clearLayer(svg); legend(svg, st.legend);
+  safeRender(document.getElementById("caption"), `<b class="h">Step ${i + 1}/${sc.steps.length}: ${st.t}</b>${st.d}`);
+  const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  safeRender(document.getElementById("code"), st.code ? st.code.split("\n").map(l => /^\s*#/.test(l) ? `<span class="c">${esc(l)}</span>` : esc(l)).join("\n") : "(no code: see caption)");
+  [...document.querySelectorAll("#steps li")].forEach((li, k) => { li.classList.toggle("on", k === i); li.classList.toggle("done", k < i); });
+  for (const a of st.a) {
+    if (a[0] === "move") await move(svg, a[1], a[2], a[3], a[4], id);
+    else if (a[0] === "jump") await jump(svg, a[1], a[2], a[3], a[4], id);
+    else if (a[0] === "badge") { badge(svg, a[1], a[2], a[3]); await sleep(500, id); }
+  }
+}
+async function go(i) {
+  const id = ++runId; idx = i;
+  try { await runStep(i, id); } catch (e) { return; }
+  if (playing && id === runId) {
+    await sleep(1400, id).catch(() => {});
+    if (playing && id === runId) { if (idx < S[cur].steps.length - 1) go(idx + 1); else { setPlay(false); } }
+  }
+}
+function setPlay(v) { playing = v; document.getElementById("play").textContent = v ? "❚❚ Pause" : "▶ Play"; }
+function select(s) {
+  runId++; setPlay(false); cur = s; idx = -1;
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.s === s));
+  Object.values(S).forEach(sc => document.getElementById(sc.svg).style.display = S[s].svg === sc.svg ? "" : "none");
+  document.getElementById("title").textContent = S[s].title;
+  safeRender(document.getElementById("steps"), S[s].steps.map((st, k) => `<li data-k="${k}">${st.t}</li>`).join(""));
+  document.querySelectorAll("#steps li").forEach(li => li.onclick = () => { setPlay(false); go(+li.dataset.k); });
+  const svg = svgOf(s); clearLayer(svg); legend(svg, null); document.getElementById("code").textContent = "—";
+  safeRender(document.getElementById("caption"), `<b class="h">Press ▶ Play</b>${S[s].steps.length} steps. Orange <b style="display:inline;color:#ff9900">LOGIN</b> markers show where the user must sign in.`);
+}
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => select(b.dataset.s));
+document.getElementById("play").onclick = () => { if (playing) { setPlay(false); runId++; } else { setPlay(true); go(idx < 0 || idx >= S[cur].steps.length - 1 ? 0 : idx + 1); } };
+document.getElementById("next").onclick = () => { setPlay(false); go(Math.min(S[cur].steps.length - 1, idx + 1)); };
+document.getElementById("prev").onclick = () => { setPlay(false); go(Math.max(0, idx - 1)); };
+document.getElementById("restart").onclick = () => { select(cur); };
+const hash = location.hash.replace("#", ""); select(S[hash] ? hash : Object.keys(S)[0]);
+if (new URLSearchParams(location.search).get("autoplay")) document.getElementById("play").click();
+</script>
+</body>
+</html>

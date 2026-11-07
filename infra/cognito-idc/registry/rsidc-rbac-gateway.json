@@ -1,0 +1,19 @@
+{
+ "name": "rsidc-rbac-gateway",
+ "displayName": "Tool RBAC gateway (IdC groups)",
+ "recordType": "MCP",
+ "recordVersion": "1.0.0",
+ "description": "AgentCore Gateway (MCP) with Policy in AgentCore (Cedar, ENFORCE): each tool needs a role in the access token's roles claim, which is derived from IAM Identity Center group Descriptions by a Cognito Pre Token trigger.\nAuth: Bearer Cognito access token with roles claim; allowedClients = OBO client; Cedar policy engine <rbac-policy-engine-id>\nTools: crm___get_customer_contacts, sales___get_sales_summary\nOwner: Jacky Wu (rsidc PoC)",
+ "descriptors": {
+  "mcpServer": {
+   "data": "{\"name\": \"io.github.aws-samples/rsidc-rbac-gateway\", \"title\": \"Tool RBAC gateway (IdC groups)\", \"description\": \"AgentCore Gateway (MCP) with Policy in AgentCore (Cedar, ENFORCE): each tool needs a role in the acc\", \"version\": \"1.0.0\", \"remotes\": [{\"type\": \"streamable-http\", \"url\": \"https://<rbac-gateway-id>.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp\"}]}",
+   "dataSchemaVersion": "2025-12-11",
+   "additionalData": {
+    "tools": {
+     "data": "{\"tools\": [{\"name\": \"crm___get_customer_contacts\", \"description\": \"Tool B: customer contact emails per order (PII)\", \"inputSchema\": {\"type\": \"object\", \"properties\": {}}}, {\"name\": \"sales___get_sales_summary\", \"description\": \"Tool A: sales totals per region (no PII)\", \"inputSchema\": {\"type\": \"object\", \"properties\": {}}}]}",
+     "dataSchemaVersion": "2025-06-18"
+    }
+   }
+  }
+ }
+}

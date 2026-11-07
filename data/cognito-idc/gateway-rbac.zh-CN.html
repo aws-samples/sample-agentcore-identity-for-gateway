@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gateway 工具级 RBAC · IAM Identity Center 组、Cedar（Cognito）</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+nav{overflow:auto}
+nav .sib{margin:14px 0 0;border-top:1px solid var(--line);padding-top:8px}
+nav .sib a{padding:4px 18px;font-size:12px;color:var(--acc)}
+nav .meta{position:static;margin:10px 18px 0}
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+
+</style></head>
+<body>
+<div class="banner"><b>静态演示</b> — 界面为模拟，数据为真实记录。本页不会调用 AWS。<a href="gateway-rbac.html" hreflang="en" lang="en" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">English</a></div>
+<div class="wrap">
+<nav>
+  <h1>Gateway 工具级 RBAC（Cognito + IdC）</h1>
+  <div class="sub">IAM Identity Center 组 → Cognito Pre Token Generation V2 → <code>roles</code> claim → 使用 Policy in AgentCore（Cedar）的 AgentCore Gateway。</div>
+  <a data-s="arch" class="on">0 · 架构</a>
+  <a data-s="replay">1 · 回放</a>
+  <a data-s="hood">2 · 原理剖析</a>
+  <a data-s="setup">3 · 配置</a>
+  <a data-s="faq">4 · FAQ · 发现</a>
+  <div class="sib">
+    <a href="part1-quick.zh-CN.html">客户版本（Quick，Cognito 组）</a>
+    <a href="part2-3lo.zh-CN.html">第 2 部分 · 3LO</a>
+    <a href="part3-2lo.zh-CN.html">第 3 部分 · 2LO</a>
+    <a href="part4-obo.zh-CN.html">第 4 部分 · OBO</a>
+    <a href="foundation.zh-CN.html">基础环境</a>
+    <a href="../../README.md">仓库 README</a>
+  </div>
+  <div class="meta" id="navmeta"></div>
+</nav>
+<main>
+<section id="arch" class="on">
+  <h2>架构：IdC 组 → Cognito roles claim → AgentCore Gateway 上的 Cedar</h2>
+  <p class="lead">一个 Gateway 位于多个工具之前。user1（wei）可调用工具 A 和 B，user2（ds1）只能调用 A，chen 一个都不能调用。组 → 工具的映射保存在
+  身份提供方中，而不是代码里：IAM Identity Center 组的 Description 会变成 Cognito access token 中的 <code>roles</code> claim，Gateway 的 Cedar 策略
+  只检查这个 claim。这是<b>演示版本</b>；客户版本（Amazon Quick、Cognito 组、四个商场工具）见
+  <a href="part1-quick.zh-CN.html">第 1 部分 · Quick</a>
+  （<a href="img/architecture-rbac-mall.svg" target="_blank" rel="noopener">其架构图</a>）。</p>
+  <div class="card arch"><a href="img/architecture-rbac.svg" target="_blank" rel="noopener">
+    <img src="img/architecture-rbac.svg" alt="架构图（演示版本）：IAM Identity Center 组驱动 Cognito Pre Token 触发器添加 roles claim；AgentCore Gateway 上的 Cedar 策略按用户允许工具 A 或 B"></a>
+    <div class="ref"><a href="img/architecture-rbac.svg" target="_blank" rel="noopener">查看大图</a> · 点击架构图可查看大图。</div></div>
+  <div class="ref">本流程的动画演示：<a href="flow-rbac.html">flow-rbac.html</a>（逐步展示 token 与策略路径）。</div>
+  <div id="design"></div>
+</section>
+<section id="replay"></section>
+<section id="hood"></section>
+<section id="setup"></section>
+<section id="faq"></section>
+</main></div>
+<script id="data" type="application/json">{"built": "2026-11-05", "personas": {"wei": {"email": "wei@techfinance.example.com", "group": "`rsidc-gw-analyst` → `Tools.Sales.Read,Tools.CRM.Read`", "roles": ["Tools.CRM.Read", "Tools.Sales.Read"]}, "ds1": {"email": "ds1@techfinance.example.com", "group": "`rsidc-gw-viewer` → `Tools.Sales.Read`", "roles": ["Tools.Sales.Read"]}, "chen": {"email": "chen@techfinance.example.com", "group": "无（未映射任何组）", "roles": []}}, "phases": {"baseline": {"label": "基线（无策略）", "users": {"wei": {"listed": ["crm___get_customer_contacts", "sales___get_sales_summary"], "calls": {"sales___get_sales_summary": {"ok": true, "http": 200, "text": "{\"tool\": \"sales___get_sales_summary\", \"columns\": [\"region\", \"orders\", \"total_amount\"], \"rows\": [[\"AMER\", 1, \"2300.00\"], [\"APAC\", 2, \"1760.50\"], [\"EMEA\", 2, \"1130.25\"]]}"}, "crm___get_customer_contacts": {"ok": true, "http": 200, "text": "列 [order_id, customer_email]；此视图省略数据行（PII 工具）"}}}, "ds1": {"listed": ["crm___get_customer_contacts", "sales___get_sales_summary"], "calls": {"sales___get_sales_summary": {"ok": true, "http": 200, "text": "{\"tool\": \"sales___get_sales_summary\", \"columns\": [\"region\", \"orders\", \"total_amount\"], \"rows\": [[\"AMER\", 1, \"2300.00\"], [\"APAC\", 2, \"1760.50\"], [\"EMEA\", 2, \"1130.25\"]]}"}, "crm___get_customer_contacts": {"ok": true, "http": 200, "text": "列 [order_id, customer_email]；此视图省略数据行（PII 工具）"}}}, "chen": {"listed": ["crm___get_customer_contacts", "sales___get_sales_summary"], "calls": {"sales___get_sales_summary": {"ok": true, "http": 200, "text": "{\"tool\": \"sales___get_sales_summary\", \"columns\": [\"region\", \"orders\", \"total_amount\"], \"rows\": [[\"AMER\", 1, \"2300.00\"], [\"APAC\", 2, \"1760.50\"], [\"EMEA\", 2, \"1130.25\"]]}"}, "crm___get_customer_contacts": {"ok": true, "http": 200, "text": "列 [order_id, customer_email]；此视图省略数据行（PII 工具）"}}}}, "others": []}, "log_only": {"label": "LOG_ONLY", "users": {"wei": {"listed": ["crm___get_customer_contacts", "sales___get_sales_summary"], "calls": {"sales___get_sales_summary": {"ok": true, "http": 200, "text": "{\"tool\": \"sales___get_sales_summary\", \"columns\": [\"region\", \"orders\", \"total_amount\"], \"rows\": [[\"AMER\", 1, \"2300.00\"], [\"APAC\", 2, \"1760.50\"], [\"EMEA\", 2, \"1130.25\"]]}"}, "crm___get_customer_contacts": {"ok": true, "http": 200, "text": "列 [order_id, customer_email]；此视图省略数据行（PII 工具）"}}}, "ds1": {"listed": ["crm___get_customer_contacts", "sales___get_sales_summary"], "calls": {"sales___get_sales_summary": {"ok": true, "http": 200, "text": "{\"tool\": \"sales___get_sales_summary\", \"columns\": [\"region\", \"orders\", \"total_amount\"], \"rows\": [[\"AMER\", 1, \"2300.00\"], [\"APAC\", 2, \"1760.50\"], [\"EMEA\", 2, \"1130.25\"]]}"}, "crm___get_customer_contacts": {"ok": true, "http": 200, "text": "列 [order_id, customer_email]；此视图省略数据行（PII 工具）"}}}, "chen": {"listed": ["crm___get_customer_contacts", "sales___get_sales_summary"], "calls": {"sales___get_sales_summary": {"ok": true, "http": 200, "text": "{\"tool\": \"sales___get_sales_summary\", \"columns\": [\"region\", \"orders\", \"total_amount\"], \"rows\": [[\"AMER\", 1, \"2300.00\"], [\"APAC\", 2, \"1760.50\"], [\"EMEA\", 2, \"1130.25\"]]}"}, "crm___get_customer_contacts": {"ok": true, "http": 200, "text": "列 [order_id, customer_email]；此视图省略数据行（PII 工具）"}}}}, "others": [{"case": "ds1 的 token，roles 被改为包含 Tools.CRM.Read", "expect": "403", "actual": "403 insufficient_scope (-32002)"}, {"case": "无效 bearer", "expect": "401", "actual": "401 Invalid Bearer token (-32001)"}, {"case": "2LO M2M token（client 不在 allowedClients 中）", "expect": "403", "actual": "403 insufficient_scope (-32002)"}]}, "enforce": {"label": "ENFORCE", "users": {"wei": {"listed": ["crm___get_customer_contacts", "sales___get_sales_summary"], "calls": {"sales___get_sales_summary": {"ok": true, "http": 200, "text": "{\"tool\": \"sales___get_sales_summary\", \"columns\": [\"region\", \"orders\", \"total_amount\"], \"rows\": [[\"AMER\", 1, \"2300.00\"], [\"APAC\", 2, \"1760.50\"], [\"EMEA\", 2, \"1130.25\"]]}"}, "crm___get_customer_contacts": {"ok": true, "http": 200, "text": "列 [order_id, customer_email]；此视图省略数据行（PII 工具）"}}}, "ds1": {"listed": ["sales___get_sales_summary"], "calls": {"sales___get_sales_summary": {"ok": true, "http": 200, "text": "{\"tool\": \"sales___get_sales_summary\", \"columns\": [\"region\", \"orders\", \"total_amount\"], \"rows\": [[\"AMER\", 1, \"2300.00\"], [\"APAC\", 2, \"1760.50\"], [\"EMEA\", 2, \"1130.25\"]]}"}, "crm___get_customer_contacts": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"}}}, "chen": {"listed": [], "calls": {"sales___get_sales_summary": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"}, "crm___get_customer_contacts": {"ok": false, "http": 200, "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"}}}}, "others": [{"case": "ds1 的 token，roles 被改为包含 Tools.CRM.Read", "expect": "403", "actual": "403 insufficient_scope (-32002)"}, {"case": "无效 bearer", "expect": "401", "actual": "401 Invalid Bearer token (-32001)"}, {"case": "2LO M2M token（client 不在 allowedClients 中）", "expect": "403", "actual": "403 insufficient_scope (-32002)"}]}}, "changes": [{"case": "7 从 rsidc-gw-viewer 移除 A 后新 token 的 roles", "expect": "[]", "actual": "[]", "evidence": "（token 在 IdC 变更后 0.6 秒签发）"}, {"case": "7 新 token 的 tools/list", "expect": "[]", "actual": "[]", "evidence": ""}, {"case": "7 新 token 调用 A", "expect": "false", "actual": "false", "evidence": ""}, {"case": "7 旧 token（变更前签发）仍可调用 A", "expect": "true", "actual": "true", "evidence": "-> 仅在下次签发 token 时生效"}, {"case": "7 恢复后：tools/list", "expect": "[\"sales___get_sales_summary\"]", "actual": "[\"sales___get_sales_summary\"]", "evidence": ""}, {"case": "8 ds1 加入 rsidc-gw-analyst：roles", "expect": "[\"Tools.CRM.Read\", \"Tools.Sales.Read\"]", "actual": "[\"Tools.CRM.Read\", \"Tools.Sales.Read\"]", "evidence": ""}, {"case": "8 ds1 的 tools/list", "expect": "[\"crm___get_customer_contacts\", \"sales___get_sales_summary\"]", "actual": "[\"crm___get_customer_contacts\", \"sales___get_sales_summary\"]", "evidence": ""}, {"case": "8 调用 B", "expect": "true", "actual": "true", "evidence": ""}, {"case": "8 移除成员关系后：tools/list", "expect": "[\"sales___get_sales_summary\"]", "actual": "[\"sales___get_sales_summary\"]", "evidence": ""}, {"case": "8 移除成员关系后：调用 B", "expect": "false", "actual": "false", "evidence": ""}], "code": {"pretoken_parse": {"ref": "infra/cognito-idc/lambda/pretoken/handler.py:15-20", "title": "组 Description '[rsidc-rbac] tools=…' -> roles", "start": 15, "lines": ["MAPPING = re.compile(r\"\\[rsidc-rbac\\]\\s*tools=([\\w.,]+)\")", "", "", "def parse(desc):", "    hit = MAPPING.search(desc or \"\")", "    return {t for t in hit.group(1).split(\",\") if t} if hit else set()"]}, "pretoken_idc": {"ref": "infra/cognito-idc/lambda/pretoken/handler.py:30-40", "title": "按邮箱查询 IdC 组得到 roles（演示）", "start": 30, "lines": ["def roles_for(email):", "    try:", "        uid = ids.get_user_id(IdentityStoreId=STORE, AlternateIdentifier={", "            \"UniqueAttribute\": {\"AttributePath\": \"emails.value\", \"AttributeValue\": email}})[\"UserId\"]", "    except ids.exceptions.ResourceNotFoundException:", "        return set()", "    roles = set()", "    for page in ids.get_paginator(\"list_group_memberships_for_member\").paginate(IdentityStoreId=STORE, MemberId={\"UserId\": uid}):", "        for m in page[\"GroupMemberships\"]:", "            roles |= parse(ids.describe_group(IdentityStoreId=STORE, GroupId=m[\"GroupId\"]).get(\"Description\"))", "    return roles"]}, "rbac_groups": {"ref": "infra/cognito-idc/15-rbac-idc-groups.sh:24-27", "title": "IdC 中的演示映射组", "start": 24, "lines": ["  ensure_group ${PROJECT}-gw-analyst Tools.Sales.Read,Tools.CRM.Read   # user1 (wei): tool A + tool B", "  ensure_group ${PROJECT}-gw-viewer Tools.Sales.Read                   # user2 (ds1): tool A only", "  member ${PROJECT}-gw-analyst wei@techfinance.example.com", "  member ${PROJECT}-gw-viewer \"${DS1_EMAIL:-ds1@techfinance.example.com}\"                      # ds1 email in Cognito and IdC (set DS1_EMAIL)"]}, "rbac_gw_auth": {"ref": "infra/cognito-idc/15-rbac-gateway.sh:28-31", "title": "演示 RBAC gateway：仅允许 OBO client", "start": 28, "lines": ["  save RBAC_GW_ID $(aws bedrock-agentcore-control create-gateway --region $R --name ${PROJECT}-rbac-gateway --role-arn arn:aws:iam::${ACCOUNT_ID}:role/$GR \\", "    --protocol-type MCP --authorizer-type CUSTOM_JWT \\", "    --authorizer-configuration \"{\\\"customJWTAuthorizer\\\":{\\\"discoveryUrl\\\":\\\"$COGNITO_DISCOVERY_URL\\\",\\\"allowedClients\\\":[\\\"$COGNITO_CLIENT_ID\\\"]}}\" \\", "    --query gatewayId --output text)"]}, "cedar_demo": {"ref": "infra/cognito-idc/15-rbac-policy.sh:23-30", "title": "Cedar：每个工具一条固定 permit（演示）", "start": 23, "lines": ["policy() {  # $1 policy name, $2 action (target___tool), $3 required role value", "  aws bedrock-agentcore-control list-policies --region $R --policy-engine-id $RBAC_PE_ID --query \"policies[?name=='$1'].policyId\" --output text | grep -q . && return", "  local stmt=\"permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\\\"$2\\\", resource == AgentCore::Gateway::\\\"$RBAC_GW_ARN\\\") when { principal.hasTag(\\\"roles\\\") && principal.getTag(\\\"roles\\\") like \\\"*\\\\\\\"$3\\\\\\\"*\\\" };\"", "  aws bedrock-agentcore-control create-policy --region $R --policy-engine-id $RBAC_PE_ID --name $1 \\", "    --description \"$2 requires role $3\" --definition \"$(jq -cn --arg s \"$stmt\" '{cedar:{statement:$s}}')\" >/dev/null", "}", "policy tool_sales_summary sales___get_sales_summary Tools.Sales.Read", "policy tool_customer_contacts crm___get_customer_contacts Tools.CRM.Read"]}, "rbac_lambda": {"ref": "infra/cognito-idc/lambda/rbac_tools/handler.py:7-10", "title": "演示工具 Lambda（svc_reporting，无按用户逻辑）", "start": 7, "lines": ["SQL = {", "    \"sales\": \"SELECT region, COUNT(*) AS orders, SUM(amount) AS total_amount FROM sales.orders GROUP BY region ORDER BY region\",", "    \"crm\": \"SELECT order_id, customer_email FROM sales.orders ORDER BY order_id\",", "}[os.environ[\"TOOL\"]]"]}, "gui_check": {"ref": "webchat/cognito-idc/rbac_app.py:54-66", "title": "RBAC GUI：先 tools/list，再直接调用每个工具", "start": 54, "lines": ["def check_gateway(gw, token):", "    \"\"\"tools/list, then tools/call on every catalogue tool. A Cedar deny is HTTP 200 with result.isError=true.\"\"\"", "    s, j = rpc(gw[\"url\"], token, \"tools/list\")", "    listed = sorted(t[\"name\"] for t in j.get(\"result\", {}).get(\"tools\", []))", "    rows = []", "    for name in gw[\"tools\"]:", "        cs, cj = rpc(gw[\"url\"], token, \"tools/call\", {\"name\": name, \"arguments\": {}})", "        res = cj.get(\"result\", {})", "        ok = cs == 200 and \"error\" not in cj and not res.get(\"isError\")", "        text = (cj.get(\"error\") or {}).get(\"message\") or (res.get(\"content\") or [{}])[0].get(\"text\", \"\")", "        rows.append({\"tool\": name, \"listed\": name in listed, \"allowed\": ok, \"http\": cs, \"detail\": text[:400]})", "    return {\"title\": gw[\"title\"], \"list_http\": s, \"listed\": listed, \"rows\": rows}", ""]}}, "design": {"flow": "IdC group Description \"[rsidc-rbac] tools=Tools.Sales.Read,Tools.CRM.Read\"     <- 谁能用什么保存在 IAM Identity Center 中\n   |  (用户登录 Cognito)\nCognito Pre Token Generation V2 -> 按邮箱查询用户的 IdC 组 -> access token  \"roles\": [\"Tools.CRM.Read\",\"Tools.Sales.Read\"]\n   |  Bearer <access token>\nAgentCore Gateway rsidc-rbac-gateway (入站：Cognito JWT，allowedClients = OBO client)\n   +- Policy Engine rsidc_rbac_pe (ENFORCE): 每个工具一条固定的 Cedar permit；工具 X 需要角色 \"Tools.X.Read\"\n        +- sales___get_sales_summary      -> Lambda rsidc-tool-sales (工具 A，无 PII)\n        +- crm___get_customer_contacts    -> Lambda rsidc-tool-crm   (tool B, PII)", "mapping": [["`rsidc-gw-analyst`", "`[rsidc-rbac] tools=Tools.Sales.Read,Tools.CRM.Read`", "wei (user1)"], ["`rsidc-gw-viewer`", "`[rsidc-rbac] tools=Tools.Sales.Read`", "ds1 (user2)"], ["(none)", "不适用", "chen：无工具"]]}, "replayTable": [["wei", "`rsidc-gw-analyst` → `Tools.Sales.Read,Tools.CRM.Read`", "2", "✅ AMER 1 · 2300.00, APAC 2 · 1760.50, EMEA 2 · 1130.25", "✅ order_id + customer_email"], ["ds1", "`rsidc-gw-viewer` → `Tools.Sales.Read`", "1", "✅", "❌ Tool Execution Denied（HTTP 200，`isError`）"], ["chen", "无", "0", "❌", "❌"]], "cedar": "permit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\"sales___get_sales_summary\",\n       resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:ap-southeast-1:123456789012:gateway/{rbac-gateway-id}\")\nwhen { principal.hasTag(\"roles\") && principal.getTag(\"roles\") like \"*\\\"Tools.Sales.Read\\\"*\" };\npermit(principal is AgentCore::OAuthUser, action == AgentCore::Action::\"crm___get_customer_contacts\",\n       resource == AgentCore::Gateway::\"arn:…:gateway/{rbac-gateway-id}\")\nwhen { principal.hasTag(\"roles\") && principal.getTag(\"roles\") like \"*\\\"Tools.CRM.Read\\\"*\" };", "steps": [{"id": "15-0", "title": "步骤 15.0 · ap-southeast-1 已提供 Policy in AgentCore", "result": "list-policy-engines 正常", "blocks": [{"t": "p", "x": "预检：Policy in AgentCore 控制面 API 在运行时所在区域可正常响应。"}, {"t": "cmd", "x": "aws bedrock-agentcore-control list-policy-engines --region ap-southeast-1      # → {\"policyEngines\": []}"}, {"t": "p", "x": "**检查要点：**在创建 engine 之前，该调用返回 `{\"policyEngines\": []}`（为空，无报错）。"}]}, {"id": "15-1", "title": "步骤 15.1 · IdC 映射组", "result": "2 个项目自有的组", "blocks": [{"t": "p", "x": "在 IAM Identity Center（ap-east-1）中创建两个映射组并添加成员。如果某个组的 Description 不以 `[rsidc-rbac]` 开头，脚本会拒绝更新它。"}, {"t": "cmd", "x": "infra/common/run.sh bash infra/cognito-idc/15-rbac-idc-groups.sh"}, {"t": "out", "x": "rsidc-gw-analyst ({idc-group-analyst-id}): [rsidc-rbac] tools=Tools.Sales.Read,Tools.CRM.Read | members: f4429c9e-… (wei)\nrsidc-gw-viewer ({idc-group-viewer-id}): [rsidc-rbac] tools=Tools.Sales.Read | members: 84620c7e-… (ds1)", "title": "实际结果"}, {"t": "p", "x": "**检查要点：**"}, {"t": "cmd", "x": "source infra/common/00-config.sh\naws identitystore list-groups --region $IDC_REGION --identity-store-id $IDENTITY_STORE_ID \\\n  --query \"Groups[?starts_with(DisplayName,'rsidc-gw-')].[DisplayName,Description]\" --output text"}, {"t": "p", "x": "预期：出现这两个组，且 Description 与上面一致。"}]}, {"id": "15-2", "title": "步骤 15.2 · 工具 Lambda、RBAC gateway、targets", "result": "gateway READY；targets sales、crm READY", "blocks": [{"t": "cmd", "x": "infra/common/run.sh bash infra/cognito-idc/15-rbac-gateway.sh"}, {"t": "p", "x": "**实际结果：**"}, {"t": "ul", "x": ["Gateway `{rbac-gateway-id}`：READY，URL `https://{rbac-gateway-id}.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp`.", "Authorizer：`discoveryUrl=…/{user-pool-id}/.well-known/openid-configuration`, `allowedClients=[\"{obo-client-id}\"]` （OBO client）。", "Targets：`sales` READY，`crm` READY。", "Lambda `rsidc-tool-sales` 和 `rsidc-tool-crm`（`infra/cognito-idc/lambda/rbac_tools/`）复用角色 `rsidc-reporting-lambda-role`（仅以 `svc_reporting` 使用 Data API）。", "Gateway 角色 `rsidc-rbac-gateway-role`（`infra/cognito-idc/policies/rbac-gateway-permissions.json`）：对两个工具的 `lambda:InvokeFunction`， 另有限定在 `rsidc_rbac_pe-*` 和 `rsidc-rbac-gateway-*` 范围内的 `AuthorizeAction`、`PartiallyAuthorizeActions` 和 `GetPolicyEngine`。", "仅用于测试的 workload identity `rsidc-rbac-test-client`，未关联。它让测试无需读取 secret，就能通过 AgentCore Identity 获取 2LO M2M token。", "脚本会在 IAM 传播期间重试 `create-gateway-target`；角色刚创建后，该调用可能报 \"execution role lacks permission to invoke Lambda\"。"]}, {"t": "p", "x": "**检查要点：**"}, {"t": "cmd", "x": "source infra/state.env; R=ap-southeast-1\naws bedrock-agentcore-control get-gateway --region $R --gateway-identifier $RBAC_GW_ID --query '{status:status,url:gatewayUrl,auth:authorizerConfiguration}'\naws bedrock-agentcore-control list-gateway-targets --region $R --gateway-identifier $RBAC_GW_ID --query 'items[].[name,status]' --output text"}, {"t": "p", "x": "预期：gateway 为 `READY`；targets `sales` 和 `crm` 均为 `READY`。"}]}, {"id": "15-3", "title": "步骤 15.3 · Cognito Pre Token Generation V2 触发器", "result": "diff 仅包含触发器；fail-closed", "blocks": [{"t": "cmd", "x": "infra/common/run.sh .venv/bin/python infra/cognito-idc/15-rbac-pretoken.py          # teardown: … 15-rbac-pretoken.py --detach"}, {"t": "p", "x": "**实际结果**（由于触发器是 fail-closed 的，预检会在挂载**之前**为 pool 中每个用户调用一次该 Lambda）："}, {"t": "out", "x": "pre-flight ds1    roles=['Tools.Sales.Read']\npre-flight zhang  roles=[]\npre-flight chen   roles=[]\npre-flight wei    roles=['Tools.CRM.Read', 'Tools.Sales.Read']\nUpdateUserPool diff: {\"LambdaConfig.PreTokenGeneration\": [null, \"arn:…:function:rsidc-pretoken-roles\"],\n  \"LambdaConfig.PreTokenGenerationConfig.LambdaArn\": [null, \"arn:…:function:rsidc-pretoken-roles\"],\n  \"LambdaConfig.PreTokenGenerationConfig.LambdaVersion\": [null, \"V2_0\"]}", "title": "实际结果"}, {"t": "ul", "x": ["**diff 只包含触发器。**`UpdateUserPool` 会重置未传入的设置，因此会把完整的 pool 配置原样写回，并打印前后 diff。`AllowAdminCreateUserOnly` 保持为 true。", "**Fail-closed 预检。**如果 Lambda 的角色策略尚未传播，预检会因 `AccessDeniedException identitystore:GetUserId` 失败，触发器**不会**被挂载。待 IAM 传播后重新运行即可。", "**Token**（本地解码；不打印 token 本身）：access token 中的 `roles` 是真正的 JSON 数组，例如 wei 为 `['Tools.CRM.Read','Tools.Sales.Read']`，chen 为 `[]`。ID token 不变，`client_id` 为 OBO client。", "**触发器增加的登录延迟：**58 次运行 p50 为 188 ms，最大 554 ms，另有一次 434 ms 的冷启动。Cognito 的触发器上限为 5 秒。"]}, {"t": "p", "x": "**检查要点：**解码你自己的 access token（`cut -d. -f2 | base64 -d`），确认 `roles` 数组和 `client_id`；并检查 pool 的触发器："}, {"t": "cmd", "x": "aws cognito-idp describe-user-pool --region ap-southeast-1 --user-pool-id {user-pool-id} \\\n  --query 'UserPool.LambdaConfig.PreTokenGenerationConfig'"}]}, {"id": "15-4", "title": "步骤 15.4 · Policy Engine 与 Cedar（LOG_ONLY → ENFORCE）", "result": "{rbac-policy-engine-id} ACTIVE, ENFORCE", "blocks": [{"t": "cmd", "x": "infra/common/run.sh bash infra/cognito-idc/15-rbac-policy.sh LOG_ONLY\ninfra/common/run.sh bash infra/cognito-idc/15-rbac-policy.sh ENFORCE\ninfra/common/run.sh bash infra/cognito-idc/15-rbac-logs.sh          # gateway APPLICATION_LOGS → /aws/vendedlogs/bedrock-agentcore/gateway/rsidc-rbac-gateway"}, {"t": "p", "x": "Cedar 策略由脚本创建，每个工具一条，且不包含任何组名："}, {"t": "cedar"}, {"t": "p", "x": "**实际结果：**"}, {"t": "ul", "x": ["Policy Engine `{rbac-policy-engine-id}` 为 ACTIVE，策略 `tool_sales_summary` 和 `tool_customer_contacts` 为 ACTIVE，且无 findings。", "gateway 的 `policyEngineConfiguration.mode` 先为 `LOG_ONLY`，之后为 `ENFORCE`。", "`like \"*\\\"…\\\"*\"` 模式中包含 JSON 引号，因为数组 claim 以其 JSON 文本形式传给 Cedar，即 `[\"Tools.CRM.Read\",\"Tools.Sales.Read\"]`。引号可避免 `Tools.CRM.Read` 同时匹配 `Tools.CRM.ReadWrite`。"]}, {"t": "p", "x": "**检查要点：**"}, {"t": "cmd", "x": "aws bedrock-agentcore-control get-gateway --region $R --gateway-identifier $RBAC_GW_ID --query policyEngineConfiguration\naws bedrock-agentcore-control list-policies --region $R --policy-engine-id $RBAC_PE_ID --query 'policies[].[name,status]' --output text\n# LOG_ONLY 的决策会写入 gateway 日志组\naws logs filter-log-events --region $R --log-group-name /aws/vendedlogs/bedrock-agentcore/gateway/rsidc-rbac-gateway \\\n  --filter-pattern '\"Policy evaluation denied request\"' --query 'events[].message' --output text"}, {"t": "p", "x": "预期：模式为 `ENFORCE`；两条策略均为 `ACTIVE`；在 LOG_ONLY 下，Cedar 本应拒绝的调用会被记录为 `\"decision\":\"DENY\"`，但调用仍然成功。"}]}, {"id": "15-5", "title": "步骤 15.5 · 测试矩阵", "result": "12/12 enforce, 10/10 changes", "blocks": [{"t": "p", "x": "针对 `rsidc-rbac-gateway` 分四次运行记录：`baseline`（挂载 policy engine 之前）、`log_only`、`enforce`，以及变更测试（7-8，仅修改 IdC）。下表每一行都是记录的结果。"}, {"t": "matrix"}, {"t": "p", "x": "**自行验证：**用每个用户的 access token 调用 gateway，并将响应与上表对比："}, {"t": "cmd", "x": "curl -s -X POST \"$RBAC_GW_URL\" -H \"Authorization: Bearer $ACCESS_TOKEN\" -H 'content-type: application/json' \\\n  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}'\ncurl -s -X POST \"$RBAC_GW_URL\" -H \"Authorization: Bearer $ACCESS_TOKEN\" -H 'content-type: application/json' \\\n  -d '{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"crm___get_customer_contacts\",\"arguments\":{}}}'"}, {"t": "p", "x": "被拒绝的调用是 HTTP 200，带 `result.isError=true` 和 `Tool Execution Denied: …`；请检查 `isError`，而不是 HTTP 状态码。结合 CloudWatch 决策日志（步骤 15.4），这就是完整的验证。"}]}, {"id": "14b", "title": "步骤 14b · RBAC Web GUI（Cognito 卡片）", "result": "GUI {web-rbac-api-id}：wei 全部 · ds1 部分 · chen 无", "blocks": [{"t": "p", "x": "**目的：**为 Gateway 工具级 RBAC 的演示版和客户版提供浏览器前端。它通过 Cognito 登录（code + PKCE，OBO client），并把携带 `roles` 的 access token 保存在服务端。对每个 gateway（演示版 `rsidc-rbac-gateway` 和客户版 `rsidc-mall-gateway`），它先执行 `tools/list`，再直接调用**每一个**工具，因此被隐藏的工具同样会显示为被拒绝（见 `webchat/cognito-idc/rbac_app.py` 中的 `check_gateway`）。"}, {"t": "cmd", "x": "infra/common/run.sh bash infra/cognito-idc/14-deploy-webchat.sh      # 部署/更新全部三个 GUI（obo、oauth、rbac）"}, {"t": "p", "x": "**实际结果（2026-10-06）：**`RBAC GUI: https://{web-rbac-api-id}.execute-api.ap-southeast-1.amazonaws.com`。浏览器端到端结果："}, {"t": "table", "head": ["用户", "演示 gateway（A / B）", "客户 gateway（list / footfall / hourly / zone）"], "rows": [["wei", "已列出 + 允许 / 已列出 + 允许", "4 个全部已列出 + 允许"], ["ds1", "已列出 + 允许 / **已隐藏 + 拒绝**", "✓ / ✓ / **已隐藏 + 拒绝** / **已隐藏 + 拒绝**"], ["chen", "已隐藏 + 拒绝 / 已隐藏 + 拒绝", "4 个全部已隐藏 + 拒绝"]]}, {"t": "p", "x": "页面逐个发送 gateway 检查：GUI Lambda 的预留并发为 1，两个并行检查会被限流（429）。"}, {"t": "p", "x": "**验证方式：**打开 GUI URL，以 wei、ds1 或 chen 登录，在两张卡片上点击 **Check tools**。清理：与步骤 14 相同，对象为 `rsidc-webchat-rbac`。"}]}], "matrix": [["0", "基线，无策略：所有人都能列出并调用 A 和 B", "全部允许", "全部允许（9/9）", "PASS（体现问题所在）"], ["1", "wei：`tools/list` / 调用 A / 调用 B", "A+B / ✓ / ✓", "`[crm___…, sales___…]` / ✓ / ✓", "PASS"], ["2", "ds1：`tools/list` / 调用 A / **手工构造**调用 B", "A / ✓ / ✗", "`[sales___get_sales_summary]` / ✓ / `Tool Execution Denied: … No policy applies to the request (denied by default).`", "PASS"], ["3", "chen（无映射组）：list / A / B", "[] / ✗ / ✗", "`[]` / 拒绝 / 拒绝", "PASS"], ["4", "ds1 的 token，`roles` 被改为包含 `Tools.CRM.Read`", "被拒绝", "**403** `insufficient_scope` (-32002)", "PASS"], ["4b", "相同 claims 重新编码（字节改变，签名不变）", "被拒绝", "403：签名会被强制校验", "PASS"], ["4c", "无效 bearer", "401", "401 `invalid_token` (-32001)", "PASS"], ["5", "2LO M2M token（client 不在 allowedClients 中）", "被拒绝", "**403** `insufficient_scope`", "PASS"], ["6", "LOG_ONLY：ds1 调用 B", "允许，并记录 deny", "HTTP 200 并返回数据，gateway 日志中有 `\"log\":\"Policy evaluation denied request\",\"decision\":\"DENY\",\"latencyMs\":48`", "PASS"], ["7", "仅从 `rsidc-gw-viewer` 的 Description 中移除 A → ds1 重新登录", "A 消失", "新 token `roles=[]`，list `[]`，调用 A 被拒绝（token 在变更后 0.6 秒签发）", "PASS"], ["7b", "ds1 在变更前签发的**旧** token", "到期前仍可用", "调用 A 仍被允许", "PASS（符合预期：下次签发 token 时生效）"], ["7c", "恢复 Description", "A 恢复", "`[sales___get_sales_summary]`", "PASS"], ["8", "将 ds1 加入 `rsidc-gw-analyst`（仅 IdC 成员关系）", "B 出现", "`roles=[CRM, Sales]`，list A+B，调用 B ✓", "PASS"], ["8b", "移除该成员关系", "B 消失", "list `[A]`，调用 B 被拒绝", "PASS"], ["9a", "回归：OBO 矩阵（第 4 部分）", "16/16", "16/16", "PASS"], ["9b", "回归：2LO/3LO 用例（第 2、3 部分）", "18/18", "18/18（+1 项 OBSERVED，与之前一致）", "PASS"], ["9c", "回归：Web GUI（API Gateway）", "200", "两个 GUI 均为 200", "PASS"]], "teardown": [{"t": "p", "x": "按以下顺序执行："}, {"t": "cmd", "x": "infra/common/run.sh .venv/bin/python infra/cognito-idc/15-rbac-pretoken.py --detach           # 先执行：从 pool 中移除触发器\nsource infra/state.env; R=ap-southeast-1\naws logs delete-delivery --region $R --id $(aws logs describe-deliveries --region $R --query \"deliveries[?deliverySourceName=='rsidc-rbac-gw-logs'].id\" --output text)\naws logs delete-delivery-source --region $R --name rsidc-rbac-gw-logs; aws logs delete-delivery-destination --region $R --name rsidc-rbac-gw-cwl\naws logs delete-log-group --region $R --log-group-name /aws/vendedlogs/bedrock-agentcore/gateway/rsidc-rbac-gateway\nfor t in $(aws bedrock-agentcore-control list-gateway-targets --region $R --gateway-identifier $RBAC_GW_ID --query 'items[].targetId' --output text); do\n  aws bedrock-agentcore-control delete-gateway-target --region $R --gateway-identifier $RBAC_GW_ID --target-id $t; done\naws bedrock-agentcore-control delete-gateway --region $R --gateway-identifier $RBAC_GW_ID\nfor p in $(aws bedrock-agentcore-control list-policies --region $R --policy-engine-id $RBAC_PE_ID --query 'policies[].policyId' --output text); do\n  aws bedrock-agentcore-control delete-policy --region $R --policy-engine-id $RBAC_PE_ID --policy-id $p; done\naws bedrock-agentcore-control delete-policy-engine --region $R --policy-engine-id $RBAC_PE_ID\naws bedrock-agentcore-control delete-workload-identity --region $R --name rsidc-rbac-test-client\nfor f in rsidc-tool-sales rsidc-tool-crm rsidc-pretoken-roles; do aws lambda delete-function --region $R --function-name $f; done"}, {"t": "p", "x": "然后删除 IAM 角色 `rsidc-rbac-gateway-role` 和 `rsidc-pretoken-roles-role`（先移除它们的内联策略）。"}, {"t": "p", "x": "最后，只删除这两个项目自有的 IdC 组 `rsidc-gw-analyst` 和 `rsidc-gw-viewer`（ap-east-1，`identitystore delete-group`；其成员关系随之删除）。不要动已有的组。"}, {"t": "p", "x": "**成本：**按请求计费。Gateway、Policy 和 Lambda 均按请求计费，Cognito 触发器每次登录产生一次 Lambda 调用。该 pool 原本就在 ESSENTIALS 套餐，因此没有新增套餐费用。RBAC GUI 的清理沿用步骤 14，对象为 `rsidc-webchat-rbac`。"}], "faq": [{"q": "`tools/list` 和 `initialize` 需要显式的 Cedar permit 吗？", "fix": "不需要。在 ENFORCE 下，`initialize` 对所有人返回 200，`tools/list` 会**自动过滤**为调用者可调用的工具。chen 得到空列表。有些博客示例会显式 permit `tools/list`/`initialize`，但这不是必需的。", "docs": [["Policy in Amazon Bedrock AgentCore", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html"]]}, {"q": "被拒绝的 `tools/call` 在客户端看来是什么样？", "wrong": "只检查 HTTP 状态码或 JSON-RPC `error` 的客户端或测试会把它当成成功。", "why": "Cedar 的 deny 不是 HTTP 或 JSON-RPC 错误，而是以 HTTP 200 返回，带 `result.isError=true` 和文本 `Tool Execution Denied: Tool call not allowed due to policy enforcement [...]`。", "fix": "检查 `isError`。", "docs": []}, {"q": "为什么被拒绝的 JWT 返回 403 而不是 401？", "why": "格式正确但签名或 `allowedClients` 校验失败的 JWT 返回 HTTP **403** `insufficient_scope`；只有无法解析的 bearer 才返回 401 `invalid_token`。ID token 同样返回 403，因为它没有 `client_id` claim。", "fix": "把 403 理解为“token 不被接受”，401 理解为“这不是 token”。请向 Gateway 发送 **access** token。", "docs": [["Gateway inbound authorization", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html"]]}, {"q": "为什么 Cedar 规则用 `like \"*\\\"Tools.CRM.Read\\\"*\"` 匹配，而不是直接比较列表？", "why": "claim 字符串化按文档所述工作：数组 `roles` 以其 JSON 文本形式传给 Cedar，因此对带引号的值使用 `like` 才是正确的匹配方式，`hasTag` 用于防止 claim 缺失。", "fix": "在模式中保留 JSON 引号；它们可避免 `Tools.CRM.Read` 同时匹配 `Tools.CRM.ReadWrite`。", "docs": [["Cedar policy language", "https://docs.cedarpolicy.com/"]]}, {"q": "IdC 中的变更多快生效？", "why": "变更在下一次签发 token 时生效，而不是立即生效。IdC 的变更会体现在下一个 token 中（Identity Store 读取是即时的：测试 7 中为 0.6 秒）。已签发的 token 在过期前保持原有 roles（该 client 的 access token 为 60 分钟）。", "fix": "如需更快撤销权限，请缩短 token 有效期，或吊销 refresh token。", "docs": [["Pre token generation Lambda trigger", "https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-pre-token-generation.html"]]}, {"q": "如果 IAM Identity Center（Identity Store）不可达会怎样？", "why": "Fail-closed 是有代价的。如果 Identity Store 不可达，没有人能登录此 pool（包括 OBO、3LO 和各 Web GUI）。这是有意为之的取舍。", "fix": "生产环境中，请对触发器的 Errors 指标设置告警。触发器给登录增加 p50 188 ms（最大 554 ms，冷启动 434 ms），而 Cognito 的上限为 5 秒。", "docs": []}, {"q": "Gateway RBAC 能取代 Redshift 中按用户的行/列控制吗？", "why": "不能。数据层没有变化：两个工具仍以 `svc_reporting` 访问 Redshift。Gateway RBAC 决定的是*能用哪个工具*。", "fix": "按用户的行/列控制仍需 OBO（第 4 部分）。", "docs": []}, {"q": "Redshift 的组（`risk-team`、`data-scientists` 等）也能驱动工具访问吗？", "why": "触发器会读取用户**所有**组的 Description。演示把映射放在两个专用组（`rsidc-gw-analyst`、`rsidc-gw-viewer`）上，对已有的组只做查询，不写入它们的 Description。", "fix": "只要在 `risk-team` 或 `data-scientists` 上写入同样的 `[rsidc-rbac] tools=…` 文本，Redshift 组也能驱动工具访问，无需改代码。", "docs": []}, {"q": "同样的 Cedar 能用于 Entra ID 而不是 Cognito 吗？", "why": "Cedar 从不引用组名，且 `roles` claim 的形态与 Entra ID App Roles 一致。", "fix": "可以：如果 Gateway 信任 Entra 而不是 Cognito，同样的 Cedar 仍然适用。请参阅 Entra ID 页面。", "docs": []}]}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+// tiny markdown: `code`, **bold**, [text](url)
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+  .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+const foot = date => `<div class="foot">测试记录（${esc(date)}）</div>`;
+const pill = (ok, yes = "允许", no = "拒绝") => `<span class="pill ${ok ? "ok" : "no"}">${ok ? yes : no}</span>`;
+const chips = r => r.length ? r.map(x => `<code>${esc(x)}</code>`).join(" ") : "<i>[]（空）</i>";
+const NEED = {"sales___get_sales_summary": "Tools.Sales.Read", "crm___get_customer_contacts": "Tools.CRM.Read"};
+const short = t => t.split("___")[1];
+const PERSONAS = ["wei", "ds1", "chen"];
+
+function codeBlock(key, note) {
+  const e = D.code[key];
+  const body = e.lines.map((t, i) => `<div class="row"><span class="ln">${e.start + i}</span>${esc(t)}</div>`).join("");
+  return `<div class="ref"><b>${esc(e.ref)}</b> · ${esc(e.title)}${note ? " · " + note : ""}</div><pre>${body}</pre>`;
+}
+
+/* ---------------- nav ---------------- */
+function go(sec) {
+  document.querySelectorAll("nav > a[data-s]").forEach(x => x.classList.toggle("on", x.dataset.s === sec));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === sec));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav > a[data-s]").forEach(a => a.onclick = () => go(a.dataset.s));
+safeRender($("#navmeta"), `页面生成于 ${esc(D.built)}<br>记录：enforce 12/12 · change 10/10`);
+
+/* ---------------- 0 · Architecture: design ---------------- */
+function renderDesign() {
+  safeRender($("#design"), `<h3>设计</h3>
+  <div class="card"><b>问题：</b>一个 Gateway 位于多个工具之前，能否让 user1 调用工具 A 和 B、user2 只能调用 A，并且把组 → 工具的映射放在 IdP 而不是代码里？这是<b>采用 Entra 风格 <code>roles</code> claim 的方案 1</b>。
+  <p class="ref" style="margin-top:12px">工作方式</p>
+  <pre class="out">${esc(D.design.flow)}</pre>
+  <p>Cedar 从不引用组名。调整谁能使用哪个工具，只需改 IdC（组 Description 或成员关系）。该 claim 的形态与 Entra ID App Roles（<code>roles</code>）一致，因此如果 Gateway 信任 Entra 而不是 Cognito，同样的 Cedar 仍然适用。</p></div>
+  <div class="card"><b>映射保存在两个专用 IdC 组上</b>
+  <table><tr><th>IdC 组</th><th>Description（映射）</th><th>成员</th></tr>
+  ${D.design.mapping.map(r => `<tr>${r.map(c => `<td>${md(c)}</td>`).join("")}</tr>`).join("")}</table>
+  <p class="ref">已有的 IdC 组（<code>risk-team</code>、<code>data-scientists</code> 等）只被 <code>infra/cognito-idc/03-idc-redshift-app.sh</code> 查询，不会写入它们的 Description。
+  触发器会读取用户<b>所有</b>组的 Description，因此只要在 <code>risk-team</code> 或 <code>data-scientists</code> 上写入同样的 <code>[rsidc-rbac] tools=…</code> 文本，Redshift 组也能驱动工具访问，无需改代码。</p></div>`);
+}
+
+/* ---------------- 1 · Replay ---------------- */
+const R = {p: "ds1", phase: "enforce", shown: false};
+function renderReplay() {
+  const el = $("#replay"), P = D.personas[R.p], ph = D.phases[R.phase];
+  const phases = [["baseline", "基线（无策略）"], ["log_only", "LOG_ONLY"], ["enforce", "ENFORCE"]];
+  safeRender(el, `<h2>回放：RBAC Web GUI 卡片</h2>
+  <p class="lead">选择用户和策略阶段，然后点击<b>检查工具</b>。与真实 GUI 一样，页面先执行 <code>tools/list</code>，再直接调用<b>每一个</b>工具，因此被隐藏的工具同样会显示为被拒绝。
+  下面所有结果均为针对 <code>rsidc-rbac-gateway</code> 记录的真实响应。</p>
+  <div class="row-btns">${PERSONAS.map(x => `<button class="btn ${x === R.p ? "on" : ""}" data-p="${x}">${x}</button>`).join("")}
+   <span style="width:16px"></span>${phases.map(([k, l]) => `<button class="btn ${k === R.phase ? "on" : ""}" data-ph="${k}">${l}</button>`).join("")}</div>
+  <div class="grid g2" style="margin-top:12px">
+   <div class="card"><b>${esc(R.p)} 的 Cognito access token</b> <span class="ref">(${esc(P.email)})</span>
+    <table class="claims"><tr><th>Claim</th><th>值</th></tr>
+     <tr><td>roles</td><td>${chips(P.roles)}</td></tr>
+     <tr><td>token_use</td><td><code>access</code></td></tr>
+     <tr><td>client_id</td><td><code>{obo-client-id}</code> （OBO client）</td></tr></table>
+    <p class="ref">由 Pre Token Generation V2 触发器根据用户的 IdC 组添加。IdC 组：${md(P.group)}。ID token 不变。</p></div>
+   <div class="card"><b>Gateway <code>rsidc-rbac-gateway</code></b>
+    <table class="kv"><tr><td>策略阶段</td><td>${esc(ph.label)}</td></tr>
+     <tr><td>入站认证</td><td>Cognito JWT，<code>allowedClients</code> = OBO client</td></tr>
+     <tr><td>工具</td><td><code>sales___get_sales_summary</code> （A，无 PII）· <code>crm___get_customer_contacts</code>（B，含 PII）</td></tr></table>
+    <div style="margin-top:10px"><button class="btn pri" id="chk">检查工具</button></div></div></div>
+  <div id="res">${R.shown ? resultTable() : ""}</div>
+  ${R.shown && R.phase === "log_only" ? `<div class="ev"><b>LOG_ONLY</b> 会评估 Cedar 并记录决策，但不阻断。${R.p === "wei" ? "wei 对两个工具都会被允许。" : `${esc(R.p)} 调用没有对应角色的工具时仍被放行，gateway 日志中会出现 <code>"log":"Policy evaluation denied request","decision":"DENY","latencyMs":48</code>。`}</div>` : ""}
+  ${R.shown && R.phase === "baseline" ? `<div class="ev"><b>基线：</b>未挂载 policy engine，所有人都能列出并调用 A 和 B（9/9 允许）。这正是 policy engine 要解决的问题。</div>` : ""}
+  ${R.phase === "enforce" ? `<div class="card"><b>针对同一 gateway 的攻击记录</b>
+   <table><tr><th>场景</th><th>预期</th><th>实际</th><th></th></tr>${D.phases.enforce.others.map(o => `<tr><td>${esc(o.case)}</td><td>${esc(o.expect)}</td><td>${esc(o.actual)}</td><td><span class="pill ok">PASS</span></td></tr>`).join("")}</table>
+   <p class="ref">被篡改的 token 在入站认证阶段就被拒绝，Cedar 尚未执行。</p></div>` : ""}
+  <div class="card"><b>记录结果：谁能看到什么（ENFORCE）</b>
+   <table><tr><th>用户</th><th>IdC 组 → Description 映射</th><th>tools/list</th><th><code>get_sales_summary</code></th><th><code>get_customer_contacts</code> (PII)</th></tr>
+   ${D.replayTable.map(r => `<tr>${r.map(c => `<td>${md(c)}</td>`).join("")}</tr>`).join("")}</table></div>
+  <div class="card"><b>变更测试：只修改 IAM Identity Center，然后重新登录</b>
+   <table><tr><th>场景</th><th>预期</th><th>实际</th><th></th></tr>${D.changes.map(c => `<tr><td>${esc(c.case)}</td><td><code>${esc(c.expect)}</code></td><td><code>${esc(c.actual)}</code>${c.evidence ? `<div class="ref">${esc(c.evidence)}</div>` : ""}</td><td><span class="pill ok">PASS</span></td></tr>`).join("")}</table></div>
+  ${foot("2026-10-06 · 2026-10-07")}`);
+  el.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { R.p = b.dataset.p; R.shown = false; renderReplay(); });
+  el.querySelectorAll("[data-ph]").forEach(b => b.onclick = () => { R.phase = b.dataset.ph; R.shown = false; renderReplay(); });
+  $("#chk", el).onclick = () => { R.shown = true; renderReplay(); $("#res").scrollIntoView({block: "nearest"}); };
+}
+function resultTable() {
+  const P = D.personas[R.p], g = D.phases[R.phase].users[R.p];
+  return `<div class="card"><b>检查工具 · ${esc(R.p)} · ${esc(D.phases[R.phase].label)}</b>
+   <p class="ref">tools/list（HTTP 200）返回 ${g.listed.length} 个工具：${g.listed.map(t => `<code>${esc(t)}</code>`).join(" ") || "<i>无</i>"}</p>
+   <table><tr><th>工具</th><th>在 tools/list 中</th><th>直接 tools/call</th><th>响应（记录）</th></tr>
+   ${Object.keys(NEED).map(t => { const c = g.calls[t]; return `<tr><td><code>${esc(t)}</code></td>
+     <td>${g.listed.includes(t) ? pill(true, "已列出") : pill(false, "已隐藏", "已隐藏")}</td>
+     <td>${c ? `${pill(c.ok)} <span class="ref">HTTP ${c.http}</span>` : "未记录"}</td>
+     <td><pre class="out">${esc(c ? c.text : "未记录")}</pre></td></tr>`; }).join("")}</table></div>`;
+}
+
+/* ---------------- 2 · Under the hood ---------------- */
+const H = {i: 0, p: "ds1", tool: "crm___get_customer_contacts", mode: "enforce"};
+function renderHood() {
+  const el = $("#hood"), P = D.personas[H.p], t = H.tool, need = NEED[t];
+  const enforce = H.mode === "enforce", has = P.roles.includes(need);
+  const g = D.phases[H.mode].users[H.p], c = g.calls[t];
+  const hops = [
+   {t: "Pre Token Generation V2", who: "Cognito + Lambda rsidc-pretoken-roles",
+    body: () => `<p>登录时 Cognito 调用该触发器。触发器<b>按邮箱</b>在 IAM Identity Center 中查找用户，并读取该用户所属每个组的 Description。只有带 <code>[rsidc-rbac] tools=…</code> 标记的 Description 才生效；没有映射则得到 <code>roles=[]</code>。只有当 <code>email_verified</code> 为 <code>true</code> 时才会查找 IdC；用户无法自行修改邮箱（任何 app client 都不能写入 email，修改需先验证）。</p>
+     <div class="seq"><div>identitystore GetUserId<br><span class="ref">emails.value = ${esc(P.email)}</span></div><span>→</span><div>ListGroupMembershipsForMember</div><span>→</span><div>DescribeGroup (Description)</div><span>→</span><div class="edge">roles ${chips(P.roles)}</div></div>
+     <ul class="checks"><li>access token 中的 <code>roles</code> 是真正的 JSON 数组；ID token 不变</li>
+     <li>fail-closed：任何 Identity Store 错误都会使登录失败（未经成功查询，任何人都拿不到 token）</li></ul>
+     ${codeBlock("pretoken_idc")}${codeBlock("pretoken_parse")}${codeBlock("rbac_groups", "在 IdC 中创建的映射组")}`},
+   {t: "Gateway 入站 JWT", who: "AgentCore Gateway (CUSTOM_JWT)",
+    body: () => `<p>客户端向 <code>rsidc-rbac-gateway</code> 发送 <code>Authorization: Bearer &lt;access token&gt;</code>。authorizer 校验 Cognito discovery 文档与签名，并用 <code>client_id</code> 对照 <code>allowedClients</code>（OBO client）。</p>
+     <table class="kv"><tr><td>discoveryUrl</td><td><code>…/{user-pool-id}/.well-known/openid-configuration</code></td></tr>
+      <tr><td>allowedClients</td><td><code>["{obo-client-id}"]</code></td></tr></table>
+     <b>记录的拒绝场景</b>
+     <table><tr><th>Token</th><th>结果</th></tr>${D.phases.enforce.others.map(o => `<tr><td>${esc(o.case)}</td><td>${esc(o.actual)}</td></tr>`).join("")}</table>
+     <p class="ref">格式正确但签名或 <code>allowedClients</code> 校验失败的 JWT 返回 403 <code>insufficient_scope</code>；只有无法解析的 bearer 才返回 401。ID token 同样返回 403（没有 <code>client_id</code>）。</p>
+     ${codeBlock("rbac_gw_auth")}`},
+   {t: "Cedar 过滤 tools/list", who: "Policy in AgentCore (rsidc_rbac_pe)",
+    body: () => `<p>${enforce ? `在 ENFORCE 下，<code>tools/list</code> 会<b>自动过滤</b>为 permit 与该 principal 匹配的工具。无需为 <code>tools/list</code> 或 <code>initialize</code> 写显式 permit。` : `在 LOG_ONLY 下不做过滤：所有工具都会列出，决策只记录日志。`}</p>
+     <p>${esc(H.p)} 看到 <b>${g.listed.length}</b> 个工具：${g.listed.map(x => `<code>${esc(x)}</code>`).join(" ") || "<i>无</i>"}</p>
+     <div class="toggle"><b>模式：</b> <button class="btn ${enforce ? "" : "on"}" data-m="log_only">LOG_ONLY</button><button class="btn ${enforce ? "on" : ""}" data-m="enforce">ENFORCE</button></div>`},
+   {t: "Cedar 决定 tools/call", who: "Policy in AgentCore (rsidc_rbac_pe)",
+    body: () => `<p>调用 <code>${esc(t)}</code> 需要 <code>roles</code> 中包含 <code>${need}</code>。${esc(H.p)} ${has ? "拥有该角色" : "没有该角色"} → ${has ? pill(true, "PERMIT") : pill(false, "DENY（无适用策略）")}${!enforce && !has ? ` <span class="pill warn">LOG_ONLY：仅记录，不强制</span>` : ""}</p>
+     <ul class="checks"><li>每个工具一条固定的 permit；<code>principal.hasTag("roles") && principal.getTag("roles") like "*\\"${need}\\"*"</code></li>
+     <li>拒绝返回 <b>HTTP 200</b>，带 <code>result.isError=true</code> 和 <i>Tool Execution Denied</i>；客户端必须检查 <code>isError</code></li>
+     <li>LOG_ONLY 的决策会记录日志：<code>"log":"Policy evaluation denied request","decision":"DENY","latencyMs":48</code></li>
+     <li>Gateway 角色需要对 <code>rsidc_rbac_pe-*</code> 具备 <code>AuthorizeAction</code>、<code>PartiallyAuthorizeActions</code> 和 <code>GetPolicyEngine</code> 权限</li></ul>
+     <div class="toggle"><b>模式：</b> <button class="btn ${enforce ? "" : "on"}" data-m="log_only">LOG_ONLY</button><button class="btn ${enforce ? "on" : ""}" data-m="enforce">ENFORCE</button></div>
+     ${codeBlock("cedar_demo")}`},
+   {t: "工具 Lambda → Redshift", who: "Lambda rsidc-tool-sales / rsidc-tool-crm",
+    body: () => `<p>仅在 Cedar 允许（或处于 LOG_ONLY）时才会到达这里。Target <code>${t.split("___")[0]}</code> 使用 Gateway IAM 角色调用 Lambda。Lambda 不含按用户的逻辑；对所有调用者都以 <code>svc_reporting</code> 通过 Data API 读取 Redshift。</p>
+     <b>${esc(H.p)} · ${esc(short(t))} 的记录结果</b> ${c ? pill(c.ok) : ""}<pre class="out">HTTP ${c ? c.http : "?"} ${esc(c ? c.text : "未记录")}</pre>
+     <p class="ref">Gateway RBAC 决定的是<i>能用哪个工具</i>；按用户的行/列控制仍需 OBO（第 4 部分）。</p>
+     ${codeBlock("rbac_lambda")}${codeBlock("gui_check", "RBAC Web GUI 即以此方式调用每个工具")}`},
+  ];
+  safeRender(el, `<h2>原理剖析：一次工具调用，逐跳查看</h2>
+  <p class="lead">选择用户、工具和策略模式。每一跳展示由谁检查什么、记录的结果，以及真实的代码或配置（文件:行号）。</p>
+  <div class="row-btns">${PERSONAS.map(x => `<button class="btn ${x === H.p ? "on" : ""}" data-u="${x}">${x}</button>`).join("")}
+   <span style="width:16px"></span>${Object.keys(NEED).map(x => `<button class="btn ${x === t ? "on" : ""}" data-t="${x}">${short(x)}</button>`).join("")}</div>
+  <div class="flow" style="margin-top:12px">${hops.map((h, i) => `${i ? '<div class="arrow">→</div>' : ""}<div class="node ${i === H.i ? "on" : ""} ${i === 4 && c ? (c.ok ? "good" : "bad") : ""}" data-i="${i}"><div class="n">第 ${i + 1} 跳</div><div class="t">${esc(h.t)}</div><div class="s">${esc(h.who)}</div></div>`).join("")}</div>
+  <div class="card"><div class="hop-hd"><h3 style="margin:0">第 ${H.i + 1} 跳 · ${esc(hops[H.i].t)}</h3><span class="pill mut who-chk">检查方：${esc(hops[H.i].who)}</span>
+   <span style="flex:1"></span><button class="btn" id="hp" ${H.i ? "" : "disabled"}>← 上一步</button><button class="btn pri" id="hn" ${H.i < hops.length - 1 ? "" : "disabled"}>下一步 →</button></div>
+   ${hops[H.i].body()}</div>
+  ${foot("2026-10-06 · 2026-10-07")}`);
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { H.p = b.dataset.u; renderHood(); });
+  el.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { H.tool = b.dataset.t; renderHood(); });
+  el.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { H.mode = b.dataset.m; renderHood(); });
+  el.querySelectorAll(".node").forEach(n => n.onclick = () => { H.i = +n.dataset.i; renderHood(); });
+  $("#hp", el).onclick = () => { H.i--; renderHood(); };
+  $("#hn", el).onclick = () => { H.i++; renderHood(); };
+}
+
+/* ---------------- 3 · Setup ---------------- */
+const table = (head, rows) => `<table><tr>${head.map(h => `<th>${esc(h)}</th>`).join("")}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${md(c)}</td>`).join("")}</tr>`).join("")}</table>`;
+function block(b) {
+  switch (b.t) {
+    case "p": return `<p>${md(b.x)}</p>`;
+    case "cmd": return `<pre class="out">${esc(b.x)}</pre>`;
+    case "out": return `<div class="ref"><b>${esc(b.title)}</b></div><pre class="out">${esc(b.x)}</pre>`;
+    case "ul": return `<ul class="checks">${b.x.map(i => `<li>${md(i)}</li>`).join("")}</ul>`;
+    case "table": return table(b.head, b.rows);
+    case "cedar": return `<pre class="out">${esc(D.cedar)}</pre>`;
+    case "matrix": return table(["#", "场景", "预期", "实际", "结果"], D.matrix) +
+      `<div class="ref">记录依据：基线 9/9 允许；enforce 12/12；变更测试 10/10；LOG_ONLY 决策来自 gateway 日志。</div>`;
+  }
+  return "";
+}
+const stepCard = s => `<details class="faq" id="st-${esc(s.id)}"><summary>${esc(s.title)} <span class="pill mut">结果：${esc(s.result)}</span></summary><div class="bd">${s.blocks.map(block).join("")}</div></details>`;
+function renderSetup() {
+  const el = $("#setup");
+  safeRender(el, `<h2>详细配置</h2>
+  <p class="lead">按构建顺序排列。前置条件：共享的基础环境（VPC、带 OBO client 的 Cognito pool <code>{user-pool-id}</code>、集成 IdC 的 Redshift、仅管理员可创建用户），详见<a href="foundation.zh-CN.html">基础环境</a>页面。
+  脚本通过 <code>infra/common/run.sh</code> 运行，它会加载 <code>infra/common/00-config.sh</code>。点击某个步骤可展开其命令、实际结果和检查要点。</p>
+  <div class="row-btns" style="margin-bottom:12px"><button class="btn" id="sopen">全部展开</button><button class="btn" id="sclose">全部折叠</button></div>
+  ${D.steps.map(stepCard).join("")}
+  <h3>Gateway RBAC 清理</h3>
+  <details class="faq" id="st-teardown"><summary>清理 · 按顺序执行的命令</summary><div class="bd">${D.teardown.map(block).join("")}</div></details>
+  ${foot("2026-10-06 · 2026-10-07")}`);
+  $("#sopen", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = true);
+  $("#sclose", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = false);
+}
+
+/* ---------------- 4 · FAQ · Findings ---------------- */
+function renderFaq() {
+  const el = $("#faq");
+  const row = (cls, label, v) => v ? `<dt class="${cls}">${label}</dt><dd>${md(v)}</dd>` : "";
+  safeRender(el, `<h2>FAQ · 发现</h2>
+  <p class="lead">记录的运行结果对使用 Cognito 与 IAM Identity Center 组的 Gateway 工具级 RBAC 说明了什么。点击问题可展开。</p>
+  <div class="row-btns" style="margin-bottom:12px"><button class="btn" id="fopen">全部展开</button><button class="btn" id="fclose">全部折叠</button></div>
+  ${D.faq.map((f, i) => `<details class="faq"><summary>${i + 1}. ${md(f.q)}</summary><div class="bd"><dl class="qa">
+    ${row("w", "问题表现", f.wrong)}${row("y", "原因", f.why)}${row("f", "修复 / 建议", f.fix)}</dl>
+    ${f.docs.length ? `<div class="docs"><b>官方文档</b><ul>${f.docs.map(([t, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("")}</ul></div>` : ""}</div></details>`).join("")}
+  <div class="card"><b>相关页面</b><ul class="checks">
+   <li><a href="part1-quick.zh-CN.html">客户版本：Amazon Quick → Gateway → 商场工具（Cognito 组）</a>，含其独立的发现与清理步骤。</li>
+   <li><a href="part4-obo.zh-CN.html">第 4 部分 · OBO</a>，用于 Redshift 中按用户的行/列控制。</li></ul></div>
+  ${foot("2026-10-06 · 2026-10-07")}`);
+  $("#fopen", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = true);
+  $("#fclose", el).onclick = () => el.querySelectorAll("details.faq").forEach(d => d.open = false);
+}
+
+renderDesign(); renderReplay(); renderHood(); renderSetup(); renderFaq();
+</script>
+<style>
+details.codefold{margin:6px 0}
+details.codefold>summary{cursor:pointer;display:inline-block;padding:3px 10px;border:1px solid #8884;border-radius:6px;
+  font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:inherit;opacity:.85;user-select:none}
+details.codefold>summary:hover{opacity:1}
+details.codefold[open]>summary{margin-bottom:6px}
+</style>
+<script>
+(function () {
+  var CODE_FILE = /[\w./-]+\.(py|sh|js|mjs|ts|tsx|json|sql|html|md|txt|yaml|yml)(:\d+(-\d+)?)?/;
+  function label(el) {
+    var p = el.previousElementSibling, t = p && p.textContent.trim();
+    return t && t.length < 140 && CODE_FILE.test(t) ? t : '';
+  }
+  function wrap(el) {
+    if (el.dataset.codefold || el.closest('details.codefold')) return;
+    if (el.tagName === 'PRE' && el.parentElement && el.parentElement.closest('.code')) return;  // the outer .code is wrapped
+    el.dataset.codefold = '1';
+    var lines = (el.textContent.replace(/\n+$/, '').match(/\n/g) || []).length + 1;
+    var kind = el.classList.contains('out') ? '显示输出' : '显示代码';
+    var lb = label(el);
+    var d = document.createElement('details'), s = document.createElement('summary');
+    d.className = 'codefold';
+    s.textContent = '▸ ' + kind + (lb ? ' · ' + lb : '') + ' (' + lines + (lines === 1 ? ' 行)' : ' 行)');
+    el.parentNode.insertBefore(d, el);
+    d.appendChild(s); d.appendChild(el);
+  }
+  function scan(root) {
+    if (root.nodeType !== 1) return;
+    if (root.matches('pre, .code')) wrap(root);
+    root.querySelectorAll('pre, .code').forEach(wrap);
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) { m.addedNodes.forEach(scan); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+</body></html>

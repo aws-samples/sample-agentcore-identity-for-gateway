@@ -1,0 +1,9 @@
+{"Version":"2012-10-17","Statement":[
+ {"Sid":"InvokeClaude","Effect":"Allow","Action":["bedrock:InvokeModel","bedrock:InvokeModelWithResponseStream"],
+  "Resource":["arn:aws:bedrock:*::foundation-model/anthropic.*","arn:aws:bedrock:*:__ACCOUNT__:inference-profile/global.anthropic.*","arn:aws:bedrock:::foundation-model/anthropic.*"]},
+ {"Sid":"Logs","Effect":"Allow","Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents","logs:DescribeLogStreams","logs:DescribeLogGroups"],
+  "Resource":"arn:aws:logs:__REGION__:__ACCOUNT__:log-group:/aws/bedrock-agentcore/runtimes/*"},
+ {"Sid":"Observability","Effect":"Allow","Action":["xray:PutTraceSegments","xray:PutTelemetryRecords","cloudwatch:PutMetricData"],"Resource":"*"},
+ {"Sid":"WorkloadIdentity","Effect":"Allow","Action":["bedrock-agentcore:GetWorkloadAccessToken","bedrock-agentcore:GetWorkloadAccessTokenForJWT","bedrock-agentcore:GetWorkloadAccessTokenForUserId"],
+  "Resource":"arn:aws:bedrock-agentcore:__REGION__:__ACCOUNT__:workload-identity-directory/default*"},
+ {"Sid":"CodeArtifact","Effect":"Allow","Action":["s3:GetObject"],"Resource":"arn:aws:s3:::__BUCKET__/agent/*"}]}

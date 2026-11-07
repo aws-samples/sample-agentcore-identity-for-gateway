@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 2 部分 · 3LO（用户授权 + Token Vault）· Cognito + IAM Identity Center</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--mut:#5f6b7a;--line:#e3e6ea;--acc:#0972d3;--ms:#0067b8;--ok:#037f0c;--okb:#e9f7ea;--no:#c0262d;--nob:#fdecec;--warn:#8a5a00;--warnb:#fff6e0;--code:#0f1b2a}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.banner{background:#232f3e;color:#fff;padding:8px 20px;font-size:13px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+.banner b{color:#ff9900}
+.wrap{display:flex;min-height:calc(100vh - 38px)}
+nav{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:18px 0;position:sticky;top:38px;height:calc(100vh - 38px)}
+nav h1{font-size:15px;margin:0 18px 4px}nav .sub{font-size:12px;color:var(--mut);margin:0 18px 16px}
+nav a{display:block;padding:9px 18px;color:var(--ink);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{border-left-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+nav .meta{position:absolute;bottom:14px;left:18px;right:12px;font-size:11px;color:var(--mut)}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1240px}
+section{display:none}section.on{display:block}
+.arch img{display:block;width:100%;height:auto}
+h2{margin:0 0 4px;font-size:22px}h3{margin:18px 0 8px;font-size:16px}.lead{color:var(--mut);margin:0 0 16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}nav{display:none}}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+:not(pre)>code{background:#eef1f4;padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{margin:0;background:var(--code);color:#d7e2ee;border-radius:8px;padding:10px 0;overflow:auto;font-size:12px;line-height:1.55}
+pre .ln{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#6b7c8f;user-select:none}
+pre .row{white-space:pre;padding-right:14px}pre .gap{color:#6b7c8f;padding-left:54px}
+pre.out{padding:10px 14px;white-space:pre-wrap;word-break:break-all}
+.ref{font-size:12px;color:var(--mut);margin:10px 0 4px}.ref b{color:var(--ink)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.ok{background:var(--okb);color:var(--ok)}.no{background:var(--nob);color:var(--no)}.warn{background:var(--warnb);color:var(--warn)}.mut{background:#eef1f4;color:var(--mut)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.on{border-color:var(--acc);background:#f0f6fc;color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.foot{margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut)}
+/* replay */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps span{flex:1;text-align:center;padding:6px;border-radius:6px;background:#eef1f4;color:var(--mut);font-size:12px}.steps span.on{background:var(--acc);color:#fff}
+.ms{max-width:420px;margin:10px auto;border:1px solid var(--line);border-radius:6px;padding:30px 36px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.ms .logo{display:flex;gap:2px;width:22px;flex-wrap:wrap;margin-bottom:14px}.ms .logo i{width:10px;height:10px;display:block}
+.ms h4{font-size:22px;font-weight:600;margin:0 0 12px}.ms input{width:100%;border:0;border-bottom:1px solid #666;padding:8px 2px;font:inherit;margin-bottom:12px;outline:none}
+.ms input:focus{border-bottom-color:var(--ms)}.ms .who{display:flex;gap:6px;margin-bottom:12px}
+.ms .go{background:var(--ms);color:#fff;border:0;padding:7px 26px;float:right;cursor:pointer;font:inherit}
+.ms small{display:block;color:var(--mut);clear:both;padding-top:14px}
+.claims td:first-child{font-family:ui-monospace,Menlo,monospace;width:170px}
+.quick{display:grid;grid-template-columns:1fr 330px;gap:14px}@media(max-width:1000px){.quick{grid-template-columns:1fr}}
+.chat{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;height:560px}
+.chat .hd{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbfc}
+.chat .ft{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px}.msg.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg .tc{font-size:12px;color:var(--mut);margin-bottom:4px}.msg pre.out{margin-top:6px;background:#f3f5f7;color:#222}
+.conn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.conn .t{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.conn .t.off{color:#a0a9b4;text-decoration:line-through}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+/* flows */
+.flow{display:flex;align-items:stretch;gap:0;margin:8px 0 16px;overflow-x:auto}
+.node{flex:1;min-width:150px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;position:relative;transition:.15s}
+.node .n{font-size:11px;color:var(--mut)}.node .t{font-weight:600;font-size:13px}.node .s{font-size:12px;color:var(--mut)}
+.node.on{border-color:var(--acc);box-shadow:0 0 0 3px #d6e8fa}.node.bad{border-color:var(--no)}.node.good{border-color:var(--ok)}
+.arrow{flex:none;width:26px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;font-size:18px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.opt h4{margin:0 0 6px;font-size:14px}
+.opt.best{border-color:var(--ok);background:#f6fcf6}
+.err{font-family:ui-monospace,Menlo,monospace;background:var(--nob);color:var(--no);padding:10px 12px;border-radius:8px;border:1px solid #f3c2c4}
+.kv td:first-child{width:220px;color:var(--mut)}
+.hop-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.who-chk{font-size:12px}
+.checks li{margin:4px 0}
+/* 2026-10-30 evidence + FAQ */
+.ev{background:var(--okb);border:1px solid #bfe3c2;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13px}
+details.faq{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+details.faq>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.faq>summary::-webkit-details-marker{display:none}details.faq>summary:before{content:"▸";color:var(--acc)}details.faq[open]>summary:before{content:"▾"}
+details.faq[open]{border-color:var(--acc)}details.faq .bd{padding:0 16px 12px 36px}
+.qa{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0}.qa dt{font-size:12px;font-weight:600;padding-top:2px}.qa dd{margin:0}
+.qa dt.w{color:var(--no)}.qa dt.y{color:var(--mut)}.qa dt.f{color:var(--ok)}.qa dt.v{color:var(--acc)}
+details.sc{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}details.sc>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--acc);font-weight:600}
+details.sc[open]{border-color:var(--acc)}details.sc .b{padding:0 12px 12px}details.sc img{max-width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;margin:6px 0}.seq div{background:#f0f6fc;border:1px solid #c9dff3;border-radius:6px;padding:5px 8px;font-size:12px;max-width:210px}
+.seq div.edge{background:var(--okb);border-color:#bfe3c2}.seq span{align-self:center;color:#9aa5b1}
+details.faq .docs{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px;font-size:13px}details.faq .docs ul{margin:4px 0 0;padding-left:18px}
+.toggle{border:1px dashed var(--no);border-radius:8px;padding:10px 12px;margin:10px 0;background:#fffafa}
+.chk label{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer}.chk input{margin-right:8px}
+.sibs{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+nav .sibs a{padding:3px 18px;font-size:12px;border-left:0}
+nav .sibs a.cur{font-weight:600;color:var(--acc)}
+nav{overflow:auto}
+</style></head>
+<body>
+<div class="banner"><b>静态演示</b> — 界面为模拟，数据为真实记录。本页不会调用 AWS。<a href="part2-3lo.html" hreflang="en" lang="en" style="margin-left:auto;color:#fff;opacity:.85;font-size:12px">English</a></div>
+<div class="wrap">
+<nav>
+  <h1>第 2 部分 · 3LO（Cognito + IdC）</h1>
+  <div class="sub">用户一次性授权，token 按 (agent, user) 存放在 AgentCore Identity Token Vault 中。与第 3 部分共用 runtime；基础环境见步骤 1–8。</div>
+  <a data-s="arch" class="on">0 · 架构</a>
+  <a data-s="replay">1 · 回放（模拟授权）</a>
+  <a data-s="hood">2 · 原理剖析</a>
+  <a data-s="setup">3 · 配置</a>
+  <a data-s="faq">4 · FAQ · 发现</a>
+  <div class="sibs">
+    <a href="foundation.zh-CN.html">基础环境（步骤 1–8）</a>
+    <a href="part1-quick.zh-CN.html">第 1 部分 · Amazon Quick</a>
+    <a class="cur" href="part2-3lo.zh-CN.html">第 2 部分 · 3LO</a>
+    <a href="part3-2lo.zh-CN.html">第 3 部分 · 2LO</a>
+    <a href="part4-obo.zh-CN.html">第 4 部分 · OBO</a>
+    <a href="gateway-rbac.zh-CN.html">Gateway 工具 RBAC</a>
+    <a href="../../README.md">仓库 README</a>
+  </div>
+  <div class="meta" id="navmeta" style="position:static;margin:12px 18px 0"></div>
+</nav>
+<main>
+<section id="arch" class="on">
+  <h2>架构：agent → AgentCore Identity（Token Vault）→ Cognito userInfo</h2>
+  <p class="lead">用户在 Cognito 一次性授权。AgentCore Identity 将得到的 token 存入 <b>Token Vault</b>，以 (workload identity, user) 为键；应用通过<b>会话绑定</b>（<code>CompleteResourceTokenAuth</code>）证明用户身份。此后 agent 读取 vault，并以该用户身份调用 Cognito <code>/oauth2/userInfo</code>。
+  其他出站模式与 OBO 在同一份 Redshift 数据上做对比；OBO runtime（<code>rsidc_data_agent</code>，版本 3）及其测试保持不变，这里使用独立的 runtime。</p>
+  <div class="card arch"><a href="img/architecture-3lo.svg" target="_blank" rel="noopener">
+    <img src="img/architecture-3lo.svg" alt="架构图：用户在 Cognito 授权，AgentCore Identity 将 token 存入 Token Vault，agent 以该用户身份调用 Cognito userInfo"></a>
+    <div class="ref"><a href="img/architecture-3lo.svg" target="_blank" rel="noopener">查看原图</a> · 用户只需授权一次（Token Vault），会话绑定由应用完成。点击图片可查看原图。</div></div>
+  <div class="ref">动画演示：<a href="flow.html">flow.html</a>（3LO 标签页）。</div>
+  <div class="grid g2">
+   <div class="card"><b>所处位置</b>
+    <ul class="checks"><li>步骤 1–8（网络、Cognito 用户池与用户、IAM Identity Center、Redshift、OBO runtime）是共用的基础环境：见 <a href="foundation.zh-CN.html">foundation.zh-CN.html</a>。</li>
+     <li>OAuth runtime <code>rsidc_oauth_agent</code> <b>与第 3 部分共用</b>：见 <a href="part3-2lo.zh-CN.html">part3-2lo.zh-CN.html</a>。3LO 使用 <code>mode: "3lo"</code>，2LO 使用 <code>mode: "2lo"</code>。</li>
+     <li>OBO（用户身份直达 Redshift）见 <a href="part4-obo.zh-CN.html">part4-obo.zh-CN.html</a>。</li></ul></div>
+   <div class="card"><b>本部分的步骤</b>
+    <table><tr><th>#</th><th>步骤</th><th>结果</th></tr>
+     <tr><td>1</td><td>步骤 9 · Cognito OAuth 客户端</td><td>rsidc-3lo-agent、code、openid email profile；ManagedLoginVersion 2</td></tr>
+     <tr><td>2</td><td>步骤 10 · Credential provider rsidc-3lo-cognito</td><td>3LO 客户端已设置 callbackUrl</td></tr>
+     <tr><td>3</td><td>步骤 12 · OAuth runtime + return URL</td><td>已设置 returnUrls</td></tr>
+     <tr><td>4</td><td>步骤 13 · 3LO 测试用例</td><td>PASS（18/18 中的 3LO 用例）+ 1 项 OBSERVED</td></tr>
+     <tr><td>5</td><td>Web GUI · 3LO 面板</td><td>CompleteResourceTokenAuth OK，身份防护通过</td></tr>
+     <tr><td>6</td><td>与 OBO 对比</td><td>资源所属 IdP 处的用户</td></tr>
+     <tr><td>7</td><td>发现</td><td>3 项发现</td></tr>
+     <tr><td>8</td><td>清理</td><td>通过 99-teardown.sh</td></tr></table></div></div>
+</section>
+<section id="replay"></section>
+<section id="hood"></section>
+<section id="setup"></section>
+<section id="faq"></section>
+</main></div>
+
+<script id="data" type="application/json">{"built": "2026-11-05", "region": "ap-southeast-1", "personas": {"wei": {"first": {"status": "PASS", "case": "3LO wei 首次调用", "expect": "CONSENT_REQUIRED", "got": "CONSENT_REQUIRED", "detail": "https://bedrock-agentcore.ap-southeast-1.amazonaws.com/identities/oauth2/authorize?request_uri=urn%3Aietf%3Apa"}, "login": {"status": "PASS", "case": "3LO wei 在 Cognito 登录 -> 重定向到应用 return URL", "expect": "callback", "got": "callback", "detail": "{'_login_form': True}"}, "bind": {"status": "PASS", "case": "3LO CompleteResourceTokenAuth（会话绑定），使用 wei 的 JWT", "expect": "OK", "got": "OK", "detail": "OK"}, "vault": {"status": "PASS", "case": "3LO wei 仍取得 wei 自己的 token（无跨用户覆盖）", "expect": "TOKEN_FROM_VAULT (wei)", "got": "TOKEN_FROM_VAULT (wei)", "detail": "{'sub': '{wei-user-sub}', 'email_verified': 'true', 'email': 'wei@techfinance.example.com', 'username': 'wei'}", "obj": {"sub": "{wei-user-sub}", "email_verified": "true", "email": "wei@techfinance.example.com", "username": "wei"}}, "email": "wei@techfinance.example.com", "group": "risk-team"}, "zhang": {"first": {"status": "PASS", "case": "3LO zhang 调用：不得复用 wei 的 vault token", "expect": "CONSENT_REQUIRED", "got": "CONSENT_REQUIRED", "detail": "vault 以 (agent, user) 为键"}, "bind": {"status": "PASS", "case": "3LO 会话绑定：用 zhang 的 JWT 完成 zhang 的会话", "expect": "OK", "got": "OK", "detail": "OK"}, "vault": {"status": "PASS", "case": "3LO zhang 第二次调用", "expect": "TOKEN_FROM_VAULT (zhang)", "got": "TOKEN_FROM_VAULT (zhang)", "detail": "{'sub': '{zhang-user-sub}', 'email_verified': 'true', 'email': 'zhang@techfinance.example.com', 'username': 'zhang'}", "obj": {"sub": "{zhang-user-sub}", "email_verified": "true", "email": "zhang@techfinance.example.com", "username": "zhang"}}, "email": "zhang@techfinance.example.com", "group": "marketing-team"}}, "negBinding": {"status": "PASS", "case": "3LO 会话绑定：用 WEI 的 JWT 完成 zhang 的会话", "expect": "rejected", "got": "rejected", "detail": "AccessDeniedException: An error occurred (AccessDeniedException) when calling the CompleteResourceTokenAuth operation: Invalid or expired sessi"}, "scenarios": [{"status": "PASS", "case": "3LO wei 首次调用", "expect": "CONSENT_REQUIRED", "got": "CONSENT_REQUIRED", "detail": "https://bedrock-agentcore.ap-southeast-1.amazonaws.com/identities/oauth2/authorize?request_uri=urn%3Aietf%3Apa"}, {"status": "PASS", "case": "3LO wei 在 Cognito 登录 -> 重定向到应用 return URL", "expect": "callback", "got": "callback", "detail": "{'_login_form': True}"}, {"status": "PASS", "case": "3LO CompleteResourceTokenAuth（会话绑定），使用 wei 的 JWT", "expect": "OK", "got": "OK", "detail": "OK"}, {"status": "PASS", "case": "3LO wei 第二次调用（新的 runtime 会话）", "expect": "TOKEN_FROM_VAULT", "got": "TOKEN_FROM_VAULT", "detail": "userinfo username=wei email=wei@techfinance.example.com claims={'iss': 'https://cognito-idp.ap-southeast-1.amazonaws.com/<pool-id>', 'sub': '69daa53c-5041-"}, {"status": "PASS", "case": "3LO zhang 调用：不得复用 wei 的 vault token", "expect": "CONSENT_REQUIRED", "got": "CONSENT_REQUIRED", "detail": "vault 以 (agent, user) 为键"}, {"status": "PASS", "case": "3LO 会话绑定：用 WEI 的 JWT 完成 zhang 的会话", "expect": "rejected", "got": "rejected", "detail": "AccessDeniedException: An error occurred (AccessDeniedException) when calling the CompleteResourceTokenAuth operation: Invalid or expired sessi"}, {"status": "PASS", "case": "3LO 会话绑定：用 zhang 的 JWT 完成 zhang 的会话", "expect": "OK", "got": "OK", "detail": "OK"}, {"status": "PASS", "case": "3LO zhang 第二次调用", "expect": "TOKEN_FROM_VAULT (zhang)", "got": "TOKEN_FROM_VAULT (zhang)", "detail": "{'sub': '{zhang-user-sub}', 'email_verified': 'true', 'email': 'zhang@techfinance.example.com', 'username': 'zhang'}"}, {"status": "PASS", "case": "3LO wei 仍取得 wei 自己的 token（无跨用户覆盖）", "expect": "TOKEN_FROM_VAULT (wei)", "got": "TOKEN_FROM_VAULT (wei)", "detail": "{'sub': '{wei-user-sub}', 'email_verified': 'true', 'email': 'wei@techfinance.example.com', 'username': 'wei'}"}, {"status": "PASS", "case": "3LO 共享浏览器：wei 的 IdP 会话替 A 授权 -> agent 防护", "expect": "IDENTITY_MISMATCH", "got": "IDENTITY_MISMATCH", "detail": "login form shown=False; complete=OK; caller=tmp-a-89e04b@test.example vault token=wei@techfinance.example.com"}, {"status": "PASS", "case": "3LO 恢复：A 在干净浏览器中强制重新授权", "expect": "TOKEN_FROM_VAULT (A)", "got": "TOKEN_FROM_VAULT (tmp-a-89e04b)", "detail": "login form shown=True; complete=OK; 过期的 wei token 已被 A 自己的 token 替换"}, {"status": "PASS", "case": "3LO prompt=login 即使存在 wei 的会话也强制显示 IdP 登录表单", "expect": "login form shown", "got": "True", "detail": "Cognito managed login v2 支持 prompt=login（v1 经典 hosted UI 会忽略它）"}, {"status": "OBSERVED", "case": "3LO 使用 prompt=login 授权后是否存储了 token？", "expect": "TOKEN_FROM_VAULT (B)", "got": "CONSENT_REQUIRED", "detail": "complete=OK; 不带 prompt=login 的同一流程会存储 token（见 wei/zhang 用例）"}, {"status": "PASS", "case": "3LO 对照：新用户 C，不带 prompt=login，干净浏览器", "expect": "TOKEN_FROM_VAULT (C)", "got": "TOKEN_FROM_VAULT", "detail": "complete=OK"}], "excerpts": {"three_lo": {"ref": "agents/cognito-idc/oauth/main.py:46-65", "parts": [[[46, "def three_lo(wat: str, payload: dict) -> dict:"], [47, "    # 3LO / USER_FEDERATION: token is bound to (this agent, this user) in the Token Vault; needs one-time user consent."], [48, "    args = dict(workloadIdentityToken=wat, resourceCredentialProviderName=os.environ[\"CP_3LO\"],"], [49, "                scopes=[\"openid\", \"email\", \"profile\"], oauth2Flow=\"USER_FEDERATION\","], [50, "                resourceOauth2ReturnUrl=payload[\"return_url\"], forceAuthentication=bool(payload.get(\"force\")))"], [51, "    if payload.get(\"session_uri\"):"], [52, "        # Collect the token for THIS consent session (SDK polling contract); otherwise an older vault token may be served."], [53, "        args[\"sessionUri\"] = payload[\"session_uri\"]"], [54, "    if payload.get(\"prompt_login\"):"], [55, "        # Force the IdP to re-authenticate instead of silently reusing an existing browser session."], [56, "        args[\"customParameters\"] = {\"prompt\": \"login\"}"], [57, "    r = identity.get_resource_oauth2_token(**args)"], [58, "    if not r.get(\"accessToken\"):"], [59, "        return {\"flow\": \"3LO\", \"status\": \"CONSENT_REQUIRED\", \"authorizationUrl\": r.get(\"authorizationUrl\"),"], [60, "                \"sessionUri\": r.get(\"sessionUri\"), \"sessionStatus\": r.get(\"sessionStatus\")}"], [61, "    profile = http_json(os.environ[\"COGNITO_DOMAIN\"] + \"/oauth2/userInfo\", r[\"accessToken\"])"], [62, "    caller = payload.get(\"_caller_email\")"], [63, "    if not caller or profile.get(\"email\", \"\").lower() != caller.lower():"], [64, "        # Defence in depth: the vault token must belong to the same person who is calling the agent."], [65, "        return {\"flow\": \"3LO\", \"status\": \"IDENTITY_MISMATCH\", \"caller_email\": caller, \"vault_token_email\": profile.get(\"email\")}"]]]}, "entry": {"ref": "agents/cognito-idc/oauth/main.py:69-77", "parts": [[[69, "@app.entrypoint"], [70, "def invoke(payload, context):"], [71, "    wat = BedrockAgentCoreContext.get_workload_access_token()"], [72, "    if not wat:"], [73, "        return {\"error\": \"no workload access token (inbound JWT required)\"}"], [74, "    auth = {k.lower(): v for k, v in (context.request_headers or {}).items()}.get(\"authorization\", \"\")"], [75, "    payload[\"_caller_email\"] = claims(auth.split(\" \", 1)[1]).get(\"email\") if auth.lower().startswith(\"bearer \") else None"], [76, "    try:"], [77, "        return two_lo(wat) if payload.get(\"mode\") == \"2lo\" else three_lo(wat, payload)"]]]}, "gui_start": {"ref": "webchat/cognito-idc/oauth_app.py:73-81", "parts": [[[73, "        if u.path == \"/3lo/start\" and s:  # ask the agent; consent needed -> send the browser to the consent URL (LOGIN 2)"], [74, "            r = call_agent(s, {\"mode\": \"3lo\", \"return_url\": RETURN_3LO, \"force\": q.get(\"force\") == [\"1\"],"], [75, "                               \"prompt_login\": q.get(\"prompt\") == [\"1\"]})"], [76, "            if r.get(\"status\") == \"CONSENT_REQUIRED\":"], [77, "                s[\"pending_session_uri\"], s[\"pending_at\"] = r[\"sessionUri\"], time.time()"], [78, "                s[\"last3lo\"] = {\"step\": \"redirected to consent\", \"agent\": r}"], [79, "                return self.send(302, headers=[(\"Location\", r[\"authorizationUrl\"])])"], [80, "            s[\"last3lo\"] = {\"step\": \"token already in vault\", \"agent\": r}"], [81, "            return self.send(302, headers=[(\"Location\", \"/#3lo\")])"]]]}, "gui_cb": {"ref": "webchat/cognito-idc/oauth_app.py:82-96", "parts": [[[82, "        if u.path == \"/3lo/callback\" and s:  # AgentCore Identity redirects here after consent -> session binding"], [83, "            session_uri = q.get(\"session_id\", [\"\"])[0]"], [84, "            pending = take_pending_3lo(s)  # one-time: cleared whether or not it matches"], [85, "            if not pending or session_uri != pending:  # not the session THIS browser session started: fail closed"], [86, "                s[\"last3lo\"] = {\"step\": \"callback rejected\", \"binding\": {\"matchesPending\": False}}"], [87, "                return self.send(400, \"3LO callback does not match a consent started in this session. <a href='/'>Back</a>\")"], [88, "            bind = {\"sessionUri\": session_uri, \"matchesPending\": True}"], [89, "            try:"], [90, "                ident.complete_resource_token_auth(sessionUri=session_uri, userIdentifier={\"userToken\": s[\"token\"]})"], [91, "                bind[\"CompleteResourceTokenAuth\"] = \"OK (bound to the signed-in user)\""], [92, "            except Exception as e:"], [93, "                bind[\"CompleteResourceTokenAuth\"] = f\"{type(e).__name__}: {e}\""], [94, "            r = call_agent(s, {\"mode\": \"3lo\", \"return_url\": RETURN_3LO, \"session_uri\": session_uri})"], [95, "            s[\"last3lo\"] = {\"step\": \"consent completed\", \"binding\": bind, \"agent\": r}"], [96, "            return self.send(302, headers=[(\"Location\", \"/#3lo\")])"]]]}}, "screens": [{"step": "9", "file": "img/console/09-cognito-app-clients.png", "caption": "Cognito，rsidc-users，App clients：OBO 客户端、rsidc-2lo-agent、rsidc-3lo-agent", "where": "Cognito，用户池 rsidc-users，App clients", "look": "rsidc-3lo-agent 与 OBO、2LO 客户端并列显示。"}, {"step": "9", "file": "img/console/09b-cognito-domain.png", "caption": "Cognito，rsidc-users，Domain：rsidc-123456789012，Managed login (v2)", "where": "Cognito，用户池 rsidc-users，Branding，Domain", "look": "用户池域名使用 Managed login version 2。"}, {"step": "10", "file": "img/console/10-agentcore-identity.png", "caption": "AgentCore，Identity：出站认证 provider rsidc-2lo-cognito 与 rsidc-3lo-cognito（Custom OAuth2）", "where": "Bedrock AgentCore，Identity", "look": "两个 provider 均为 Custom OAuth2；用户授权使用的是 rsidc-3lo-cognito。"}, {"step": "12", "file": "img/console/12-agentcore-runtime-oauth.png", "caption": "AgentCore，Runtime，rsidc_oauth_agent，版本 4：2LO/3LO 的独立 runtime（JWT 入站、VPC、环境变量 CP_2LO / CP_3LO / GW_URL）", "where": "Bedrock AgentCore，Runtime，rsidc_oauth_agent", "look": "JWT 入站认证、VPC 模式、环境变量 CP_2LO、CP_3LO、GW_URL。"}, {"step": "12", "file": "img/console/12b-iam-oauth-runtime-role.png", "caption": "IAM，rsidc-oauth-runtime-role，oauth-runtime 策略：对 token vault、两个 credential provider 及其 workload identity 授予 GetResourceOauth2Token", "where": "IAM，Roles，rsidc-oauth-runtime-role", "look": "GetResourceOauth2Token 被允许作用于 token vault、两个 provider 和 workload identity。"}]}</script>
+<script>
+// Renders page-built markup without innerHTML: parse, drop active content, insert nodes. Data values are escaped by esc() at the call sites.
+function safeRender(el, html, append) {
+  const svg = el instanceof SVGElement;
+  const doc = new DOMParser().parseFromString(svg ? `<svg xmlns="http://www.w3.org/2000/svg">${html}</svg>` : "<body>" + html, "text/html");
+  doc.querySelectorAll("script,iframe,object,embed,link,meta,base,form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(a => {
+    const v = a.value.trim().toLowerCase();
+    if (a.name.startsWith("on") || ((a.name === "href" || a.name === "src" || a.name === "xlink:href") && v.startsWith("javascript:"))) n.removeAttribute(a.name);
+  }));
+  const nodes = svg ? [...doc.querySelector("svg").childNodes] : [...doc.body.childNodes];
+  append ? el.append(...nodes) : el.replaceChildren(...nodes);
+}
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+const foot = t => `<div class="foot">${esc(t)}</div>`;
+const pill = (ok, y = "PASS", n = "FAIL") => `<span class="pill ${ok ? "ok" : "no"}">${ok ? y : n}</span>`;
+const stPill = s => s === "PASS" ? pill(true) : `<span class="pill warn">${esc(s)}</span>`;
+
+function codeBlock(key, note) {
+  const e = D.excerpts[key];
+  const body = e.parts.map(p => p.map(([n, t]) => `<div class="row"><span class="ln">${n}</span>${esc(t)}</div>`).join(""))
+    .join(`<div class="gap">…</div>`);
+  return `<div class="ref"><b>${esc(e.ref)}</b>${note ? " · " + note : ""}</div><pre>${body}</pre>`;
+}
+const cmd = c => `<pre class="out">${esc(c)}</pre>`;
+function screenCard(x) {
+  return `<details class="sc"><summary>截图：${esc(x.caption)}</summary><div class="b">
+    <a href="${esc(x.file)}" target="_blank" rel="noopener"><img src="${esc(x.file)}" alt="${esc(x.caption)}" loading="lazy"></a>
+    <div class="ref"><a href="${esc(x.file)}" target="_blank" rel="noopener">查看原图</a> · 控制台：${esc(x.where)}</div>
+    <div class="ref"><b>关注点：</b> ${esc(x.look)}</div></div></details>`;
+}
+const shots = step => D.screens.filter(x => x.step === step).map(screenCard).join("");
+
+/* ---------------- nav ---------------- */
+function go(sec) {
+  document.querySelectorAll("nav a[data-s]").forEach(x => x.classList.toggle("on", x.dataset.s === sec));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === sec));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav a[data-s]").forEach(a => a.onclick = () => go(a.dataset.s));
+safeRender($("#navmeta"), `页面构建于 ${esc(D.built)}<br>3LO 录制运行：18/18 条断言用例 + 1 项观察`);
+
+/* ---------------- 1 · Replay ---------------- */
+const R = {user: "wei", stage: 0, neg: false};
+const STAGES = ["首次调用：需要授权", "在 Cognito 授权", "回调 + 会话绑定", "第二次调用：从 vault 取 token"];
+function renderReplay() {
+  const el = $("#replay"), p = D.personas[R.user];
+  safeRender(el, `<h2>回放：授权一次，之后 token 从 vault 取得</h2>
+  <p class="lead">选择一个用户，逐步走完 Web GUI 的 3LO 面板。调用结果（CONSENT_REQUIRED、OK、TOKEN_FROM_VAULT、会话绑定被拒绝）是针对 <code>rsidc_oauth_agent</code> 录制的<b>真实</b>结果。
+  Cognito 授权页为模拟，输入任意密码均可，不会向任何地方发送数据。</p>
+  <div class="steps">${STAGES.map((s, i) => `<span class="${i <= R.stage ? "on" : ""}">${i + 1} · ${s}</span>`).join("")}</div>
+  <div class="row-btns" style="margin-bottom:12px">${["wei", "zhang"].map(u => `<button class="btn ${u === R.user ? "on" : ""}" data-u="${u}">${u}</button>`).join("")}
+    <span class="ref" style="align-self:center">${esc(R.user)} 属于 <code>${esc(p.group)}</code>（${esc(p.email)}）。vault 初始为空，与录制时一致。</span></div>
+  <div id="rp"></div>
+  <h3>录制的画面（3LO 面板）</h3>
+  <pre class="out">┌ 2LO / 3LO GUI · signed in as wei ───────────────────────────────────────────────┐
+│ [Connect my profile]                                                            │
+│  1st call   → CONSENT_REQUIRED   authorizationUrl = …/identities/oauth2/authorize?request_uri=urn:… │
+│  (浏览器)   → 以 wei 身份在 Cognito 授权 → 重定向到 /3lo/callback?session_id=…  │
+│  callback   → CompleteResourceTokenAuth = OK  （session URI 与待完成会话一致） │
+│  2nd call   → TOKEN_FROM_VAULT   userInfo: username=wei, email=wei@techfinance.example.com │
+│ zhang 首次调用 → CONSENT_REQUIRED（不会复用 wei 的 vault token）                  │
+└─────────────────────────────────────────────────────────────────────────────────┘</pre>
+  <h3>全部已录制的 3LO 用例</h3>
+  <table><tr><th>状态</th><th>用例</th><th>期望</th><th>实际</th><th>详情</th></tr>
+  ${D.scenarios.map(r => `<tr><td>${stPill(r.status)}</td><td>${esc(r.case)}</td><td>${esc(r.expect)}</td><td>${esc(r.got)}</td><td class="mono">${esc(r.detail)}</td></tr>`).join("")}</table>
+  <div class="ref">授权 URL 和 claims 在录制时已被截断。临时用户（A、B、C）由管理员创建，并在运行结束时删除。</div>
+  ${foot("录制的测试结果（18/18 条断言用例全部匹配，另有 1 项已记录的观察）")}`);
+  [s1, s2, s3, s4][R.stage]($("#rp"));
+  el.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { R.user = b.dataset.u; R.stage = 0; R.neg = false; renderReplay(); });
+}
+const nextBtn = (label) => `<div class="row-btns" style="margin-top:12px">${R.stage ? '<button class="btn" id="bk">← 返回</button>' : ""}${label ? `<button class="btn pri" id="nx">${label}</button>` : '<button class="btn" id="rs">重新开始</button>'}</div>`;
+function wire(el) {
+  const nx = $("#nx", el), bk = $("#bk", el), rs = $("#rs", el);
+  if (nx) nx.onclick = () => { R.stage++; renderReplay(); };
+  if (bk) bk.onclick = () => { R.stage--; R.neg = false; renderReplay(); };
+  if (rs) rs.onclick = () => { R.stage = 0; R.neg = false; renderReplay(); };
+}
+function s1(el) {
+  const p = D.personas[R.user];
+  safeRender(el, `<div class="card"><b>Web GUI · 以 ${esc(R.user)} 身份登录</b>（登录 1，Cognito managed login）
+    <p>点击 <b>Connect my profile</b>。GUI 携带 <code>{"mode":"3lo","return_url":…}</code> 和用户的 Cognito JWT 调用 runtime。agent 向 AgentCore Identity 请求 (本 agent, ${esc(R.user)}) 的 token。</p>
+    <div class="ref">录制的结果</div><pre class="out">status: ${esc(p.first.got)}
+authorizationUrl: ${esc(p.first.detail)}…   （录制时已截断）
+sessionUri: 随之返回；GUI 将其保存为待完成的会话</pre>
+    <div class="ev">${R.user === "zhang" ? "wei 已在 vault 中存有 token，但<b>没有</b>被复用给 zhang：" : ""}${pill(p.first.status === "PASS")} ${esc(p.first.case)} → ${esc(p.first.got)}</div>
+    ${nextBtn("跳转到授权 URL →")}</div>`);
+  wire(el);
+}
+function s2(el) {
+  const p = D.personas[R.user];
+  safeRender(el, `<div class="card"><b>Amazon Cognito · managed login v2（登录 2，模拟）</b>
+    <div class="ms" style="max-width:380px"><h4>登录以连接你的 profile</h4>
+      <div class="ref">应用客户端 <b>rsidc-3lo-agent</b>（经 AgentCore Identity）请求 <code>openid email profile</code>。</div>
+      <input value="${esc(R.user)}" readonly><input type="password" placeholder="密码（任意值，模拟）">
+      <button class="go" id="nx">登录并允许</button><small>仅为演示：不会发生真实登录。</small></div>
+    <p class="ref">真实流程：浏览器跟随授权 URL 到达 Cognito，用户再次以 ${esc(R.user)} 身份登录，Cognito 携带 code 重定向到 credential provider 的 AgentCore callback，AgentCore Identity 使用 3LO 客户端密钥换取 token。随后浏览器带着 <code>session_id</code> 被送回应用的 return URL。
+    ${p.login ? "wei 的录制结果：" + esc(p.login.got) + "（显示了登录表单）。" : ""}</p>
+    ${nextBtn("")}</div>`);
+  $("#nx", el).onclick = () => { R.stage = 2; renderReplay(); };
+  const rs = $("#rs", el); if (rs) rs.remove();
+  const bk = $("#bk", el); if (bk) bk.onclick = () => { R.stage--; renderReplay(); };
+}
+function s3(el) {
+  const p = D.personas[R.user], n = D.negBinding;
+  safeRender(el, `<div class="card"><b>回调：<code>/3lo/callback?session_id=…</code> → 会话绑定</b>
+    <pre class="out">CompleteResourceTokenAuth(
+  sessionUri   = &lt;session_id from the redirect&gt;,          # 必须与 GUI 发起的待完成会话一致
+  userIdentifier = {"userToken": &lt;${esc(R.user)}'s Cognito JWT&gt;})   # 已登录的应用用户
+→ ${esc(p.bind.got)}</pre>
+    <div class="ev">${pill(true)} ${esc(p.bind.case)} → ${esc(p.bind.got)}</div>
+    <div class="row-btns" style="margin-top:8px"><button class="btn ${R.neg ? "on" : ""}" id="neg">试一试：用 wei 的 JWT 完成 zhang 的会话</button></div>
+    ${R.neg ? `<div class="err" style="margin-top:8px">${esc(n.detail)}…</div><div class="ref">录制结果：${esc(n.case)} → ${esc(n.got)}。发起流程的用户必须就是完成流程的用户。</div>` : ""}
+    ${nextBtn("agent 再次调用 →")}</div>`);
+  $("#neg", el).onclick = () => { R.neg = !R.neg; s3(el); };
+  wire(el);
+}
+function s4(el) {
+  const p = D.personas[R.user], o = p.vault.obj;
+  safeRender(el, `<div class="card"><b>第二次调用（新的 runtime 会话）→ TOKEN_FROM_VAULT</b>
+    <p>agent 携带授权时的 <code>sessionUri</code> 再次调用 <code>GetResourceOauth2Token</code>，从 vault 取得 access token 并调用 Cognito <code>/oauth2/userInfo</code>。身份防护会比对 userInfo 的 email 与调用者的 email。</p>
+    <pre class="out">status: ${esc(p.vault.got)}
+${o ? Object.entries(o).map(([k, v]) => k + ": " + v).join("\n") : esc(p.vault.detail)}</pre>
+    <div class="ev">${pill(true)} ${esc(p.vault.case)} → ${esc(p.vault.got)}</div>
+    ${R.user === "wei" ? "<p class='ref'>zhang 也授权之后，wei 取到的仍是 wei 自己的 token：vault 按 (agent, user) 隔离，不会互相覆盖。</p>" : ""}
+    ${nextBtn("")}</div>`);
+  wire(el);
+}
+
+/* ---------------- 2 · Under the hood ---------------- */
+const H = {i: 0};
+const hops = [
+  {t: "GUI → Runtime", who: "Runtime customJWTAuthorizer",
+   body: () => `<table class="kv"><tr><td>调用</td><td><code>InvokeAgentRuntime</code>，携带用户的 Cognito JWT，payload <code>{"mode":"3lo","return_url":…}</code></td></tr>
+     <tr><td>校验方</td><td>Runtime 的 <code>customJWTAuthorizer</code>：discovery URL + 允许的客户端</td></tr>
+     <tr><td>分发</td><td><code>agents/cognito-idc/oauth/main.py:77</code>：由 <code>mode</code> 选择 <code>two_lo</code> 或 <code>three_lo</code></td></tr></table>
+     ${codeBlock("entry", "入口与 mode 分发")}${shots("12")}`},
+  {t: "Runtime → agent（WAT）", who: "AgentCore Runtime",
+   body: () => `<p>Runtime 交给 agent 一个绑定到 (agent, user) 的 <b>workload access token（WAT）</b>。WAT 携带来自入站 JWT 的用户身份；agent 从不接触长期密钥。</p>
+     <p class="ref">agent 还会从入站 <code>Authorization</code> 头读取调用者的 email，供后面的身份防护使用。</p>
+     ${codeBlock("entry", "第 71 行 <code>get_workload_access_token()</code>，第 75 行取调用者 email")}`},
+  {t: "Agent → Identity", who: "AgentCore Identity（Token Vault）",
+   body: () => `<pre class="out">GetResourceOauth2Token(
+  workloadIdentityToken = &lt;WAT&gt;,
+  resourceCredentialProviderName = "rsidc-3lo-cognito",
+  scopes = ["openid", "email", "profile"],
+  oauth2Flow = "USER_FEDERATION",
+  resourceOauth2ReturnUrl = &lt;return URL&gt;,
+  sessionUri = &lt;可选，第二次调用时传入&gt;,
+  forceAuthentication = &lt;可选&gt;)</pre>
+     <p>Token Vault 以 <b>(workload identity, user)</b> 为键查找。未存储 → 响应包含 <code>authorizationUrl</code> + <code>sessionUri</code>（状态 <code>CONSENT_REQUIRED</code>，已录制）。</p>
+     <p class="ref">runtime 的 IAM 角色必须允许对 token vault、provider 及其 workload identity 调用 <code>GetResourceOauth2Token</code>。</p>
+     ${codeBlock("three_lo", "请求、vault 未命中与身份防护")}${shots("10")}`},
+  {t: "浏览器 → Cognito → callback", who: "Cognito managed login v2 + AgentCore Identity",
+   body: () => `<ul class="checks"><li>用户在 Cognito 授权（客户端 <code>rsidc-3lo-agent</code>，authorization code 流程）。3LO 客户端唯一的 callback URL 是 credential provider 的 AgentCore callback。</li>
+     <li>provider 的 callback 收到 code，并用 3LO 客户端密钥（保存在 vault 中，从不打印）换取 token。</li>
+     <li>随后浏览器跳转到应用的 return URL（<code>…/3lo/callback?session_id=…</code>）；AgentCore Identity 只会重定向到该 workload identity 允许的 return URL。</li>
+     <li>授权 URL 和 session URI 约 10 分钟内有效；<code>request_uri</code> 一次性使用。</li>
+     <li><code>prompt=login</code> 在 managed login v2 上会强制显示登录表单（v1 会忽略它）。</li></ul>${shots("9")}`},
+  {t: "GUI → Identity（会话绑定）", who: "AgentCore Identity",
+   body: () => `<pre class="out">CompleteResourceTokenAuth(sessionUri = &lt;session_id&gt;, userIdentifier = {"userToken": &lt;caller's JWT&gt;})</pre>
+     <p><b>会话绑定</b>：发起流程的用户必须就是完成流程的用户。用 wei 的 JWT 完成 zhang 的会话 → <code>AccessDeniedException</code>（已录制）。</p>
+     <p>GUI 的 <code>/3lo/callback</code> 只能使用一次，并与浏览器会话绑定：只接受本会话发起的 <code>session_id</code>（10 分钟内），用后即清除；其他请求一律返回 HTTP 400，且不会调用 <code>CompleteResourceTokenAuth</code>。</p>
+     <p>该调用还需要使用<b>调用者自己的</b>凭证对 provider 的客户端密钥具有 <code>secretsmanager:GetSecretValue</code> 权限；缺少时报 <code>AccessDenied when retrieving secret</code>。</p>
+     <div class="ev">${pill(true)} ${esc(D.negBinding.case)} → ${esc(D.negBinding.got)}</div>
+     ${codeBlock("gui_start", "start：询问 agent，重定向到授权 URL")}${codeBlock("gui_cb", "callback：会话绑定，然后再次询问 agent")}`},
+  {t: "Agent → Identity → userInfo", who: "agent 身份防护",
+   body: () => `<p>第二次 <code>GetResourceOauth2Token</code> → 从 vault 取得 <code>accessToken</code> → <code>GET {COGNITO_DOMAIN}/oauth2/userInfo</code>。</p>
+     <p>agent 的<b>身份防护</b>：vault token 的 email 必须与调用者的 email 一致，否则返回 <code>IDENTITY_MISMATCH</code>（共享浏览器场景已录制）。</p>
+     <table><tr><th>录制项</th><th>结果</th></tr>${["wei", "zhang"].map(u => `<tr><td>${esc(D.personas[u].vault.case)}</td><td>${esc(D.personas[u].vault.got)}</td></tr>`).join("")}</table>
+     ${codeBlock("three_lo", "第 62-66 行：身份防护与结果")}`},
+];
+function renderHood() {
+  const el = $("#hood");
+  safeRender(el, `<h2>原理剖析：agent → GetResourceOauth2Token → 授权 → CompleteResourceTokenAuth → vault → userInfo</h2>
+  <p class="lead">六跳构成一次完整的 3LO 往返。每一跳展示调用、谁校验什么，以及真实的代码或配置（本仓库中的 文件:行号）。</p>
+  <div class="flow">${hops.map((h, i) => `${i ? '<div class="arrow">→</div>' : ""}<div class="node ${i === H.i ? "on" : ""} ${i === 5 ? "good" : ""}" data-i="${i}"><div class="n">第 ${i + 1} 跳</div><div class="t">${esc(h.t)}</div><div class="s">${esc(h.who)}</div></div>`).join("")}</div>
+  <div class="card"><div class="hop-hd"><h3 style="margin:0">第 ${H.i + 1} 跳 · ${esc(hops[H.i].t)}</h3><span class="pill mut who-chk">校验方：${esc(hops[H.i].who)}</span>
+   <span style="flex:1"></span><button class="btn" id="hp" ${H.i ? "" : "disabled"}>← 上一跳</button><button class="btn pri" id="hn" ${H.i < hops.length - 1 ? "" : "disabled"}>下一跳 →</button></div>
+   ${hops[H.i].body()}</div>
+  <p class="ref">已录制的边界情况：共享浏览器 → <code>IDENTITY_MISMATCH</code>，通过强制重新授权修复；<code>prompt=login</code> 会显示登录表单，但未存储 token（OBSERVED）。</p>
+  ${foot("录制的测试结果（18/18 条断言用例）")}`);
+  el.querySelectorAll(".node").forEach(n => n.onclick = () => { H.i = +n.dataset.i; renderHood(); });
+  $("#hp", el).onclick = () => { H.i--; renderHood(); };
+  $("#hn", el).onclick = () => { H.i++; renderHood(); };
+}
+
+/* ---------------- 3 · Setup ---------------- */
+const step = (id, title, result, inner, open) => `<details class="faq" id="${id}" ${open ? "open" : ""}><summary><span>${title}<span class="ref" style="display:block;font-weight:400;margin:2px 0 0">结果：${esc(result)}</span></span></summary><div class="bd" style="padding-left:16px">${inner}</div></details>`;
+function renderSetup() {
+  const el = $("#setup");
+  safeRender(el, `<h2>配置：步骤 9、10、12 与 Web GUI</h2>
+  <p class="lead">前置条件：<a href="foundation.zh-CN.html">基础环境</a>的步骤 1–8（网络、Cognito 用户池 <code>rsidc-users</code>、IAM Identity Center、Redshift、OBO runtime）。所有脚本都通过 <code>infra/common/run.sh</code> 运行，它会加载 <code>infra/common/00-config.sh</code>。runtime <code>rsidc_oauth_agent</code> 与<a href="part3-2lo.zh-CN.html">第 3 部分 · 2LO</a> 共用。点击步骤可展开。</p>
+  ${step("3lo-step-9", "步骤 9 · 3LO 的 Cognito OAuth 客户端", "rsidc-3lo-agent code openid email profile；ManagedLoginVersion 2", `
+    ${cmd("infra/common/run.sh ./infra/cognito-idc/09-cognito-oauth-clients.sh")}
+    <p>创建：</p><ul class="checks"><li>托管登录域名 <code>rsidc-123456789012</code>，使用 <b>managed login v2</b>。<code>prompt=login</code> 需要 v2；经典的 v1 hosted UI 会忽略它。</li>
+     <li><code>rsidc-3lo-agent</code>：机密客户端，仅授权 <code>code</code> 模式，scope 为 <code>openid email profile</code>。</li></ul>
+    <div class="ref"><b>结果</b></div>${cmd(`rsidc-3lo-agent  code                email openid profile
+authorization_endpoint https://rsidc-123456789012.auth.ap-southeast-1.amazoncognito.com/oauth2/authorize
+ManagedLoginVersion 2, ACTIVE`)}
+    <div class="ref"><b>检查要点：</b>客户端与域名。</div>
+    ${cmd("aws cognito-idp list-user-pool-clients --region ap-southeast-1 --user-pool-id {user-pool-id}\naws cognito-idp describe-user-pool-domain --region ap-southeast-1 --domain rsidc-123456789012")}
+    ${shots("9")}`)}
+  ${step("3lo-step-10", "步骤 10 · Credential provider rsidc-3lo-cognito", "3LO 客户端已设置 callbackUrl", `
+    ${cmd("infra/common/run.sh .venv/bin/python infra/cognito-idc/10-credential-providers.py")}
+    <p>创建两个基于 Cognito discovery 的 <code>CustomOauth2</code> provider。客户端密钥直接写入 AgentCore Identity vault，从不打印。随后脚本将 3LO 客户端的 callback 设为 provider 的 AgentCore callback URL；由于 <code>UpdateUserPoolClient</code> 会重置未提供的字段，脚本会完整复制该客户端的现有配置。</p>
+    <div class="ref"><b>结果</b></div>${cmd(`rsidc-3lo-cognito  callbackUrl=https://bedrock-agentcore.ap-southeast-1.amazonaws.com/identities/oauth2/callback/9cb308bc-...
+3LO client callback -> [that callbackUrl]`)}
+    <div class="ref"><b>检查要点：</b>provider 已存在，且 3LO 客户端唯一的 callback URL 等于其 <code>callbackUrl</code>。</div>
+    ${cmd("aws bedrock-agentcore-control get-oauth2-credential-provider --region ap-southeast-1 --name rsidc-3lo-cognito\naws cognito-idp describe-user-pool-client --region ap-southeast-1 --user-pool-id {user-pool-id} --client-id {3lo-client-id} --query 'UserPoolClient.CallbackURLs'")}
+    ${shots("10")}`)}
+  ${step("3lo-step-12", "步骤 12 · OAuth runtime 与 3LO return URL", "returnUrls [http://localhost:8765/callback]", `
+    <p>runtime <code>rsidc_oauth_agent</code> 与 2LO 共用：详见<a href="part3-2lo.zh-CN.html">第 3 部分 · 2LO，步骤 12</a>。</p>
+    <ul class="checks"><li>其 workload identity 允许两个 3LO return URL，均由 <code>infra/cognito-idc/12-deploy-oauth-runtime.sh</code> 设置：<code>http://localhost:8765/callback</code>（测试中代替应用回调页）和 <code>http://localhost:8081/3lo/callback</code>（本地 2LO/3LO Web GUI）。步骤 14 之后会再加入 <code>&lt;oauth-api&gt;/3lo/callback</code>。</li></ul>
+    <div class="ref"><b>结果</b>（录制于步骤 12 的测试运行，当时尚未加入 Web GUI 的 return URL）</div>${cmd('status READY, version 4, returnUrls ["http://localhost:8765/callback"]')}
+    <div class="ref"><b>检查要点：</b>runtime 状态与 workload identity 允许的 return URL。</div>
+    ${cmd("aws bedrock-agentcore-control get-workload-identity --region ap-southeast-1 --name <workload-identity-name> --query allowedResourceOauth2ReturnUrls")}
+    ${shots("12")}`)}
+  ${step("3lo-step-13", "步骤 13 · 3LO 测试用例", "PASS（18/18 中的 3LO 用例）+ 1 项 OBSERVED", `
+    <p>3LO 授权的自动化方式：<code>agent-browser</code>（headless Chrome）扮演用户，在 Cognito managed login 上登录。<code>:8765</code> 上的本地监听器接收 return URL 的重定向，随后测试用用户的 JWT 调用 <code>CompleteResourceTokenAuth</code>，即应用的会话绑定步骤。涉及 vault 状态的场景使用<b>管理员创建的一次性 Cognito 用户</b>，结束时删除，因此每次运行 vault 槽位都是空的。测试套件本身不在本仓库中；下面的录制结果即为证据。</p>
+    <div class="ref"><b>结果：18/18 条断言用例全部匹配，另有 1 项已记录的观察</b></div>
+    ${cmd(`PASS 3LO wei 首次调用 -> CONSENT_REQUIRED (authorizationUrl + sessionUri)
+PASS 3LO wei 在 Cognito 登录 -> 重定向到 return URL; CompleteResourceTokenAuth(wei JWT) OK
+PASS 3LO wei 第二次调用（新 runtime 会话）-> TOKEN_FROM_VAULT, userinfo username=wei
+PASS 3LO zhang -> CONSENT_REQUIRED（未复用 wei 的 vault token）
+PASS 3LO 用 WEI 的 JWT 完成 zhang 的会话 -> AccessDeniedException（会话绑定）
+PASS 3LO 用 zhang 的 JWT 完成 zhang 的会话 -> OK; zhang 取得 zhang 的 token; wei 仍取得 wei 的
+PASS 3LO 共享浏览器（以 wei 登录）替临时用户 A 授权 -> agent 防护返回 IDENTITY_MISMATCH
+PASS 3LO 恢复：A 在干净浏览器中强制重新授权 -> A 自己的 token
+PASS 3LO prompt=login 即使已有会话也强制显示 Cognito 登录表单
+OBSERVED 3LO 通过 customParameters 传入 prompt=login: 授权 + CompleteResourceTokenAuth OK，但未存储 token (CONSENT_REQUIRED)
+PASS 3LO 对照：新用户 C，不带 prompt=login -> token 已存储`)}
+    <p><b>2LO/3LO 构建后的 OBO 回归：</b>OBO 矩阵仍然 16/16 通过，反向测试不变，OBO runtime 仍为版本 3。</p>
+    <div class="ref"><b>自行验证：</b>使用下面的 Web GUI。第一次点击 <i>Connect my profile</i> 返回 <code>CONSENT_REQUIRED</code>；授权并完成 <code>CompleteResourceTokenAuth</code> 后，第二次调用返回 <code>TOKEN_FROM_VAULT</code>，内容为你自己的 userInfo。</div>`)}
+  ${step("3lo-gui", "Web GUI · 3LO 面板", "CompleteResourceTokenAuth OK，身份防护通过", `
+    <b>2LO / 3LO 的 Web GUI（端口 8081）</b>
+    <ol><li>一次性配置：<ul>
+      <li>${"<code>infra/common/run.sh .venv/bin/python infra/cognito-idc/13-web-login-client.py</code>"} 添加登录回调 <code>http://localhost:8081/callback</code>。</li>
+      <li>OAuth workload identity 的 return URL 必须包含 <code>http://localhost:8081/3lo/callback</code>；<code>infra/cognito-idc/12-deploy-oauth-runtime.sh</code> 会同时设置两者。</li></ul></li>
+     <li>用 ${"<code>infra/common/run.sh .venv/bin/python webchat/cognito-idc/oauth_app.py</code>"} 启动，然后打开 <code>http://localhost:8081</code> 并登录（登录 1）。</li>
+     <li><b>2LO</b>：<i>Run sales report via Gateway</i>。<b>3LO</b>：<i>Connect my profile</i>。首次会经过登录 2（授权），再做会话绑定，然后从 vault 读取 token。<i>Check vault only</i> 只读取 vault，不做重定向。</li></ol>
+    <div class="ref"><b>结果（2026-10-05，headless Chrome，zhang）</b></div>
+    <ul class="checks"><li><b>3LO</b>（强制重新授权）：<ul><li><code>CompleteResourceTokenAuth</code> 返回 OK，且 session URI 与待完成的会话一致。</li>
+      <li>vault 中的 token 属于 zhang 本人：<code>username=zhang</code>，<code>client_id={3lo-client-id}</code>（3LO 客户端）。<code>userInfo</code> 返回 zhang 的 profile。</li>
+      <li>身份防护通过。</li></ul></li><li>8080 端口上的 OBO GUI 仍正常工作，无变化。</li></ul>
+    <div class="ref"><b>在 AWS 上（步骤 14，以 wei 登录）</b></div>
+    <ul class="checks"><li>强制重新授权的 3LO：<code>CompleteResourceTokenAuth → OK</code>，身份防护确认 token 属于调用者。</li></ul>
+    <div class="ref"><b>在 AWS 上发现的要求</b></div>
+    <ul class="checks"><li><code>CompleteResourceTokenAuth</code> 使用<b>调用者自己的凭证</b>读取 provider 的客户端密钥。因此 GUI 的角色需要对该密钥具有 <code>GetSecretValue</code> 权限；缺少时调用会失败并报 <code>AccessDenied when retrieving secret</code>。</li></ul>
+    <p class="ref">第 1 节的回放对应的就是这个面板；相同的页面逻辑在仓库中：<code>webchat/cognito-idc/oauth_app.py</code>。</p>`)}
+  ${step("3lo-compare", "与 OBO 在同一份 Redshift 数据上的对比", "资源所属 IdP 处的用户", `
+    <table><tr><th>模式</th><th>到达资源的是谁的身份</th><th>zhang（marketing）看到</th><th>ds1（无授权）看到</th></tr>
+     <tr><td><b>OBO</b>（<a href="part4-obo.zh-CN.html">第 4 部分</a>）</td><td>最终用户（<code>AWSIDC:zhang@…</code>）</td><td>2 行 APAC 数据，PII 列被拒绝</td><td>被拒绝 (42501)</td></tr>
+     <tr><td><b>3LO</b></td><td>最终用户在<i>资源所属</i> IdP 处的身份（Cognito userInfo）</td><td>仅自己的 profile</td><td>仅自己的 profile</td></tr></table>`)}
+  ${step("3lo-teardown", "3LO 清理", "通过 99-teardown.sh", `
+    ${cmd("infra/common/run.sh ./infra/cognito-idc/99-teardown.sh")}
+    <p>同时会删除 OAuth runtime、Gateway 及 target、Lambda、credential provider、三个新增的 IAM 角色以及 Cognito 域名。由于 runtime 是共用的，这也会删除<a href="part3-2lo.zh-CN.html">第 3 部分 · 2LO</a> 所使用的资源。</p>
+    <div class="ref"><b>检查要点：</b><code>aws bedrock-agentcore-control list-oauth2-credential-providers --region ap-southeast-1</code> 的输出中不再包含 <code>rsidc-3lo-cognito</code>。</div>`)}
+  ${foot("录制于 2026-10-05（配置、GUI）· 测试结果 18/18 + 1 项 OBSERVED")}`);
+}
+
+/* ---------------- 4 · FAQ · Findings ---------------- */
+function renderFaq() {
+  const el = $("#faq");
+  const f = (q, body, open) => `<details class="faq" ${open ? "open" : ""}><summary>${q}</summary><div class="bd">${body}</div></details>`;
+  safeRender(el, `<h2>FAQ · 发现</h2>
+  <p class="lead">3LO 构建中的三项发现（以经验教训的形式陈述），以及与 OBO 的对比。</p>
+  ${f("1 · 3LO Token Vault 按 agent 和用户隔离，会话绑定有效", `<p>完成他人的会话会被拒绝：用 wei 的 JWT 完成 zhang 的会话 → <code>AccessDeniedException</code>。第二个用户的首次调用返回 <code>CONSENT_REQUIRED</code>；第一个用户的 token 既不会被复用，也不会被覆盖。</p>
+    <div class="ev">${pill(true)} 录制结果：${esc(D.negBinding.case)}</div>`, true)}
+  ${f("2 · 共享浏览器风险：存储的是谁的 token？", `<p>如果授权 URL 在一个已以他人身份登录 IdP 的浏览器中打开，为调用者存储的将是<b>那个人的</b> token。会话绑定校验的是应用用户，而不是 IdP 用户。</p>
+    <p><b>已验证的缓解措施：</b>agent 将 vault token 的身份与入站调用者比对，不一致则拒绝（<code>IDENTITY_MISMATCH</code>）；之后在干净浏览器中强制重新授权即可恢复。</p>
+    <div class="seq"><div>wei 在浏览器中已登录 Cognito</div><span>→</span><div>在该浏览器中打开临时用户 A 的授权 URL</div><span>→</span><div>为 A 存储了 wei 的 token</div><span>→</span><div class="edge">agent 防护：IDENTITY_MISMATCH</div><span>→</span><div class="edge">在干净浏览器中强制重新授权 → A 自己的 token</div></div>`, true)}
+  ${f("3 · prompt=login", `<p>Cognito managed login v2 支持 <code>prompt=login</code>，会显示登录表单。但通过 AgentCore Identity 的 <code>customParameters</code> 传入时，授权后并未存储 token（再次返回 <code>CONSENT_REQUIRED</code>，而不带它的同一流程会存储 token）。在依赖该能力之前，应先向服务团队反馈。</p>
+    <div class="ev"><span class="pill warn">OBSERVED</span> 授权 + CompleteResourceTokenAuth OK，但未存储 token。</div>`, true)}
+  ${f("运维提示 · GUI 角色需要 GetSecretValue", `<p><code>CompleteResourceTokenAuth</code> 使用调用者自己的凭证读取 provider 的客户端密钥。请仅对该密钥授予 <code>secretsmanager:GetSecretValue</code>；否则调用会失败并报 <code>AccessDenied when retrieving secret</code>。</p>`)}
+  ${f("3LO 与 OBO：对数据所有者有何不同？", `<table><tr><th>模式</th><th>到达资源的是谁的身份</th><th>zhang（marketing）看到</th><th>ds1（无授权）看到</th></tr>
+     <tr><td>OBO（<a href="part4-obo.zh-CN.html">第 4 部分</a>）</td><td>最终用户（<code>AWSIDC:zhang@…</code>）</td><td>2 行 APAC 数据，PII 列被拒绝</td><td>被拒绝 (42501)</td></tr>
+     <tr><td>3LO</td><td>最终用户在资源所属 IdP 处的身份（Cognito userInfo）</td><td>仅自己的 profile</td><td>仅自己的 profile</td></tr></table>
+     <p class="ref">3LO 回答的是“该用户在资源所属 IdP 处是谁”；它不会把 IAM Identity Center 的权限带到 Redshift。</p>`)}
+  ${foot("录制的测试结果（18/18 条断言用例 + 1 项 OBSERVED）")}`);
+}
+
+renderReplay(); renderHood(); renderSetup(); renderFaq();
+
+</script>
+</body></html>
